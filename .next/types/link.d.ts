@@ -35,9 +35,9 @@ declare namespace __next_route_internal_types__ {
     | `/dashboard`
     | `/settings`
   type DynamicRoutes<T extends string = string> = 
-    | `/c/${SafeSlug<T>}/settings`
     | `/c/${SafeSlug<T>}/projects`
     | `/c/${SafeSlug<T>}/projects/${SafeSlug<T>}`
+    | `/c/${SafeSlug<T>}/settings`
     | `/projects/${SafeSlug<T>}`
 
   type RouteImpl<T> = 
