@@ -29,15 +29,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
 import { formatDate } from '@/lib/utils';
-import dynamic from 'next/dynamic';
-
-const EditableStageComponents = dynamic(
-  () => import('@/components/client/editable-stage-components').then(mod => ({ default: mod.EditableStageComponents })),
-  {
-    loading: () => <div className="animate-pulse bg-gray-200 h-32 rounded"></div>,
-    ssr: false
-  }
-);
+import { updateStage } from '@/actions/stages';
+import { toast } from 'sonner';
+import { EditableStageDate } from '@/components/ui/editable-stage-date';
+import { EditableStageComponents } from '@/components/client/editable-stage-components';
 
 interface EditableStageCardProps {
   stage: Stage;
@@ -118,6 +113,36 @@ export function EditableStageCard({
   const handleUpdateStageStatus = (newStatus: string) => {
     onUpdateStage?.(stage.id, { status: newStatus as Stage['status'] });
     setShowAddMenu(false);
+  };
+
+  const handleUpdateStageDate = async (dateField: 'planned_start' | 'planned_end' | 'deadline', newDate: string) => {
+    try {
+      // If there's an onUpdateStage prop, use it instead of calling the action directly
+      if (onUpdateStage) {
+        const updates: Partial<Stage> = {};
+        updates[dateField] = newDate;
+        onUpdateStage(stage.id, updates);
+        return;
+      }
+
+      // Fallback to direct action call
+      const formData = new FormData();
+      formData.append('stageId', stage.id);
+      formData.append('projectId', stage.project_id);
+      formData.append(dateField, newDate);
+
+      const result = await updateStage(null, formData);
+
+      if (result.error) {
+        toast.error('Error al actualizar la fecha');
+        console.error('Error updating stage date:', result.error);
+      } else {
+        toast.success('Fecha actualizada');
+      }
+    } catch (error) {
+      console.error('Error in handleUpdateStageDate:', error);
+      toast.error('Error al actualizar la fecha');
+    }
   };
 
   const componentTypes = [
@@ -266,23 +291,35 @@ export function EditableStageCard({
           </div>
         </div>
 
-        {/* Fechas de la etapa mejoradas */}
-        {(stage.planned_start || stage.deadline) && (
-          <div className="relative flex items-center gap-4 text-xs pt-3 mt-3 border-t border-border/30">
-            {stage.planned_start && (
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                <span>Inicio: {formatDate(stage.planned_start)}</span>
-              </div>
-            )}
-            {stage.deadline && (
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                <span>Fecha límite: {formatDate(stage.deadline)}</span>
-              </div>
-            )}
+        {/* Fechas editables de la etapa */}
+        <div className="relative pt-3 mt-3 border-t border-border/30">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <EditableStageDate
+              value={stage.planned_start}
+              onSave={(newDate) => handleUpdateStageDate('planned_start', newDate)}
+              placeholder="Fecha de inicio"
+              label="Inicio"
+              dateType="start"
+              className="text-xs"
+            />
+            <EditableStageDate
+              value={stage.planned_end}
+              onSave={(newDate) => handleUpdateStageDate('planned_end', newDate)}
+              placeholder="Fecha de fin"
+              label="Fin"
+              dateType="end"
+              className="text-xs"
+            />
+            <EditableStageDate
+              value={stage.deadline}
+              onSave={(newDate) => handleUpdateStageDate('deadline', newDate)}
+              placeholder="Fecha límite"
+              label="Límite"
+              dateType="deadline"
+              className="text-xs"
+            />
           </div>
-        )}
+        </div>
       </CardHeader>
 
       {isExpanded && (

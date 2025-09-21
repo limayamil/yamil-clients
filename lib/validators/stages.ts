@@ -1,22 +1,27 @@
 import { z } from 'zod';
 
+// Helper to handle projectId that might come as string or array from FormData
+const projectIdSchema = z.union([z.string(), z.array(z.string())]).transform((val) =>
+  Array.isArray(val) ? val[0] : val
+).pipe(z.string().uuid());
+
 export const requestMaterialsSchema = z.object({
-  projectId: z.string().uuid()
+  projectId: projectIdSchema
 });
 
 export const requestApprovalSchema = z.object({
-  projectId: z.string().uuid(),
+  projectId: projectIdSchema,
   stageId: z.string().uuid().optional()
 });
 
 export const completeStageSchema = z.object({
   stageId: z.string().uuid(),
-  projectId: z.string().uuid()
+  projectId: projectIdSchema
 });
 
 export const addStageComponentSchema = z.object({
   stageId: z.string().uuid(),
-  projectId: z.string().uuid(),
+  projectId: projectIdSchema,
   componentType: z.enum([
     'upload_request',
     'checklist',
@@ -40,7 +45,7 @@ export const addStageComponentSchema = z.object({
 
 export const updateStageComponentSchema = z.object({
   componentId: z.string().uuid(),
-  projectId: z.string().uuid(),
+  projectId: projectIdSchema,
   config: z.string().transform((str, ctx) => {
     try {
       return JSON.parse(str);
@@ -54,13 +59,16 @@ export const updateStageComponentSchema = z.object({
 
 export const deleteStageComponentSchema = z.object({
   componentId: z.string().uuid(),
-  projectId: z.string().uuid()
+  projectId: projectIdSchema
 });
 
 export const updateStageSchema = z.object({
   stageId: z.string().uuid(),
-  projectId: z.string().uuid(),
+  projectId: projectIdSchema,
   status: z.enum(['todo', 'waiting_client', 'in_review', 'approved', 'blocked', 'done']).optional(),
   title: z.string().optional(),
-  description: z.string().optional()
+  description: z.string().optional(),
+  planned_start: z.string().datetime().optional(),
+  planned_end: z.string().datetime().optional(),
+  deadline: z.string().datetime().optional()
 });

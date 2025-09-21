@@ -15,7 +15,6 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   // Optimizaciones de bundle
-  bundlePagesExternals: false,
   optimizeFonts: true,
   // Configuración de imágenes
   images: {

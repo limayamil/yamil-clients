@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
 import { requireRole } from '@/lib/auth/guards';
 import { getProviderProject } from '@/lib/queries/provider';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
 
-const ProjectDetailView = dynamic(
+const ProjectDetailView = nextDynamic(
   () => import('@/components/provider/project-detail-view').then(mod => ({ default: mod.ProjectDetailView })),
   {
     loading: () => (

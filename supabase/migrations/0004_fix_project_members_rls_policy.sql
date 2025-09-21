@@ -1,3 +1,4 @@
+
 -- Fix infinite recursion in project_members RLS policy and JWT role checking
 -- 1. The client_read_members policy was querying the same table causing infinite recursion
 -- 2. Both is_provider() and is_client() functions were checking wrong JWT path for role

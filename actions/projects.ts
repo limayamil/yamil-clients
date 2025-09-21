@@ -13,6 +13,30 @@ import {
   updateProjectStageSchema
 } from '@/lib/validators/projects';
 
+// Helper function to safely process FormData and handle duplicate keys
+function processFormData(formData: FormData): Record<string, any> {
+  const payload: Record<string, any> = {};
+  for (const [key, value] of formData.entries()) {
+    if (payload[key]) {
+      // If key already exists, convert to array or add to existing array
+      if (Array.isArray(payload[key])) {
+        payload[key].push(value);
+      } else {
+        payload[key] = [payload[key], value];
+      }
+    } else {
+      payload[key] = value;
+    }
+  }
+
+  // For projectId specifically, always take the first value if it's an array
+  if (Array.isArray(payload.projectId)) {
+    payload.projectId = payload.projectId[0];
+  }
+
+  return payload;
+}
+
 const createProjectSchema = z.object({
   template: z.string(),
   clientId: z.string().uuid(),
@@ -23,7 +47,7 @@ const createProjectSchema = z.object({
 
 export async function createProjectFromTemplate(_: unknown, formData: FormData) {
   const supabase = createSupabaseServerClient();
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = createProjectSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -56,7 +80,7 @@ export async function createProjectFromTemplate(_: unknown, formData: FormData) 
 
 export async function updateProjectBasicInfo(formData: FormData) {
   const supabase = createSupabaseServerClient();
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = updateProjectBasicInfoSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -87,7 +111,7 @@ export async function updateProjectBasicInfo(formData: FormData) {
 
 export async function updateProjectDates(formData: FormData) {
   const supabase = createSupabaseServerClient();
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = updateProjectDatesSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -120,7 +144,7 @@ export async function updateProjectDates(formData: FormData) {
 
 export async function updateProjectStatus(formData: FormData) {
   const supabase = createSupabaseServerClient();
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = updateProjectStatusSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -148,7 +172,7 @@ export async function updateProjectStatus(formData: FormData) {
 
 export async function updateProjectCurrentStage(formData: FormData) {
   const supabase = createSupabaseServerClient();
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = updateProjectStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 

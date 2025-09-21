@@ -17,11 +17,35 @@ import { trackEvent } from '@/lib/observability/events';
 import { rateLimitCurrentUser } from '@/lib/security/rate-limit';
 import { revalidatePath } from 'next/cache';
 
+// Helper function to safely process FormData and handle duplicate keys
+function processFormData(formData: FormData): Record<string, any> {
+  const payload: Record<string, any> = {};
+  for (const [key, value] of formData.entries()) {
+    if (payload[key]) {
+      // If key already exists, convert to array or add to existing array
+      if (Array.isArray(payload[key])) {
+        payload[key].push(value);
+      } else {
+        payload[key] = [payload[key], value];
+      }
+    } else {
+      payload[key] = value;
+    }
+  }
+
+  // For projectId specifically, always take the first value if it's an array
+  if (Array.isArray(payload.projectId)) {
+    payload.projectId = payload.projectId[0];
+  }
+
+  return payload;
+}
+
 export async function requestMaterials(_: unknown, formData: FormData) {
   const cookieStore = cookies();
   const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
   rateLimitCurrentUser();
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = requestMaterialsSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -42,7 +66,7 @@ export async function requestApproval(_: unknown, formData: FormData) {
   const cookieStore = cookies();
   const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
   rateLimitCurrentUser();
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = requestApprovalSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -67,7 +91,7 @@ export async function completeStage(_: unknown, formData: FormData) {
   const cookieStore = cookies();
   const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
   rateLimitCurrentUser();
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = completeStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -91,7 +115,7 @@ export async function addStageComponent(_: unknown, formData: FormData) {
   const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
   rateLimitCurrentUser();
 
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = addStageComponentSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -143,7 +167,7 @@ export async function updateStageComponent(_: unknown, formData: FormData) {
   const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
   rateLimitCurrentUser();
 
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = updateStageComponentSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -200,7 +224,7 @@ export async function deleteStageComponent(_: unknown, formData: FormData) {
   const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
   rateLimitCurrentUser();
 
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = deleteStageComponentSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -254,7 +278,7 @@ export async function updateStage(_: unknown, formData: FormData) {
   const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
   rateLimitCurrentUser();
 
-  const payload = Object.fromEntries(formData.entries());
+  const payload = processFormData(formData);
   const parsed = updateStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -283,6 +307,9 @@ export async function updateStage(_: unknown, formData: FormData) {
   if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
   if (parsed.data.title !== undefined) updateData.title = parsed.data.title;
   if (parsed.data.description !== undefined) updateData.description = parsed.data.description;
+  if (parsed.data.planned_start !== undefined) updateData.planned_start = parsed.data.planned_start;
+  if (parsed.data.planned_end !== undefined) updateData.planned_end = parsed.data.planned_end;
+  if (parsed.data.deadline !== undefined) updateData.deadline = parsed.data.deadline;
 
   const { error } = await supabase
     .from('stages')

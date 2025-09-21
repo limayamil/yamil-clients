@@ -19,14 +19,14 @@ import dynamic from 'next/dynamic';
 const GanttTimeline = dynamic(
   () => import('@/components/client/gantt-timeline').then(mod => ({ default: mod.GanttTimeline })),
   {
-    loading: () => <div className="animate-pulse bg-gray-200 h-40 rounded"></div>,
+    loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-3xl"></div>,
     ssr: false
   }
 );
 import { EditableStageCard } from '@/components/client/editable-stage-card';
 import { StageCommentThread } from '@/components/client/stage-comment-thread';
 import { StageFileDropzone } from '@/components/client/stage-file-dropzone';
-import type { ProjectSummary, ProjectStatus, StageComponent } from '@/types/project';
+import type { ProjectSummary, ProjectStatus, StageComponent, Stage } from '@/types/project';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { updateProjectBasicInfo, updateProjectDates, updateProjectStatus, updateProjectCurrentStage } from '@/actions/projects';
 import { addStageComponent, updateStageComponent, deleteStageComponent, updateStage } from '@/actions/stages';
@@ -211,6 +211,9 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
     if (updates.status) formData.append('status', updates.status);
     if (updates.title) formData.append('title', updates.title);
     if (updates.description) formData.append('description', updates.description);
+    if (updates.planned_start) formData.append('planned_start', updates.planned_start);
+    if (updates.planned_end) formData.append('planned_end', updates.planned_end);
+    if (updates.deadline) formData.append('deadline', updates.deadline);
 
     const result = await updateStage(null, formData);
     if (result.error) {
@@ -347,7 +350,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
         </div>
       </header>
 
-      {/* Cronograma Gantt */}
+      {/* Cronograma Visual */}
       <GanttTimeline
         stages={project.stages ?? []}
         projectStartDate={project.start_date}
