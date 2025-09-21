@@ -1,0 +1,59 @@
+{
+  "common": {
+    "appName": "FlowSync",
+    "dashboard": "Tablero",
+    "projects": "Proyectos",
+    "settings": "Ajustes",
+    "logout": "Cerrar sesión",
+    "notifications": "Notificaciones",
+    "activity": "Actividad",
+    "files": "Archivos",
+    "comments": "Comentarios",
+    "timeline": "Cronograma",
+    "status": "Estado",
+    "deadline": "Fecha límite",
+    "start": "Inicio",
+    "end": "Fin",
+    "actions": "Acciones",
+    "loading": "Cargando...",
+    "emptyState": "Aún no hay registros"
+  },
+  "auth": {
+    "title": "Iniciá sesión",
+    "subtitle": "Gestioná tus proyectos y colaboración",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "remember": "Recordarme",
+    "cta": "Ingresar",
+    "magicLink": "Ingresar con link mágico",
+    "sendLink": "Enviar link",
+    "emailSent": "Te enviamos un enlace a tu correo"
+  },
+  "provider": {
+    "welcome": "Bienvenido, ",
+    "projectsInProgress": "Proyectos en curso",
+    "createProject": "Nuevo proyecto",
+    "awaitingClient": "Esperando al cliente",
+    "overdue": "Vencido",
+    "upcoming": "Próximos vencimientos",
+    "progress": "Avance",
+    "team": "Equipo cliente",
+    "stageComplete": "Marcar etapa como completa",
+    "requestMaterials": "Solicitar materiales",
+    "requestApproval": "Pedir aprobación",
+    "reopenStage": "Reabrir etapa",
+    "activityLog": "Registro de actividad"
+  },
+  "client": {
+    "myProjects": "Mis proyectos",
+    "pending": "Pendientes",
+    "upload": "Subir materiales",
+    "approve": "Aprobar",
+    "requestChanges": "Solicitar cambios",
+    "materials": "Materiales requeridos",
+    "ready": "Listo para revisar",
+    "profile": "Preferencias",
+    "notifications": "Notificaciones",
+    "language": "Idioma"
+  }
+}

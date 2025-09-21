@@ -1,0 +1,59 @@
+{
+  "common": {
+    "appName": "FlowSync",
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "settings": "Settings",
+    "logout": "Sign out",
+    "notifications": "Notifications",
+    "activity": "Activity",
+    "files": "Files",
+    "comments": "Comments",
+    "timeline": "Timeline",
+    "status": "Status",
+    "deadline": "Deadline",
+    "start": "Start",
+    "end": "End",
+    "actions": "Actions",
+    "loading": "Loading...",
+    "emptyState": "Nothing here yet"
+  },
+  "auth": {
+    "title": "Sign in",
+    "subtitle": "Manage your client delivery flows",
+    "email": "Email",
+    "password": "Password",
+    "remember": "Remember me",
+    "cta": "Continue",
+    "magicLink": "Use magic link",
+    "sendLink": "Send link",
+    "emailSent": "We sent you a link"
+  },
+  "provider": {
+    "welcome": "Welcome, ",
+    "projectsInProgress": "Active projects",
+    "createProject": "New project",
+    "awaitingClient": "Waiting on client",
+    "overdue": "Overdue",
+    "upcoming": "Upcoming deadlines",
+    "progress": "Progress",
+    "team": "Client team",
+    "stageComplete": "Mark stage complete",
+    "requestMaterials": "Request materials",
+    "requestApproval": "Request approval",
+    "reopenStage": "Reopen stage",
+    "activityLog": "Activity log"
+  },
+  "client": {
+    "myProjects": "My projects",
+    "pending": "Pending",
+    "upload": "Upload files",
+    "approve": "Approve",
+    "requestChanges": "Request changes",
+    "materials": "Required materials",
+    "ready": "Ready for review",
+    "profile": "Preferences",
+    "notifications": "Notifications",
+    "language": "Language"
+  }
+}
