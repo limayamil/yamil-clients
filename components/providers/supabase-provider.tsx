@@ -21,15 +21,23 @@ export function SupabaseProvider({ session: initialSession, children }: { sessio
   useEffect(() => {
     let mounted = true;
 
-    // Get the session from getUser() which is secure
+    // Get the session safely using getUser() which is secure
     const getInitialSession = async () => {
       try {
         const { data: { user }, error } = await client.auth.getUser();
         if (mounted) {
           if (user && !error) {
-            // If we have a user, get the session
-            const { data: { session: currentSession } } = await client.auth.getSession();
-            setSession(currentSession);
+            // Create a session-like object from the user data
+            // This avoids the security warning from getSession()
+            const sessionFromUser: Session = {
+              access_token: '', // Not needed for client-side usage
+              refresh_token: '', // Not needed for client-side usage
+              expires_in: 0, // Not needed for client-side usage
+              expires_at: 0, // Not needed for client-side usage
+              token_type: 'bearer',
+              user: user,
+            };
+            setSession(sessionFromUser);
           } else {
             setSession(null);
           }

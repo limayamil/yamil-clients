@@ -21,14 +21,15 @@ import {
   AlertCircle,
   CheckCircle2,
   Users,
-  Target
+  Target,
+  Link
 } from 'lucide-react';
-import type { Stage, StageComponent } from '@/types/project';
+import type { Stage, StageComponent, CommentEntry } from '@/types/project';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
-import { formatDate } from '@/lib/utils';
+import { formatDate, getStageTypeColors, getStageStatusColors } from '@/lib/utils';
 import { updateStage } from '@/actions/stages';
 import { toast } from 'sonner';
 import { EditableStageDate } from '@/components/ui/editable-stage-date';
@@ -36,6 +37,8 @@ import { EditableStageComponents } from '@/components/client/editable-stage-comp
 
 interface EditableStageCardProps {
   stage: Stage;
+  projectId: string;
+  comments: CommentEntry[];
   onAddComponent?: (stageId: string, componentType: string) => void;
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   onDeleteComponent?: (componentId: string) => void;
@@ -47,6 +50,8 @@ interface EditableStageCardProps {
 
 export function EditableStageCard({
   stage,
+  projectId,
+  comments,
   onAddComponent,
   onUpdateComponent,
   onDeleteComponent,
@@ -146,7 +151,7 @@ export function EditableStageCard({
   };
 
   const componentTypes = [
-    { type: 'upload_request', label: 'Solicitar archivos', icon: Paperclip },
+    { type: 'upload_request', label: 'Solicitar enlaces', icon: Link },
     { type: 'checklist', label: 'Lista de verificación', icon: CheckSquare },
     { type: 'approval', label: 'Solicitar aprobación', icon: CheckCircle2 },
     { type: 'text_block', label: 'Nota/Descripción', icon: FileText },
@@ -168,7 +173,7 @@ export function EditableStageCard({
     <Card ref={cardRef} className={`group transition-all duration-300 hover:shadow-lg ${className}`}>
       <CardHeader className="pb-3 relative">
         {/* Gradiente decorativo sutil */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-brand-50/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-xl"></div>
+        <div className={`absolute inset-0 bg-gradient-to-b ${getStageTypeColors(stage.type).gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-xl`}></div>
 
         <div className="relative flex items-center justify-between">
           <Button
@@ -178,15 +183,7 @@ export function EditableStageCard({
           >
             <div className="flex items-center gap-3">
               {/* Icono de tipo de etapa */}
-              <div className={`flex h-8 w-8 items-center justify-center rounded-xl shadow-sm transition-colors duration-200 ${
-                stage.status === 'done'
-                  ? 'bg-gradient-to-r from-green-500 to-green-600'
-                  : stage.status === 'waiting_client'
-                  ? 'bg-gradient-to-r from-orange-500 to-orange-600'
-                  : stage.status === 'blocked'
-                  ? 'bg-gradient-to-r from-red-500 to-red-600'
-                  : 'bg-gradient-to-r from-brand-500 to-brand-600'
-              }`}>
+              <div className={`flex h-8 w-8 items-center justify-center rounded-xl shadow-sm transition-colors duration-200 ${getStageTypeColors(stage.type).solid}`}>
                 <StageTypeIcon className="h-4 w-4 text-white" />
               </div>
 
@@ -263,8 +260,8 @@ export function EditableStageCard({
                   Comentarios de etapa
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onUploadFiles?.(stage.id)} className="gap-3">
-                  <Paperclip className="h-4 w-4" />
-                  Subir archivos
+                  <Link className="h-4 w-4" />
+                  Compartir enlaces
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
@@ -328,6 +325,8 @@ export function EditableStageCard({
             <EditableStageComponents
               components={stage.components || []}
               stageId={stage.id}
+              projectId={projectId}
+              comments={comments}
               onUpdateComponent={onUpdateComponent}
               onDeleteComponent={onDeleteComponent}
               onAddComponent={(stageId, component) => {
@@ -354,8 +353,8 @@ export function EditableStageCard({
                 onClick={() => onUploadFiles?.(stage.id)}
                 className="h-8 text-xs hover:bg-green-100/50 hover:text-green-700 transition-colors duration-200"
               >
-                <Paperclip className="h-3 w-3 mr-1.5" />
-                Subir archivo
+                <Link className="h-3 w-3 mr-1.5" />
+                Compartir enlace
               </Button>
               <div className="flex-1" />
               <Button

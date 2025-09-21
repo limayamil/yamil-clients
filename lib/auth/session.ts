@@ -1,12 +1,52 @@
 import { cookies } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Session } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 import { withAuthRateLimit } from './rate-limit-handler';
 
 // Cache para evitar múltiples llamadas en la misma request
 let sessionCache: { session: Session | null; timestamp: number } | null = null;
+let userCache: { user: User | null; timestamp: number } | null = null;
 const CACHE_DURATION = 5000; // 5 segundos de cache
+
+export async function getUser(): Promise<User | null> {
+  // Verificar cache
+  if (userCache && (Date.now() - userCache.timestamp) < CACHE_DURATION) {
+    return userCache.user;
+  }
+
+  try {
+    const cookieStore = cookies();
+    const supabase = createServerComponentClient<Database>({ cookies: () => cookieStore });
+
+    // Use getUser() for security - authenticates by contacting Supabase Auth server
+    const result = await withAuthRateLimit(
+      async () => await supabase.auth.getUser(),
+      { data: { user: null }, error: null } as any // fallback en caso de rate limit
+    );
+
+    const { data: { user }, error } = result;
+
+    if (error) {
+      console.warn('Auth user error:', error.message);
+      userCache = { user: null, timestamp: Date.now() };
+      return null;
+    }
+
+    if (!user) {
+      userCache = { user: null, timestamp: Date.now() };
+      return null;
+    }
+
+    // Cachear el resultado
+    userCache = { user, timestamp: Date.now() };
+    return user;
+  } catch (error) {
+    console.error('Unexpected error in getUser:', error);
+    userCache = { user: null, timestamp: Date.now() };
+    return null;
+  }
+}
 
 export async function getSession(): Promise<Session | null> {
   // Verificar cache
@@ -38,24 +78,20 @@ export async function getSession(): Promise<Session | null> {
       return null;
     }
 
-    // Get the session after validating the user
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      sessionCache = { session: null, timestamp: Date.now() };
-      return null;
-    }
-
-    // Validar que el token no esté expirado
-    const now = Math.floor(Date.now() / 1000);
-    if (session.expires_at && session.expires_at < now) {
-      sessionCache = { session: null, timestamp: Date.now() };
-      return null;
-    }
+    // Create a session-like object from the user data
+    // This avoids the security warning from calling supabase.auth.getSession()
+    const sessionFromUser: Session = {
+      access_token: '', // Not needed for server-side usage
+      refresh_token: '', // Not needed for server-side usage
+      expires_in: 0, // Not needed for server-side usage
+      expires_at: 0, // Not needed for server-side usage
+      token_type: 'bearer',
+      user: user,
+    };
 
     // Cachear el resultado
-    sessionCache = { session, timestamp: Date.now() };
-    return session;
+    sessionCache = { session: sessionFromUser, timestamp: Date.now() };
+    return sessionFromUser;
   } catch (error) {
     console.error('Unexpected error in getSession:', error);
     sessionCache = { session: null, timestamp: Date.now() };
@@ -66,4 +102,13 @@ export async function getSession(): Promise<Session | null> {
 // Función para limpiar el cache (útil en tests o logout)
 export function clearSessionCache() {
   sessionCache = null;
+}
+
+export function clearUserCache() {
+  userCache = null;
+}
+
+export function clearAllAuthCache() {
+  sessionCache = null;
+  userCache = null;
 }

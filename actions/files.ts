@@ -7,7 +7,7 @@ import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/database';
 import { rateLimitCurrentUser } from '@/lib/security/rate-limit';
 import { audit } from '@/lib/observability/audit';
-import { getSession } from '@/lib/auth/session';
+import { getUser } from '@/lib/auth/session';
 
 // File upload validation schema
 const fileUploadSchema = z.object({
@@ -116,15 +116,15 @@ export async function uploadFileRecord(_: unknown, formData: FormData) {
     }
 
     // Authentication check - usar nuestra función optimizada
-    const session = await getSession();
-    if (!session?.user) {
+    const user = await getUser();
+    if (!user) {
       return {
         error: 'Debes estar autenticado para subir archivos',
         success: false,
       };
     }
 
-    const user = session.user;
+    // user is already available from getUser() call above
 
     const userRole = user.user_metadata?.role as 'provider' | 'client';
     if (!userRole) {
@@ -253,15 +253,15 @@ export async function deleteFile(_: unknown, formData: FormData) {
     }
 
     // Authentication check - usar nuestra función optimizada
-    const sessionData = await getSession();
-    if (!sessionData?.user) {
+    const user = await getUser();
+    if (!user) {
       return {
         error: 'Debes estar autenticado para eliminar archivos',
         success: false,
       };
     }
 
-    const user = sessionData.user;
+    // user is already available from getUser() call above
 
     const userRole = user.user_metadata?.role as 'provider' | 'client';
     if (!userRole) {

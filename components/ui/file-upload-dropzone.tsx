@@ -1,19 +1,22 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { Upload, X, FileIcon, Loader2 } from 'lucide-react';
+import { Upload, X, FileIcon, Loader2, Link, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
 interface FileUploadDropzoneProps {
   onFilesSelected: (files: File[]) => void;
   onUpload: (files: File[]) => Promise<void>;
+  onUrlSubmitted?: (url: string, title?: string) => Promise<void>;
   maxFileSize?: number; // en MB
   allowedTypes?: string[];
   multiple?: boolean;
   disabled?: boolean;
   className?: string;
+  mode?: 'files' | 'urls' | 'both'; // New prop to control mode
 }
 
 interface FileWithPreview extends File {
@@ -24,15 +27,19 @@ interface FileWithPreview extends File {
 export function FileUploadDropzone({
   onFilesSelected,
   onUpload,
+  onUrlSubmitted,
   maxFileSize = 10,
   allowedTypes = [],
   multiple = true,
   disabled = false,
-  className
+  className,
+  mode = 'files'
 }: FileUploadDropzoneProps) {
   const [isDragActive, setIsDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<FileWithPreview[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+  const [isSubmittingUrl, setIsSubmittingUrl] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFiles = useCallback((fileList: FileList | null) => {
@@ -137,6 +144,41 @@ export function FileUploadDropzone({
     }
   };
 
+  const validateUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleSubmitUrl = async () => {
+    if (!urlInput.trim() || !onUrlSubmitted) return;
+
+    if (!validateUrl(urlInput.trim())) {
+      console.warn('Invalid URL provided');
+      return;
+    }
+
+    setIsSubmittingUrl(true);
+    try {
+      await onUrlSubmitted(urlInput.trim());
+      setUrlInput('');
+    } catch (error) {
+      console.error('Error submitting URL:', error);
+    } finally {
+      setIsSubmittingUrl(false);
+    }
+  };
+
+  const handleUrlKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmitUrl();
+    }
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -147,44 +189,75 @@ export function FileUploadDropzone({
 
   return (
     <div className={cn('space-y-4', className)}>
-      <div
-        className={cn(
-          'relative rounded-xl border-2 border-dashed border-border p-8 text-center transition-colors',
-          isDragActive && 'border-brand-500 bg-brand-50',
-          disabled && 'opacity-50 cursor-not-allowed',
-          !disabled && 'hover:border-brand-300 hover:bg-brand-50/50 cursor-pointer'
-        )}
-        onDragEnter={handleDragIn}
-        onDragLeave={handleDragOut}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        onClick={() => !disabled && fileInputRef.current?.click()}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple={multiple}
-          accept={allowedTypes.join(',')}
-          onChange={handleFileInput}
-          className="hidden"
-          disabled={disabled}
-        />
+      {/* File upload interface - show if mode is 'files' or 'both' */}
+      {(mode === 'files' || mode === 'both') && (
+        <div
+          className={cn(
+            'relative rounded-xl border-2 border-dashed border-border p-8 text-center transition-colors',
+            isDragActive && 'border-brand-500 bg-brand-50',
+            disabled && 'opacity-50 cursor-not-allowed',
+            !disabled && 'hover:border-brand-300 hover:bg-brand-50/50 cursor-pointer'
+          )}
+          onDragEnter={handleDragIn}
+          onDragLeave={handleDragOut}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={() => !disabled && fileInputRef.current?.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple={multiple}
+            accept={allowedTypes.join(',')}
+            onChange={handleFileInput}
+            className="hidden"
+            disabled={disabled}
+          />
 
-        <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-4" />
-        <div className="space-y-2">
-          <p className="text-base font-medium text-foreground">
-            {isDragActive ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí o haz clic para seleccionar'}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Máximo {maxFileSize}MB por archivo
-            {allowedTypes.length > 0 && (
-              <span className="block">
-                Tipos permitidos: {allowedTypes.map(type => type.split('/')[1]).join(', ')}
-              </span>
-            )}
-          </p>
+          <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-4" />
+          <div className="space-y-2">
+            <p className="text-base font-medium text-foreground">
+              {isDragActive ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí o haz clic para seleccionar'}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Máximo {maxFileSize}MB por archivo
+              {allowedTypes.length > 0 && (
+                <span className="block">
+                  Tipos permitidos: {allowedTypes.map(type => type.split('/')[1]).join(', ')}
+                </span>
+              )}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* URL input interface - show if mode is 'urls' or 'both' */}
+      {(mode === 'urls' || mode === 'both') && (
+        <div className="rounded-xl border border-border p-6 bg-brand-50/30">
+          <div className="flex items-center gap-2 mb-4">
+            <Link className="h-5 w-5 text-brand-600" />
+            <h3 className="text-sm font-medium text-foreground">Compartir enlace</h3>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              onKeyDown={handleUrlKeyDown}
+              placeholder="https://drive.google.com/... o https://dropbox.com/..."
+              className="flex-1"
+              disabled={disabled || isSubmittingUrl}
+            />
+            <Button
+              onClick={handleSubmitUrl}
+              disabled={!urlInput.trim() || disabled || isSubmittingUrl}
+              size="sm"
+              className="px-3"
+            >
+              <Send className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {selectedFiles.length > 0 && (
         <div className="space-y-3">

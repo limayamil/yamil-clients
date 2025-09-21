@@ -69,7 +69,56 @@
 - Diferenciar versiones “express” vs “a medida” mediante plantillas (`template.landing`, `template.custom`).
 - Comunicación proactiva: recordatorios antes de deadlines, notificar cuando `stage.status = waiting_client` > 3 días.
 
+## Navegación y Layout (v2.0)
+- **Sidebar colapsable**
+  - Estado persistido en `localStorage` con hook personalizado `useSidebar()`
+  - Desktop: `w-72` expandido, `w-16` colapsado con tooltips
+  - Mobile: overlay completo `w-72` con backdrop
+  - Transiciones suaves `transition-all duration-300 ease-out`
+  - Header con gradiente `from-brand-500 to-brand-600`
+- **Navegación por colores**
+  - Dashboard: gradiente `from-blue-500 to-emerald-500`
+  - Clientes: gradiente `from-purple-500 to-pink-500`
+  - Proyectos: gradiente `from-orange-500 to-yellow-500`
+  - Configuración: gradiente `from-gray-500 to-slate-500`
+  - Iconos con fondo gradient en estado activo, sólido pastel en hover
+
+## Sistema de colores por tipo de etapa
+- **Intake** (Toma de requerimientos): rosa pastel `rose-*`
+  - Fondo: `bg-rose-100/60`, borde: `border-rose-200`, texto: `text-rose-700`
+  - Gradiente: `from-rose-50 to-rose-100/30`, sólido: `bg-rose-500`
+- **Materials** (Materiales): azul cielo `sky-*`
+  - Fondo: `bg-sky-100/60`, borde: `border-sky-200`, texto: `text-sky-700`
+  - Gradiente: `from-sky-50 to-sky-100/30`, sólido: `bg-sky-500`
+- **Design** (Diseño): violeta `violet-*`
+  - Fondo: `bg-violet-100/60`, borde: `border-violet-200`, texto: `text-violet-700`
+  - Gradiente: `from-violet-50 to-violet-100/30`, sólido: `bg-violet-500`
+- **Development** (Desarrollo): esmeralda `emerald-*`
+  - Fondo: `bg-emerald-100/60`, borde: `border-emerald-200`, texto: `text-emerald-700`
+  - Gradiente: `from-emerald-50 to-emerald-100/30`, sólido: `bg-emerald-500`
+- **Review** (Revisión): naranja `orange-*`
+  - Fondo: `bg-orange-100/60`, borde: `border-orange-200`, texto: `text-orange-700`
+  - Gradiente: `from-orange-50 to-orange-100/30`, sólido: `bg-orange-500`
+- **Handoff** (Entrega): índigo `indigo-*`
+  - Fondo: `bg-indigo-100/60`, borde: `border-indigo-200`, texto: `text-indigo-700`
+  - Gradiente: `from-indigo-50 to-indigo-100/30`, sólido: `bg-indigo-500`
+
+## Colores por estado de etapa
+- **Todo**: gris pizarra `slate-*` - `bg-slate-100/60`, sólido: `bg-slate-400`
+- **Waiting Client**: ámbar `amber-*` - `bg-amber-100/60`, sólido: `bg-amber-500`
+- **In Review**: púrpura `purple-*` - `bg-purple-100/60`, sólido: `bg-purple-500`
+- **Approved**: azul `blue-*` - `bg-blue-100/60`, sólido: `bg-blue-500`
+- **Done**: verde `green-*` - `bg-green-100/60`, sólido: `bg-green-500`
+- **Blocked**: rojo `red-*` - `bg-red-100/60`, sólido: `bg-red-500`
+
+## Funciones de utilidad
+- `getStageTypeColors(type)`: retorna objeto con `bg`, `border`, `text`, `gradient`, `icon`, `solid`
+- `getStageStatusColors(status)`: retorna objeto con `bg`, `border`, `text`, `solid`
+- `getNavItemColors(href)`: retorna colores específicos para navegación
+
 ## Próximos pasos de diseño
 1. Definir token `--surface-elevated` para modales/overlays y documentar estados dark mode si se requiere.
 2. Extender paleta con variantes neutrales cálidas (`stone-*`) para mensajes informativos.
 3. Añadir ejemplos de tipografía en headings H1–H4 y variaciones responsive.
+4. Considerar modo oscuro para el sistema de colores pasteles
+5. Documentar patrones de microinteracciones para transiciones de estado

@@ -6,9 +6,9 @@ import { CreateProjectDialog } from '@/components/provider/create-project-dialog
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const session = await requireRole(['provider']);
+  const user = await requireRole(['provider']);
   const [projects, clients, templates] = await Promise.all([
-    getProviderDashboardProjects(session.user.id),
+    getProviderDashboardProjects(user.id),
     getActiveClients(),
     getProjectTemplates()
   ]);

@@ -9,7 +9,7 @@ interface ClientProjectsPageProps {
 }
 
 export default async function ClientProjectsPage({ params }: ClientProjectsPageProps) {
-  const session = await requireRole(['client']);
-  const projects = await getClientProjects(session.user.email!);
+  const user = await requireRole(['client']);
+  const projects = await getClientProjects(user.email!);
   return <ClientProjectsGrid projects={projects} clientId={params.clientId} />;
 }

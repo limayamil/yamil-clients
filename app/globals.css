@@ -17,6 +17,20 @@
   --radius: 16px;
 }
 
+.dark {
+  --background: 220 15% 8%;
+  --foreground: 220 15% 95%;
+  --muted: 220 15% 12%;
+  --muted-foreground: 220 8% 70%;
+  --popover: 220 15% 10%;
+  --popover-foreground: 220 15% 95%;
+  --card: 220 15% 11%;
+  --card-foreground: 220 15% 95%;
+  --border: 220 15% 18%;
+  --input: 220 15% 16%;
+  --ring: 217 91% 65%;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -24,6 +38,43 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+  }
+
+  /* Dark mode specific overrides */
+  .dark .bg-gradient-to-br.from-brand-50\/70.to-brand-100\/50 {
+    @apply from-slate-900/90 to-slate-800/50;
+  }
+
+  .dark .bg-gradient-to-r.from-brand-500.to-brand-600 {
+    @apply from-brand-600 to-brand-700;
+  }
+
+  .dark .bg-white {
+    @apply bg-card;
+  }
+
+  .dark .text-white {
+    @apply text-card-foreground;
+  }
+
+  .dark .shadow-xl {
+    @apply shadow-2xl shadow-black/20;
+  }
+
+  .dark .hover\:bg-gray-100\/80:hover {
+    @apply hover:bg-muted/50;
+  }
+
+  .dark .hover\:text-gray-700:hover {
+    @apply hover:text-foreground;
+  }
+
+  .dark .text-gray-600 {
+    @apply text-muted-foreground;
+  }
+
+  .dark .bg-gray-900 {
+    @apply bg-popover;
   }
 }
 

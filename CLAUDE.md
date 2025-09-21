@@ -48,6 +48,7 @@ npm run test:e2e
 - **Projects**: Core entity with stages, deadlines, and status tracking
 - **Stages**: Sequential project phases with different types (upload, checklist, approval)
 - **Stage Components**: Interactive elements within stages (checklist, upload_request, approval, text_block, link, milestone, tasklist, prototype)
+- **Comments**: Granular discussion system attached to projects, stages, or specific components
 - **Activity Log**: Audit trail of all project actions
 - **Templates**: Predefined project workflows (`template.landing`, `template.custom`)
 
@@ -68,17 +69,17 @@ npm run test:e2e
   - Proper error handling with Spanish error messages
 - **Queries**: Database queries in `/lib/queries` with proper RLS
 - **Validation**: Zod schemas in `/lib/validators` for type safety
-- **Security**: Server-only imports, proper session handling with getSession()
-- **Authentication**: Use getUser() instead of getSession() for security (avoid client-side session access)
+- **Security**: Server-only imports, secure authentication with getUser()
+- **Authentication**: Always use getUser() for authentication checks (eliminates security warnings)
 
 ## Key Directories
 
 - `/app` - Next.js App Router pages and layouts
 - `/components` - React components organized by domain
   - `/ui` - Reusable UI components (EditableText, FileUploadDropzone, etc.)
-  - `/shared` - Cross-domain components (FilesPanel, ActivityPanel, CommentsPanel)
-  - `/provider` - Provider-specific components (ProjectDetailView, DashboardOverview)
-  - `/client` - Client-specific components
+  - `/shared` - Cross-domain components (FilesPanel, ActivityPanel, ComponentCommentThread)
+  - `/provider` - Provider-specific components (ProjectDetailView, StageComponentRenderer, DashboardOverview)
+  - `/client` - Client-specific components (EditableStageCard, EditableStageComponents)
   - `/layout` - Shell components for navigation (ProviderShell, ClientShell)
 - `/lib` - Utilities, configurations, and shared logic
   - `/validators` - Zod schemas for form validation
@@ -116,13 +117,15 @@ The application follows a custom design system documented in `design.md`:
 ### Data Patterns
 - **Server Actions**: Use FormData, not JSON objects
 - **Mutations**: Always call revalidatePath() after database changes
-- **Authentication**: Use getUser() for secure auth checks, never getSession() on client
+- **Authentication**: Always use getUser() for secure auth checks (replaces deprecated getSession())
 - **Validation**: Create Zod schemas in `/lib/validators` for all forms
 - **Error Handling**: Return Spanish error messages, use toast.error() for user feedback
 
 ### Component Development
 - **Editable Components**: Use EditableText, EditableDate, EditableStatus patterns
 - **File Management**: Use FileUploadDropzone and FilesManager components
+- **Comments System**: Use ComponentCommentThread for granular discussions on specific components
+- **Component Integration**: Pass `projectId` and `comments` props to stage components for comment functionality
 - **Loading States**: Always include loading props and visual feedback
 - **Responsive Design**: Mobile-first approach with touch-friendly targets (h-11 minimum)
 - **Accessibility**: Include ARIA labels, keyboard navigation, and semantic HTML
@@ -171,8 +174,8 @@ export async function updateProject(formData: FormData) {
   const parsed = updateProjectSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const session = await getSession();
-  if (!session?.user?.id) return { error: { auth: ['No session'] } };
+  const user = await getUser();
+  if (!user?.id) return { error: { auth: ['No user'] } };
 
   // Database operation
   const { error } = await supabase.from('projects').update(data).eq('id', projectId);
@@ -212,3 +215,56 @@ const handleUpload = async (files: File[]) => {
 // Hidden text on small screens
 <span className="hidden sm:inline">Texto completo</span>
 ```
+
+### Component-Level Comments Pattern
+```typescript
+// Use ComponentCommentThread for granular discussions
+<ComponentCommentThread
+  componentId={component.id}
+  componentTitle="Upload Request"
+  projectId={project.id}
+  comments={project.comments || []}
+  isCompact={true}
+/>
+```
+
+### Stage Component Integration
+```typescript
+// StageComponentRenderer usage in provider view
+<StageComponentRenderer
+  stage={stage}
+  projectId={project.id}
+  comments={project.comments || []}
+/>
+
+// EditableStageComponents usage in client view
+<EditableStageComponents
+  components={stage.components || []}
+  stageId={stage.id}
+  projectId={project.id}
+  comments={project.comments || []}
+  onUpdateComponent={onUpdateComponent}
+  onDeleteComponent={onDeleteComponent}
+  readonly={false}
+/>
+```
+
+## Comments System Architecture
+
+### Database Schema
+- **comments** table supports three levels of granularity:
+  - `project_id`: Project-level discussions (deprecated in favor of component-level)
+  - `stage_id`: Stage-level discussions
+  - `component_id`: Component-level discussions (primary method)
+
+### Comment Flow
+1. **Component-Level**: Each stage component has its own comment thread
+2. **Contextual**: Comments are displayed inline with the component they reference
+3. **Expandable**: Comments start collapsed and expand when clicked
+4. **Real-time**: Uses existing server actions and revalidation patterns
+
+### Implementation Notes
+- **Backward Compatibility**: Existing comments system still functions
+- **Migration**: Project-level comments replaced with component-specific discussions
+- **UI**: Compact collapsed state with full expansion for detailed discussions
+- **Access Control**: Same RLS policies apply to component-level comments

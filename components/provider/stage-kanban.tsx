@@ -29,7 +29,11 @@ export function StageKanban({ project }: StageKanbanProps) {
               </p>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col gap-3">
-              <StageComponentRenderer stage={stage} />
+              <StageComponentRenderer
+                stage={stage}
+                projectId={project.id}
+                comments={project.comments || []}
+              />
             </CardContent>
           </Card>
         </div>

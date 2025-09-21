@@ -8,7 +8,7 @@ import { audit } from '@/lib/observability/audit';
 
 export async function createClient(_: unknown, formData: FormData) {
   try {
-    const session = await requireRole(['provider']);
+    const user = await requireRole(['provider']);
     const supabase = createSupabaseServerClient();
 
     const payload = Object.fromEntries(formData.entries());
@@ -40,7 +40,7 @@ export async function createClient(_: unknown, formData: FormData) {
         clientId: data.id,
         clientName: data.name,
         clientEmail: data.email,
-        createdBy: session.user.id
+        createdBy: user.id
       }
     });
 

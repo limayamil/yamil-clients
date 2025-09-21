@@ -10,12 +10,16 @@ interface AuditParams {
 export async function audit({ projectId, actorType, action, details }: AuditParams) {
   try {
     const supabase = createServiceRoleClient();
-    await (supabase as any).from('activity_log').insert({
+
+    // Ensure actorType is properly typed as actor_type enum
+    const validActorType: 'provider' | 'client' | 'system' = actorType;
+
+    await supabase.from('activity_log').insert({
       project_id: projectId,
-      actor_type: actorType,
+      actor_type: validActorType,
       action,
       details
-    });
+    } as any);
   } catch (error) {
     console.error('Failed to write audit log', error);
   }

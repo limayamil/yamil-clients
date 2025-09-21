@@ -10,8 +10,8 @@ interface ClientProjectPageProps {
 }
 
 export default async function ClientProjectPage({ params }: ClientProjectPageProps) {
-  const session = await requireRole(['client']);
-  const project = await getClientProject(params.projectId, session.user.email!);
+  const user = await requireRole(['client']);
+  const project = await getClientProject(params.projectId, user.email!);
   if (!project) notFound();
-  return <ClientProjectDetail project={project} clientEmail={session.user.email!} />;
+  return <ClientProjectDetail project={project} clientEmail={user.email!} />;
 }

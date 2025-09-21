@@ -11,27 +11,21 @@ import { EditableDate } from '@/components/ui/editable-date';
 import { EditableDateTile } from '@/components/ui/editable-date-tile';
 import { EditableStatus } from '@/components/ui/editable-status';
 import { EditableStageSelector } from '@/components/ui/editable-stage-selector';
-import { CommentsPanel } from '@/components/shared/comments-panel';
+// import { CommentsPanel } from '@/components/shared/comments-panel';
 import { ActivityPanel } from '@/components/shared/activity-panel';
-import { ModernFilesPanel } from '@/components/shared/modern-files-panel';
-import dynamic from 'next/dynamic';
-
-const GanttTimeline = dynamic(
-  () => import('@/components/client/gantt-timeline').then(mod => ({ default: mod.GanttTimeline })),
-  {
-    loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-3xl"></div>,
-    ssr: false
-  }
-);
+import { ProjectLinksPanel } from '@/components/shared/project-links-panel';
+import { ProjectMinutesPanel } from '@/components/shared/project-minutes-panel';
+import { GanttTimeline } from '@/components/client/gantt-timeline';
 import { EditableStageCard } from '@/components/client/editable-stage-card';
 import { StageCommentThread } from '@/components/client/stage-comment-thread';
-import { StageFileDropzone } from '@/components/client/stage-file-dropzone';
+import { StageLinkPanel } from '@/components/client/stage-link-panel';
 import type { ProjectSummary, ProjectStatus, StageComponent, Stage } from '@/types/project';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { updateProjectBasicInfo, updateProjectDates, updateProjectStatus, updateProjectCurrentStage } from '@/actions/projects';
 import { addStageComponent, updateStageComponent, deleteStageComponent, updateStage } from '@/actions/stages';
-import { Home, FolderKanban, Clock, Calendar, Target, Users, CheckCircle2, AlertCircle, Zap, Settings } from 'lucide-react';
+import { Home, FolderKanban, Clock, Calendar, Target, Users, CheckCircle2, AlertCircle, Zap, Settings, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { ProjectMembersManager } from './project-members-manager';
 
 interface ProjectDetailViewProps {
   project: ProjectSummary;
@@ -153,7 +147,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
     setActiveFileStage(null);
   };
 
-  const handleUploadFiles = (stageId: string) => {
+  const handleShareLinks = (stageId: string) => {
     setActiveFileStage(activeFileStage === stageId ? null : stageId);
     setActiveCommentStage(null);
   };
@@ -355,6 +349,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
         stages={project.stages ?? []}
         projectStartDate={project.start_date}
         projectEndDate={project.end_date}
+        projectDeadline={project.deadline}
       />
       {/* Grid de Etapas Editables */}
       <section className="space-y-4 md:space-y-6">
@@ -391,12 +386,14 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                 >
                   <EditableStageCard
                     stage={stage}
+                    projectId={project.id}
+                    comments={project.comments || []}
                     onAddComponent={handleAddComponent}
                     onUpdateComponent={handleUpdateComponent}
                     onDeleteComponent={handleDeleteComponent}
                     onUpdateStage={handleUpdateStage}
                     onToggleComments={handleToggleComments}
-                    onUploadFiles={handleUploadFiles}
+                    onUploadFiles={handleShareLinks}
                     className={`transition-all duration-300 ${
                       isActiveStage
                         ? 'ring-2 ring-brand-500/20 shadow-lg shadow-brand-500/10 bg-gradient-to-br from-white to-brand-50/30'
@@ -414,66 +411,33 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
           </div>
       </section>
 
-      {/* Sección de archivos y discusión */}
-      <section className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2 space-y-6">
-          <ModernFilesPanel
-            files={project.files ?? []}
-            projectId={project.id}
-            canUpload={true}
-            canDelete={true}
-            showUploadZone={true}
-          />
-
-          <Card className="relative overflow-hidden border-border/50 shadow-lg bg-gradient-to-br from-white to-gray-50/30">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-brand-100/20 to-transparent blur-2xl"></div>
-            <CardHeader className="relative">
-              <CardTitle className="flex items-center gap-3 text-lg">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg">
-                  <Users className="h-4 w-4 text-white" />
-                </div>
-                Discusión del Proyecto
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <CommentsPanel comments={project.comments ?? []} projectId={project.id} />
-            </CardContent>
-          </Card>
+      {/* Gestión de Miembros del Proyecto */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg">
+            <UserCheck className="h-4 w-4 text-white" />
+          </div>
+          <h2 className="text-lg md:text-xl font-semibold text-foreground">Acceso del Cliente</h2>
         </div>
+        <ProjectMembersManager
+          projectId={project.id}
+          members={project.project_members || []}
+        />
+      </section>
 
-        <Card className="relative overflow-hidden border-border/50 shadow-lg bg-gradient-to-br from-white to-purple-50/30">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-purple-100/20 to-transparent blur-2xl"></div>
-          <CardHeader className="relative">
-            <CardTitle className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 shadow-lg">
-                <CheckCircle2 className="h-4 w-4 text-white" />
-              </div>
-              Estado de Aprobaciones
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="relative space-y-4">
-            {project.approvals?.map((approval) => (
-              <div key={approval.id} className="rounded-2xl border border-purple-200/50 bg-gradient-to-r from-purple-50/50 to-white p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-1">
-                  {approval.status === 'approved' ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  ) : approval.status === 'changes_requested' ? (
-                    <AlertCircle className="h-4 w-4 text-orange-600" />
-                  ) : (
-                    <Clock className="h-4 w-4 text-blue-600" />
-                  )}
-                  <p className="text-sm font-medium text-foreground">{approval.status}</p>
-                </div>
-                <p className="text-xs text-muted-foreground">Solicitado {formatDate(approval.requested_at)}</p>
-              </div>
-            )) || (
-              <div className="text-center py-6">
-                <CheckCircle2 className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Sin aprobaciones activas</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Sección de Links y Minutas */}
+      <section className="grid gap-6 xl:grid-cols-2">
+        <ProjectLinksPanel
+          links={project.links ?? []}
+          projectId={project.id}
+          canEdit={true}
+        />
+
+        <ProjectMinutesPanel
+          minutes={project.minutes ?? []}
+          projectId={project.id}
+          canEdit={true}
+        />
       </section>
 
       {/* Paneles modales */}
@@ -489,13 +453,17 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
       )}
 
       {activeFileStage && (
-        <StageFileDropzone
+        <StageLinkPanel
           stageId={activeFileStage}
           stageTitle={project.stages?.find(s => s.id === activeFileStage)?.title || 'Etapa'}
-          files={project.files ?? []}
+          links={project.files ?? []}
           isOpen={true}
           onClose={() => setActiveFileStage(null)}
           projectId={project.id}
+          onLinkAdded={(link) => {
+            console.log('Link added:', link);
+            // Here you would typically call an API to save the link
+          }}
         />
       )}
     </div>

@@ -16,19 +16,24 @@ import {
   Eye,
   AlertCircle,
   Users,
-  Target
+  Target,
+  Play,
+  Send
 } from 'lucide-react';
-import type { StageComponent } from '@/types/project';
+import type { StageComponent, CommentEntry } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DynamicChecklist } from '@/components/client/dynamic-checklist';
+import { ComponentCommentThread } from '@/components/shared/component-comment-thread';
 
 interface EditableStageComponentsProps {
   components: StageComponent[];
   stageId: string;
+  projectId: string;
+  comments: CommentEntry[];
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   onDeleteComponent?: (componentId: string) => void;
   onAddComponent?: (stageId: string, component: Omit<StageComponent, 'id' | 'stage_id'>) => void;
@@ -38,6 +43,8 @@ interface EditableStageComponentsProps {
 export function EditableStageComponents({
   components,
   stageId,
+  projectId,
+  comments,
   onUpdateComponent,
   onDeleteComponent,
   onAddComponent,
@@ -72,6 +79,8 @@ export function EditableStageComponents({
           component={component}
           isEditing={editingComponent === component.id}
           readonly={readonly}
+          projectId={projectId}
+          comments={comments}
           onEdit={() => handleEdit(component.id)}
           onSave={(updates) => handleSave(component, updates)}
           onCancel={handleCancel}
@@ -97,6 +106,8 @@ interface EditableComponentCardProps {
   component: StageComponent;
   isEditing: boolean;
   readonly: boolean;
+  projectId: string;
+  comments: CommentEntry[];
   onEdit: () => void;
   onSave: (updates: any) => void;
   onCancel: () => void;
@@ -108,6 +119,8 @@ function EditableComponentCard({
   component,
   isEditing,
   readonly,
+  projectId,
+  comments,
   onEdit,
   onSave,
   onCancel,
@@ -141,6 +154,8 @@ function EditableComponentCard({
     <ViewMode
       component={component}
       readonly={readonly}
+      projectId={projectId}
+      comments={comments}
       onEdit={onEdit}
       onDelete={onDelete}
       onUpdateComponent={onUpdateComponent}
@@ -151,12 +166,16 @@ function EditableComponentCard({
 function ViewMode({
   component,
   readonly,
+  projectId,
+  comments,
   onEdit,
   onDelete,
   onUpdateComponent
 }: {
   component: StageComponent;
   readonly: boolean;
+  projectId: string;
+  comments: CommentEntry[];
   onEdit: () => void;
   onDelete: () => void;
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
@@ -174,11 +193,14 @@ function ViewMode({
 
   const getComponentTitle = (type: string) => {
     switch (type) {
-      case 'upload_request': return 'Solicitud de Archivos';
+      case 'upload_request': return 'Solicitud de Enlaces';
       case 'checklist': return 'Lista de Verificación';
       case 'approval': return 'Solicitud de Aprobación';
       case 'text_block': return 'Nota/Descripción';
       case 'link': return 'Enlace Externo';
+      case 'milestone': return 'Hito';
+      case 'tasklist': return 'Lista de Tareas';
+      case 'prototype': return 'Prototipo';
       default: return 'Componente';
     }
   };
@@ -186,6 +208,7 @@ function ViewMode({
   const getStatusText = (status: string) => {
     switch (status) {
       case 'todo': return 'Por hacer';
+      case 'in_progress': return 'En progreso';
       case 'waiting_client': return 'Esperando cliente';
       case 'in_review': return 'En revisión';
       case 'approved': return 'Aprobado';
@@ -198,6 +221,7 @@ function ViewMode({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'todo': return Target;
+      case 'in_progress': return Play;
       case 'waiting_client': return Clock;
       case 'in_review': return Eye;
       case 'approved': return CheckCircle2;
@@ -210,9 +234,10 @@ function ViewMode({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'todo': return 'outline';
+      case 'in_progress': return 'default';
       case 'waiting_client': return 'warning';
       case 'in_review': return 'secondary';
-      case 'approved': return 'default';
+      case 'approved': return 'success';
       case 'blocked': return 'destructive';
       case 'done': return 'success';
       default: return 'outline';
@@ -260,28 +285,25 @@ function ViewMode({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="border-border/50 shadow-xl">
-                  <SelectItem value="todo" className="gap-2">
-                    <Target className="h-3 w-3" />
+                  <SelectItem value="todo">
                     Por hacer
                   </SelectItem>
-                  <SelectItem value="waiting_client" className="gap-2">
-                    <Clock className="h-3 w-3" />
+                  <SelectItem value="in_progress">
+                    En progreso
+                  </SelectItem>
+                  <SelectItem value="waiting_client">
                     Esperando cliente
                   </SelectItem>
-                  <SelectItem value="in_review" className="gap-2">
-                    <Eye className="h-3 w-3" />
+                  <SelectItem value="in_review">
                     En revisión
                   </SelectItem>
-                  <SelectItem value="approved" className="gap-2">
-                    <CheckCircle2 className="h-3 w-3" />
+                  <SelectItem value="approved">
                     Aprobado
                   </SelectItem>
-                  <SelectItem value="blocked" className="gap-2">
-                    <AlertCircle className="h-3 w-3" />
+                  <SelectItem value="blocked">
                     Bloqueado
                   </SelectItem>
-                  <SelectItem value="done" className="gap-2">
-                    <CheckCircle2 className="h-3 w-3" />
+                  <SelectItem value="done">
                     Completado
                   </SelectItem>
                 </SelectContent>
@@ -312,6 +334,22 @@ function ViewMode({
       </div>
 
       <ComponentContent component={component} />
+
+      {/* URL Submission for upload_request components */}
+      {component.component_type === 'upload_request' && !readonly && (
+        <URLSubmissionForm
+          component={component}
+          onUpdateComponent={onUpdateComponent}
+        />
+      )}
+
+      <ComponentCommentThread
+        componentId={component.id}
+        componentTitle={getComponentTitle(component.component_type)}
+        projectId={projectId}
+        comments={comments}
+        isCompact={true}
+      />
     </div>
   );
 }
@@ -399,11 +437,28 @@ function ComponentContent({ component }: { component: StageComponent }) {
       return (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            {(component.config?.description as string) || 'Solicitud de archivos'}
+            {(component.config?.description as string) || 'Solicitud de enlaces'}
           </p>
-          <p className="text-xs text-muted-foreground">
-            Tipos permitidos: {(component.config?.allowed_types as string[])?.join(', ') || 'Todos'}
-          </p>
+          {(component.config?.submitted_urls as string[])?.length > 0 ? (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-foreground">Enlaces enviados:</p>
+              {(component.config?.submitted_urls as string[]).map((url, index) => (
+                <a
+                  key={index}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-xs text-brand-600 hover:text-brand-700 underline truncate"
+                >
+                  {url}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Sin enlaces enviados aún
+            </p>
+          )}
         </div>
       );
 
@@ -498,18 +553,18 @@ function ComponentEditor({
             <Textarea
               value={data.description || ''}
               onChange={(e) => updateField('description', e.target.value)}
-              placeholder="Describe qué archivos necesitas..."
+              placeholder="Describe qué enlaces necesitas (ej: enlaces de Google Drive, Dropbox, etc.)..."
               rows={3}
             />
           </div>
           <div>
             <label className="text-sm font-medium text-foreground mb-1 block">
-              Tipos de archivo permitidos (separados por coma)
+              Instrucciones adicionales
             </label>
             <Input
-              value={data.allowed_types?.join(', ') || ''}
-              onChange={(e) => updateField('allowed_types', e.target.value.split(',').map((t: string) => t.trim()))}
-              placeholder="pdf, jpg, png, docx"
+              value={data.instructions || ''}
+              onChange={(e) => updateField('instructions', e.target.value)}
+              placeholder="Instrucciones para compartir enlaces..."
             />
           </div>
         </div>
@@ -588,4 +643,70 @@ function ComponentEditor({
         </div>
       );
   }
+}
+
+interface URLSubmissionFormProps {
+  component: StageComponent;
+  onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
+}
+
+function URLSubmissionForm({ component, onUpdateComponent }: URLSubmissionFormProps) {
+  const [newUrl, setNewUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmitUrl = async () => {
+    if (!newUrl.trim() || !onUpdateComponent) return;
+
+    setIsSubmitting(true);
+    try {
+      const currentUrls = (component.config?.submitted_urls as string[]) || [];
+      const updatedUrls = [...currentUrls, newUrl.trim()];
+
+      await onUpdateComponent(component.id, {
+        config: {
+          ...component.config,
+          submitted_urls: updatedUrls
+        }
+      });
+
+      setNewUrl('');
+    } catch (error) {
+      console.error('Error submitting URL:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmitUrl();
+    }
+  };
+
+  return (
+    <div className="mt-3 p-3 bg-brand-50/50 rounded-lg border border-brand-200/50">
+      <label className="text-xs font-medium text-brand-700 mb-2 block">
+        Enviar enlace
+      </label>
+      <div className="flex gap-2">
+        <Input
+          value={newUrl}
+          onChange={(e) => setNewUrl(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="https://drive.google.com/..."
+          className="flex-1 text-sm"
+          disabled={isSubmitting}
+        />
+        <Button
+          onClick={handleSubmitUrl}
+          disabled={!newUrl.trim() || isSubmitting}
+          size="sm"
+          className="px-3"
+        >
+          <Send className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
+  );
 }

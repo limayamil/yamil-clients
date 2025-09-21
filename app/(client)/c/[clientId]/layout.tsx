@@ -4,13 +4,13 @@ import { requireRole } from '@/lib/auth/guards';
 import { ClientShell } from '@/components/layout/client-shell';
 
 export default async function ClientLayout({ children, params }: { children: ReactNode; params: { clientId: string } }) {
-  const session = await requireRole(['client']);
+  const user = await requireRole(['client']);
 
   // Critical security check: ensure client can only access their own data
-  if (!session.user.email || session.user.email !== params.clientId) {
+  if (!user.email || user.email !== params.clientId) {
     // Redirect to the correct client URL instead of allowing unauthorized access
-    redirect(`/c/${session.user.email}/projects`);
+    redirect(`/c/${user.email}/projects`);
   }
 
-  return <ClientShell clientId={params.clientId} userEmail={session.user.email}>{children}</ClientShell>;
+  return <ClientShell clientId={params.clientId} userEmail={user.email}>{children}</ClientShell>;
 }

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server-client';
 import { audit } from '@/lib/observability/audit';
 import { revalidatePath } from 'next/cache';
-import { getSession } from '@/lib/auth/session';
+import { getUser } from '@/lib/auth/session';
 import {
   updateProjectBasicInfoSchema,
   updateProjectDatesSchema,
@@ -52,9 +52,9 @@ export async function createProjectFromTemplate(_: unknown, formData: FormData) 
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
   // Authentication check - usar nuestra función optimizada
-  const session = await getSession();
-  const userId = session?.user?.id;
-  if (!userId) return { error: { auth: ['No session'] } };
+  const user = await getUser();
+  const userId = user?.id;
+  if (!userId) return { error: { auth: ['No user'] } };
 
   const { data, error } = await supabase.rpc('create_project_from_template', {
     template_slug: parsed.data.template,
@@ -84,9 +84,9 @@ export async function updateProjectBasicInfo(formData: FormData) {
   const parsed = updateProjectBasicInfoSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const session = await getSession();
-  const userId = session?.user?.id;
-  if (!userId) return { error: { auth: ['No session'] } };
+  const user = await getUser();
+  const userId = user?.id;
+  if (!userId) return { error: { auth: ['No user'] } };
 
   const { error } = await supabase
     .from('projects')
@@ -115,9 +115,9 @@ export async function updateProjectDates(formData: FormData) {
   const parsed = updateProjectDatesSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const session = await getSession();
-  const userId = session?.user?.id;
-  if (!userId) return { error: { auth: ['No session'] } };
+  const user = await getUser();
+  const userId = user?.id;
+  if (!userId) return { error: { auth: ['No user'] } };
 
   const updateData: any = {};
   if (parsed.data.startDate) updateData.start_date = parsed.data.startDate;
@@ -148,9 +148,9 @@ export async function updateProjectStatus(formData: FormData) {
   const parsed = updateProjectStatusSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const session = await getSession();
-  const userId = session?.user?.id;
-  if (!userId) return { error: { auth: ['No session'] } };
+  const user = await getUser();
+  const userId = user?.id;
+  if (!userId) return { error: { auth: ['No user'] } };
 
   const { error } = await supabase
     .from('projects')
@@ -176,9 +176,9 @@ export async function updateProjectCurrentStage(formData: FormData) {
   const parsed = updateProjectStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const session = await getSession();
-  const userId = session?.user?.id;
-  if (!userId) return { error: { auth: ['No session'] } };
+  const user = await getUser();
+  const userId = user?.id;
+  if (!userId) return { error: { auth: ['No user'] } };
 
   // Get all stages for this project, ordered by sequence
   const { data: stages, error: stagesError } = await supabase

@@ -7,7 +7,7 @@ import type { Database } from '@/types/database';
 import { createCommentSchema } from '@/lib/validators/comments';
 import { audit } from '@/lib/observability/audit';
 import { rateLimitCurrentUser } from '@/lib/security/rate-limit';
-import { getSession } from '@/lib/auth/session';
+import { getUser } from '@/lib/auth/session';
 
 interface CommentActionState {
   error?: string;
@@ -48,15 +48,13 @@ export async function createComment(_: unknown, formData: FormData): Promise<Com
     }
 
     // Authentication check - usar nuestra función optimizada
-    const session = await getSession();
-    if (!session?.user) {
+    const user = await getUser();
+    if (!user) {
       return {
         error: 'Debes estar autenticado para comentar',
         success: false,
       };
     }
-
-    const user = session.user;
 
     // Authorization check for project access
     const userRole = user.user_metadata?.role as 'provider' | 'client';

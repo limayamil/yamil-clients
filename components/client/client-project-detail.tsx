@@ -6,19 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { ActivityPanel } from '@/components/shared/activity-panel';
-import { CommentsPanel } from '@/components/shared/comments-panel';
-import dynamic from 'next/dynamic';
-
-const GanttTimeline = dynamic(
-  () => import('@/components/client/gantt-timeline').then(mod => ({ default: mod.GanttTimeline })),
-  {
-    loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-3xl"></div>,
-    ssr: false
-  }
-);
+// import { CommentsPanel } from '@/components/shared/comments-panel';
+import { ProjectLinksPanel } from '@/components/shared/project-links-panel';
+import { ProjectMinutesPanel } from '@/components/shared/project-minutes-panel';
+import { GanttTimeline } from '@/components/client/gantt-timeline';
 import { EditableStageCard } from '@/components/client/editable-stage-card';
 import { StageCommentThread } from '@/components/client/stage-comment-thread';
-import { StageFileDropzone } from '@/components/client/stage-file-dropzone';
+import { StageLinkPanel } from '@/components/client/stage-link-panel';
 import type { ProjectSummary, Stage, StageComponent } from '@/types/project';
 import { Home, FolderKanban, Clock, Calendar, Target, Users, CheckCircle2, AlertCircle, Zap } from 'lucide-react';
 import { addStageComponent, updateStageComponent, deleteStageComponent, updateStage } from '@/actions/stages';
@@ -46,7 +40,7 @@ export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetai
     setActiveFileStage(null);
   };
 
-  const handleUploadFiles = (stageId: string) => {
+  const handleShareLinks = (stageId: string) => {
     setActiveFileStage(activeFileStage === stageId ? null : stageId);
     setActiveCommentStage(null);
   };
@@ -207,6 +201,7 @@ export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetai
         stages={project.stages ?? []}
         projectStartDate={project.start_date}
         projectEndDate={project.end_date}
+        projectDeadline={project.deadline}
       />
 
       {/* Grid de Etapas Editables */}
@@ -244,12 +239,14 @@ export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetai
                 >
                   <EditableStageCard
                     stage={stage}
+                    projectId={project.id}
+                    comments={project.comments || []}
                     onAddComponent={handleAddComponent}
                     onUpdateComponent={handleUpdateComponent}
                     onDeleteComponent={handleDeleteComponent}
                     onUpdateStage={handleUpdateStage}
                     onToggleComments={handleToggleComments}
-                    onUploadFiles={handleUploadFiles}
+                    onUploadFiles={handleShareLinks}
                     className={`transition-all duration-300 ${
                       isActiveStage
                         ? 'ring-2 ring-brand-500/20 shadow-lg shadow-brand-500/10 bg-gradient-to-br from-white to-brand-50/30'
@@ -279,9 +276,28 @@ export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetai
           </CardTitle>
         </CardHeader>
         <CardContent className="relative">
-          <CommentsPanel comments={project.comments ?? []} projectId={project.id} />
+          {/* <CommentsPanel comments={project.comments ?? []} projectId={project.id} /> */}
+          <div className="p-4 text-center text-muted-foreground">
+            <p className="text-sm">Los comentarios ahora están organizados por componente específico.</p>
+            <p className="text-xs mt-1">Encuentra las discusiones en cada elemento del proyecto.</p>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Sección de Links y Minutas */}
+      <section className="grid gap-6 xl:grid-cols-2">
+        <ProjectLinksPanel
+          links={project.links ?? []}
+          projectId={project.id}
+          canEdit={false}
+        />
+
+        <ProjectMinutesPanel
+          minutes={project.minutes ?? []}
+          projectId={project.id}
+          canEdit={false}
+        />
+      </section>
 
       {/* Paneles modales */}
       {activeCommentStage && (
@@ -296,13 +312,17 @@ export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetai
       )}
 
       {activeFileStage && (
-        <StageFileDropzone
+        <StageLinkPanel
           stageId={activeFileStage}
           stageTitle={project.stages?.find(s => s.id === activeFileStage)?.title || 'Etapa'}
-          files={project.files ?? []}
+          links={project.files ?? []}
           isOpen={true}
           onClose={() => setActiveFileStage(null)}
           projectId={project.id}
+          onLinkAdded={(link) => {
+            console.log('Link added:', link);
+            // Here you would typically call an API to save the link
+          }}
         />
       )}
     </div>

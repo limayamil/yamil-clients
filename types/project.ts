@@ -38,10 +38,12 @@ export interface Stage {
 }
 
 export interface ProjectMember {
+  id: string;
   email: string;
   role: 'client_viewer' | 'client_editor';
   invited_at?: string | null;
   accepted_at?: string | null;
+  created_at: string;
 }
 
 export interface FileEntry {
@@ -87,6 +89,26 @@ export interface ActivityEntry {
   created_at: string;
 }
 
+export interface ProjectLinkEntry {
+  id: string;
+  project_id: string;
+  title: string;
+  url: string;
+  created_by?: string | null;
+  created_at: string;
+}
+
+export interface ProjectMinuteEntry {
+  id: string;
+  project_id: string;
+  title?: string | null;
+  meeting_date: string;
+  content_markdown: string;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ProjectSummary {
   id: string;
   title: string;
@@ -105,6 +127,9 @@ export interface ProjectSummary {
   comments?: CommentEntry[];
   approvals?: ApprovalEntry[];
   activity?: ActivityEntry[];
+  links?: ProjectLinkEntry[];
+  minutes?: ProjectMinuteEntry[];
+  project_members?: ProjectMember[];
 }
 
 export interface ClientProjectCard {
