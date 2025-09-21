@@ -89,7 +89,9 @@ export function ModernFilesPanel({
             onDrop={(e) => {
               e.preventDefault();
               setDragActive(false);
-              // TODO: Manejar subida de archivos
+              const files = Array.from(e.dataTransfer.files);
+              console.log('Files dropped:', files);
+              // Implementar subida cuando se agregue la acción correspondiente
             }}
           >
             <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
@@ -113,7 +115,7 @@ export function ModernFilesPanel({
                   file={file}
                   canDelete={canDelete}
                   onDelete={() => {
-                    // TODO: Implementar eliminación
+                    // Función de eliminación será implementada cuando se agregue la acción correspondiente
                     console.log('Delete file:', file.id);
                   }}
                 />
@@ -134,7 +136,7 @@ export function ModernFilesPanel({
                   canDelete={canDelete}
                   showStage={true}
                   onDelete={() => {
-                    // TODO: Implementar eliminación
+                    // Función de eliminación será implementada cuando se agregue la acción correspondiente
                     console.log('Delete file:', file.id);
                   }}
                 />

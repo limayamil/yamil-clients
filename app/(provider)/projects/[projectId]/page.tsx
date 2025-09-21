@@ -1,7 +1,19 @@
 import { notFound } from 'next/navigation';
 import { requireRole } from '@/lib/auth/guards';
 import { getProviderProject } from '@/lib/queries/provider';
-import { ProjectDetailView } from '@/components/provider/project-detail-view';
+import dynamic from 'next/dynamic';
+
+const ProjectDetailView = dynamic(
+  () => import('@/components/provider/project-detail-view').then(mod => ({ default: mod.ProjectDetailView })),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-pulse bg-gray-200 h-32 w-full rounded"></div>
+      </div>
+    ),
+    ssr: false
+  }
+);
 
 export const dynamic = 'force-dynamic';
 

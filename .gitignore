@@ -32,5 +32,16 @@ coverage/
 
 # IDE/system files
 .DS_Store
+**/.DS_Store
 .idea/
 .vscode/
+
+# Additional temporary files
+*.tmp
+*.temp
+.cache/
+.sass-cache/
+
+# Package manager lock files (opcional, depende de tu estrategia)
+# package-lock.json
+# yarn.lock

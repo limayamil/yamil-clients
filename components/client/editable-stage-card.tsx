@@ -29,7 +29,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
 import { formatDate } from '@/lib/utils';
-import { EditableStageComponents } from '@/components/client/editable-stage-components';
+import dynamic from 'next/dynamic';
+
+const EditableStageComponents = dynamic(
+  () => import('@/components/client/editable-stage-components').then(mod => ({ default: mod.EditableStageComponents })),
+  {
+    loading: () => <div className="animate-pulse bg-gray-200 h-32 rounded"></div>,
+    ssr: false
+  }
+);
 
 interface EditableStageCardProps {
   stage: Stage;

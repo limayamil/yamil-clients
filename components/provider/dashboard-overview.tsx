@@ -160,7 +160,10 @@ export function DashboardOverview({ projects }: DashboardOverviewProps) {
                   description="Crea un proyecto para empezar a colaborar con tus clientes y hacer seguimiento del progreso."
                   action={{
                     label: 'Crear proyecto',
-                    onClick: () => {/* TODO: Open create project dialog */}
+                    onClick: () => {
+                      // Redirigir a la página de creación de proyecto
+                      window.location.href = '/projects/new';
+                    }
                   }}
                 />
               </div>
