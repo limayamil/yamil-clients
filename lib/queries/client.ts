@@ -100,6 +100,17 @@ export async function getClientProject(projectId: string, clientEmail: string) {
 
     if (!rpcError && rpcData) {
       console.log('RPC function worked, processing data...');
+      console.log('RPC data structure:', {
+        hasStages: Array.isArray(rpcData.stages),
+        stagesCount: Array.isArray(rpcData.stages) ? rpcData.stages.length : 0,
+        stagesWithComponents: Array.isArray(rpcData.stages) ?
+          rpcData.stages.map((s: any) => ({
+            id: s.id,
+            title: s.title,
+            componentsCount: s.components?.length || 0
+          })) : []
+      });
+
       const parsed = rpcData as Record<string, any>;
 
       // Obtener links y minutas del proyecto
@@ -122,7 +133,12 @@ export async function getClientProject(projectId: string, clientEmail: string) {
     }
 
     console.log('RPC function failed, trying direct query fallback...');
-    console.log('RPC error:', rpcError);
+    console.log('RPC error details:', {
+      message: rpcError?.message,
+      details: rpcError?.details,
+      hint: rpcError?.hint,
+      code: rpcError?.code
+    });
 
     // Crear cliente con service role para bypasear RLS
     const serviceSupabase = createClient<Database>(
@@ -160,12 +176,14 @@ export async function getClientProject(projectId: string, clientEmail: string) {
         stage_components (*)
       `).eq('project_id', projectId).order('order'),
       serviceSupabase.from('project_members').select('*').eq('project_id', projectId),
+      serviceSupabase.from('comments').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+      serviceSupabase.from('files').select('*').eq('project_id', projectId).order('uploaded_at', { ascending: false }),
       serviceSupabase.from('activity_log').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(50),
       serviceSupabase.from('project_links').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
       serviceSupabase.from('project_minutes').select('*').eq('project_id', projectId).order('meeting_date', { ascending: false })
     ]);
 
-    const [projectResult, stagesResult, membersResult, activityResult, linksResult, minutesResult] = results;
+    const [projectResult, stagesResult, membersResult, commentsResult, filesResult, activityResult, linksResult, minutesResult] = results;
 
     if (projectResult.error || !projectResult.data) {
       console.error('Direct query error:', projectResult.error);
@@ -175,6 +193,19 @@ export async function getClientProject(projectId: string, clientEmail: string) {
     console.log('Direct query successful, assembling data...');
 
     const projectData = (projectResult as any).data;
+    const rawStages = (stagesResult as any).data ?? [];
+
+    // Transform stage_components to components field for each stage
+    const transformedStages = rawStages.map((stage: any) => ({
+      ...stage,
+      components: stage.stage_components || []
+    }));
+
+    console.log('Transformed stages with components:', transformedStages.map((s: any) => ({
+      id: s.id,
+      title: s.title,
+      componentsCount: s.components?.length || 0
+    })));
 
     return {
       id: projectData.id,
@@ -188,10 +219,10 @@ export async function getClientProject(projectId: string, clientEmail: string) {
       visibility_settings: projectData.visibility_settings,
       created_at: projectData.created_at,
       updated_at: projectData.updated_at,
-      stages: (stagesResult as any).data ?? [],
+      stages: transformedStages,
       members: (membersResult as any).data ?? [],
-      files: [], // Placeholder
-      comments: [], // Placeholder
+      files: (filesResult as any).data ?? [],
+      comments: (commentsResult as any).data ?? [],
       approvals: [], // Placeholder
       activity: (activityResult as any).data ?? [],
       links: (linksResult as any).data ?? [],

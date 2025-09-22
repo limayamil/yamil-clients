@@ -30,9 +30,10 @@ import { StageManagementPanel } from './stage-management-panel';
 
 interface ProjectDetailViewProps {
   project: ProjectSummary;
+  currentUserId?: string;
 }
 
-export function ProjectDetailView({ project }: ProjectDetailViewProps) {
+export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewProps) {
   const [activeCommentStage, setActiveCommentStage] = useState<string | null>(null);
   const [activeFileStage, setActiveFileStage] = useState<string | null>(null);
   const activeStage = project.stages?.find((stage) => stage.status !== 'done');
@@ -389,6 +390,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                     stage={stage}
                     projectId={project.id}
                     comments={project.comments || []}
+                    files={project.files || []}
                     onAddComponent={handleAddComponent}
                     onUpdateComponent={handleUpdateComponent}
                     onDeleteComponent={handleDeleteComponent}
@@ -396,6 +398,8 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                     onToggleComments={handleToggleComments}
                     onUploadFiles={handleShareLinks}
                     defaultExpanded={isActiveStage}
+                    viewMode="provider"
+                    currentUserId={currentUserId}
                     className={`transition-all duration-300 ${
                       isActiveStage
                         ? 'ring-2 ring-brand-500/20 shadow-lg shadow-brand-500/10 bg-gradient-to-br from-white to-brand-50/30'
@@ -461,6 +465,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
           isOpen={true}
           onClose={() => setActiveCommentStage(null)}
           projectId={project.id}
+          currentUserId={currentUserId}
         />
       )}
 
@@ -472,10 +477,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
           isOpen={true}
           onClose={() => setActiveFileStage(null)}
           projectId={project.id}
-          onLinkAdded={(link) => {
-            console.log('Link added:', link);
-            // Here you would typically call an API to save the link
-          }}
+          currentUserId={currentUserId}
         />
       )}
     </div>

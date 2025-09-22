@@ -144,24 +144,25 @@ export async function uploadFileRecord(_: unknown, formData: FormData) {
       };
     }
 
-    // For clients, verify they have access to this project
+    // For clients, verify they have access to this project using project_members
     if (userRole === 'client') {
-      const { data: project, error: projectError } = await supabase
-        .from('projects')
-        .select('client_id, clients!inner(email)')
-        .eq('id', parsed.data.projectId)
+      const { data: memberCheck, error: memberError } = await supabase
+        .from('project_members')
+        .select('role')
+        .eq('project_id', parsed.data.projectId)
+        .eq('email', user.email?.toLowerCase())
         .single();
 
-      if (projectError || !project) {
+      if (memberError || !memberCheck) {
+        console.error('Client access check error in files:', memberError);
         return {
-          error: 'Proyecto no encontrado',
+          error: 'No tienes permisos para subir archivos a este proyecto',
           success: false,
         };
       }
 
-      // Check if client owns this project
-      const clientEmail = (project.clients as any)?.email;
-      if (clientEmail !== user.email) {
+      // Verify the user has at least viewer access
+      if (!['client_viewer', 'client_editor'].includes(memberCheck.role)) {
         return {
           error: 'No tienes permisos para subir archivos a este proyecto',
           success: false,
@@ -274,7 +275,7 @@ export async function deleteFile(_: unknown, formData: FormData) {
     // Get file information
     const { data: file, error: fileError } = await supabase
       .from('files')
-      .select('*, projects!inner(client_id, clients!inner(email))')
+      .select('*')
       .eq('id', parsed.data.fileId)
       .eq('project_id', parsed.data.projectId)
       .single();
@@ -286,10 +287,33 @@ export async function deleteFile(_: unknown, formData: FormData) {
       };
     }
 
-    // Authorization check
+    // Verify the user is the owner of the file/link
+    if (file.created_by !== user.id) {
+      return {
+        error: 'Solo puedes eliminar tus propios archivos y enlaces',
+        success: false,
+      };
+    }
+
+    // Authorization check using project_members
     if (userRole === 'client') {
-      const clientEmail = (file.projects?.clients as any)?.email;
-      if (clientEmail !== user.email) {
+      const { data: memberCheck, error: memberError } = await supabase
+        .from('project_members')
+        .select('role')
+        .eq('project_id', parsed.data.projectId)
+        .eq('email', user.email?.toLowerCase())
+        .single();
+
+      if (memberError || !memberCheck) {
+        console.error('Client access check error for file deletion:', memberError);
+        return {
+          error: 'No tienes permisos para eliminar este archivo',
+          success: false,
+        };
+      }
+
+      // Verify the user has at least viewer access
+      if (!['client_viewer', 'client_editor'].includes(memberCheck.role)) {
         return {
           error: 'No tienes permisos para eliminar este archivo',
           success: false,
@@ -297,14 +321,16 @@ export async function deleteFile(_: unknown, formData: FormData) {
       }
     }
 
-    // Delete from storage
-    const { error: storageError } = await supabase.storage
-      .from('project-files')
-      .remove([file.storage_path]);
+    // Delete from storage only if it's a real file, not a URL link
+    if (file.mime !== 'text/uri-list') {
+      const { error: storageError } = await supabase.storage
+        .from('project-files')
+        .remove([file.storage_path]);
 
-    if (storageError) {
-      console.error('Storage deletion error:', storageError);
-      // Continue with database deletion even if storage fails
+      if (storageError) {
+        console.error('Storage deletion error:', storageError);
+        // Continue with database deletion even if storage fails
+      }
     }
 
     // Delete from database
@@ -344,6 +370,137 @@ export async function deleteFile(_: unknown, formData: FormData) {
     console.error('File deletion error:', error);
     return {
       error: 'Error inesperado al eliminar el archivo',
+      success: false,
+    };
+  }
+}
+
+// Schema for adding stage links
+const stageLinkSchema = z.object({
+  projectId: z.string().uuid(),
+  stageId: z.string().uuid(),
+  title: z.string().min(1, 'El título es requerido').max(200),
+  url: z.string().url('URL inválida'),
+});
+
+export async function addStageLink(_: unknown, formData: FormData) {
+  try {
+    // Rate limiting
+    rateLimitCurrentUser(10);
+
+    const cookieStore = cookies();
+    const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+
+    // Get form data
+    const payload = Object.fromEntries(formData.entries());
+    const parsed = stageLinkSchema.safeParse({
+      projectId: payload.projectId,
+      stageId: payload.stageId,
+      title: payload.title,
+      url: payload.url,
+    });
+
+    if (!parsed.success) {
+      const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
+      return {
+        error: firstError || 'Datos del formulario inválidos',
+        success: false,
+      };
+    }
+
+    // Authentication check
+    const user = await getUser();
+    if (!user) {
+      return {
+        error: 'Debes estar autenticado para agregar enlaces',
+        success: false,
+      };
+    }
+
+    const userRole = user.user_metadata?.role as 'provider' | 'client';
+    if (!userRole) {
+      return {
+        error: 'Rol de usuario no válido',
+        success: false,
+      };
+    }
+
+    // For clients, verify they have access to this project using project_members
+    if (userRole === 'client') {
+      const { data: memberCheck, error: memberError } = await supabase
+        .from('project_members')
+        .select('role')
+        .eq('project_id', parsed.data.projectId)
+        .eq('email', user.email?.toLowerCase())
+        .single();
+
+      if (memberError || !memberCheck) {
+        console.error('Client access check error in stage link:', memberError);
+        return {
+          error: 'No tienes permisos para agregar enlaces a este proyecto',
+          success: false,
+        };
+      }
+
+      // Verify the user has at least viewer access
+      if (!['client_viewer', 'client_editor'].includes(memberCheck.role)) {
+        return {
+          error: 'No tienes permisos para agregar enlaces a este proyecto',
+          success: false,
+        };
+      }
+    }
+
+    // Create link record in database using the files table
+    const { data: linkRecord, error: dbError } = await supabase
+      .from('files')
+      .insert({
+        project_id: parsed.data.projectId,
+        stage_id: parsed.data.stageId,
+        uploader_type: userRole,
+        storage_path: parsed.data.url, // Store the URL in storage_path
+        file_name: parsed.data.title, // Store the title in file_name
+        mime: 'text/uri-list', // Special MIME type for URLs
+        size: parsed.data.url.length, // URL length as "size"
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      return {
+        error: 'Error al guardar el enlace',
+        success: false,
+      };
+    }
+
+    // Log the link addition activity
+    await audit({
+      projectId: parsed.data.projectId,
+      actorType: userRole,
+      action: 'stage.link.added',
+      details: {
+        stage_id: parsed.data.stageId,
+        link_id: linkRecord.id,
+        title: parsed.data.title,
+        url: parsed.data.url,
+      },
+    });
+
+    // Revalidate the project page to show new link
+    revalidatePath(`/c/${user.email}/projects/${parsed.data.projectId}`);
+    revalidatePath(`/projects/${parsed.data.projectId}`);
+
+    return {
+      success: true,
+      linkId: linkRecord.id,
+      message: 'Enlace agregado correctamente',
+    };
+  } catch (error) {
+    console.error('Stage link addition error:', error);
+    return {
+      error: 'Error inesperado al agregar el enlace',
       success: false,
     };
   }

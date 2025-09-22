@@ -22,8 +22,8 @@ interface ProjectPageProps {
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
-  await requireRole(['provider']);
+  const user = await requireRole(['provider']);
   const project = await getProviderProject(params.projectId);
   if (!project) notFound();
-  return <ProjectDetailView project={project} />;
+  return <ProjectDetailView project={project} currentUserId={user.id} />;
 }

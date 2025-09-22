@@ -21,9 +21,10 @@ import { toast } from 'sonner';
 interface ClientProjectDetailProps {
   project: ProjectSummary;
   clientEmail: string;
+  currentUserId: string;
 }
 
-export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetailProps) {
+export function ClientProjectDetail({ project, clientEmail, currentUserId }: ClientProjectDetailProps) {
   const [activeCommentStage, setActiveCommentStage] = useState<string | null>(null);
   const [activeFileStage, setActiveFileStage] = useState<string | null>(null);
   const pendingApproval = project.approvals?.find((approval) => approval.status === 'requested');
@@ -36,13 +37,19 @@ export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetai
   ];
 
   const handleToggleComments = (stageId: string) => {
+    // Si estamos abriendo comentarios de una etapa diferente, cerrar el panel de archivos
+    if (activeCommentStage !== stageId) {
+      setActiveFileStage(null);
+    }
     setActiveCommentStage(activeCommentStage === stageId ? null : stageId);
-    setActiveFileStage(null);
   };
 
   const handleShareLinks = (stageId: string) => {
+    // Si estamos abriendo archivos de una etapa diferente, cerrar el panel de comentarios
+    if (activeFileStage !== stageId) {
+      setActiveCommentStage(null);
+    }
     setActiveFileStage(activeFileStage === stageId ? null : stageId);
-    setActiveCommentStage(null);
   };
 
   const handleAddComponent = async (stageId: string, componentType: string) => {
@@ -241,6 +248,7 @@ export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetai
                     stage={stage}
                     projectId={project.id}
                     comments={project.comments || []}
+                    files={project.files || []}
                     onAddComponent={handleAddComponent}
                     onUpdateComponent={handleUpdateComponent}
                     onDeleteComponent={handleDeleteComponent}
@@ -248,6 +256,7 @@ export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetai
                     onToggleComments={handleToggleComments}
                     onUploadFiles={handleShareLinks}
                     defaultExpanded={isActiveStage}
+                    viewMode="client"
                     className={`transition-all duration-300 ${
                       isActiveStage
                         ? 'ring-2 ring-brand-500/20 shadow-lg shadow-brand-500/10 bg-gradient-to-br from-white to-brand-50/30'
@@ -309,6 +318,7 @@ export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetai
           isOpen={true}
           onClose={() => setActiveCommentStage(null)}
           projectId={project.id}
+          currentUserId={currentUserId}
         />
       )}
 
@@ -320,10 +330,7 @@ export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetai
           isOpen={true}
           onClose={() => setActiveFileStage(null)}
           projectId={project.id}
-          onLinkAdded={(link) => {
-            console.log('Link added:', link);
-            // Here you would typically call an API to save the link
-          }}
+          currentUserId={currentUserId}
         />
       )}
     </div>

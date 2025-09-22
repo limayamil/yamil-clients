@@ -24,7 +24,7 @@ import {
   Target,
   Link
 } from 'lucide-react';
-import type { Stage, StageComponent, CommentEntry } from '@/types/project';
+import type { Stage, StageComponent, CommentEntry, FileEntry } from '@/types/project';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -34,11 +34,13 @@ import { updateStage } from '@/actions/stages';
 import { toast } from 'sonner';
 import { EditableStageDate } from '@/components/ui/editable-stage-date';
 import { EditableStageComponents } from '@/components/client/editable-stage-components';
+import { ClientStageComponents } from '@/components/client/client-stage-components';
 
 interface EditableStageCardProps {
   stage: Stage;
   projectId: string;
   comments: CommentEntry[];
+  files?: FileEntry[];
   onAddComponent?: (stageId: string, componentType: string) => void;
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   onDeleteComponent?: (componentId: string) => void;
@@ -47,12 +49,15 @@ interface EditableStageCardProps {
   onUploadFiles?: (stageId: string) => void;
   defaultExpanded?: boolean;
   className?: string;
+  viewMode?: 'client' | 'provider';
+  currentUserId?: string;
 }
 
 export function EditableStageCard({
   stage,
   projectId,
   comments,
+  files = [],
   onAddComponent,
   onUpdateComponent,
   onDeleteComponent,
@@ -60,7 +65,9 @@ export function EditableStageCard({
   onToggleComments,
   onUploadFiles,
   defaultExpanded = true,
-  className
+  className,
+  viewMode = 'provider',
+  currentUserId
 }: EditableStageCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -171,6 +178,19 @@ export function EditableStageCard({
   const StageTypeIcon = getStageTypeIcon(stage.type);
   const StatusIcon = getStatusIcon(stage.status);
 
+  // Calculate comment and link counters for this stage
+  const stageCommentsCount = comments.filter(comment => comment.stage_id === stage.id).length;
+  const stageComponentCommentsCount = comments.filter(comment =>
+    stage.components?.some(comp => comp.id === comment.component_id)
+  ).length;
+  const totalCommentsCount = stageCommentsCount + stageComponentCommentsCount;
+
+  // Count stage links (files with mime type 'text/uri-list' or URLs in storage_path)
+  const stageLinksCount = files.filter(file =>
+    file.stage_id === stage.id &&
+    (file.mime === 'text/uri-list' || file.storage_path?.startsWith('http'))
+  ).length;
+
   return (
     <Card ref={cardRef} className={`group transition-all duration-300 hover:shadow-lg ${className}`}>
       <CardHeader className="pb-3 relative">
@@ -217,16 +237,17 @@ export function EditableStageCard({
           </Button>
 
           <div className="flex items-center gap-2 ml-3">
-            <DropdownMenu open={showAddMenu} onOpenChange={setShowAddMenu}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-brand-100/50 hover:scale-105"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
+            {viewMode === 'provider' && (
+              <DropdownMenu open={showAddMenu} onOpenChange={setShowAddMenu}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-brand-100/50 hover:scale-105"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 border-border/50 shadow-xl">
                 {/* Cambiar estado de etapa */}
                 <DropdownMenuSub>
@@ -286,7 +307,8 @@ export function EditableStageCard({
                   );
                 })}
               </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
@@ -323,20 +345,29 @@ export function EditableStageCard({
 
       {isExpanded && (
         <CardContent className="pt-0">
-            {/* Componentes editables */}
-            <EditableStageComponents
-              components={stage.components || []}
-              stageId={stage.id}
-              projectId={projectId}
-              comments={comments}
-              onUpdateComponent={onUpdateComponent}
-              onDeleteComponent={onDeleteComponent}
-              onAddComponent={(stageId, component) => {
-                // Esta función no se usa actualmente, los componentes se agregan a través del dropdown
-                console.log('Adding full component:', component, 'to stage:', stageId);
-              }}
-              readonly={false}
-            />
+            {/* Componentes editables o de solo lectura según el modo */}
+            {viewMode === 'client' ? (
+              <ClientStageComponents
+                components={stage.components || []}
+                projectId={projectId}
+                comments={comments}
+                onUpdateComponent={onUpdateComponent}
+              />
+            ) : (
+              <EditableStageComponents
+                components={stage.components || []}
+                stageId={stage.id}
+                projectId={projectId}
+                comments={comments}
+                onUpdateComponent={onUpdateComponent}
+                onDeleteComponent={onDeleteComponent}
+                onAddComponent={(stageId, component) => {
+                  // Esta función no se usa actualmente, los componentes se agregan a través del dropdown
+                  console.log('Adding full component:', component, 'to stage:', stageId);
+                }}
+                readonly={false}
+              />
+            )}
 
             {/* Acciones rápidas mejoradas */}
             <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/30">
@@ -344,30 +375,42 @@ export function EditableStageCard({
                 variant="ghost"
                 size="sm"
                 onClick={() => onToggleComments?.(stage.id)}
-                className="h-8 text-xs hover:bg-blue-100/50 hover:text-blue-700 transition-colors duration-200"
+                className="h-8 text-xs hover:bg-blue-100/50 hover:text-blue-700 transition-colors duration-200 gap-1.5"
               >
-                <MessageSquare className="h-3 w-3 mr-1.5" />
-                Comentar
+                <MessageSquare className="h-3 w-3" />
+                <span>Comentar</span>
+                {totalCommentsCount > 0 && (
+                  <span className="bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center">
+                    {totalCommentsCount}
+                  </span>
+                )}
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onUploadFiles?.(stage.id)}
-                className="h-8 text-xs hover:bg-green-100/50 hover:text-green-700 transition-colors duration-200"
+                className="h-8 text-xs hover:bg-green-100/50 hover:text-green-700 transition-colors duration-200 gap-1.5"
               >
-                <Link className="h-3 w-3 mr-1.5" />
-                Compartir enlace
+                <Link className="h-3 w-3" />
+                <span>Compartir enlace</span>
+                {stageLinksCount > 0 && (
+                  <span className="bg-green-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center">
+                    {stageLinksCount}
+                  </span>
+                )}
               </Button>
               <div className="flex-1" />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAddMenu(true)}
-                className="h-8 text-xs hover:bg-brand-100/50 hover:text-brand-700 transition-all duration-200 hover:scale-105"
-              >
-                <Plus className="h-3 w-3 mr-1.5" />
-                Agregar
-              </Button>
+              {viewMode === 'provider' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAddMenu(true)}
+                  className="h-8 text-xs hover:bg-brand-100/50 hover:text-brand-700 transition-all duration-200 hover:scale-105"
+                >
+                  <Plus className="h-3 w-3 mr-1.5" />
+                  Agregar
+                </Button>
+              )}
             </div>
         </CardContent>
       )}

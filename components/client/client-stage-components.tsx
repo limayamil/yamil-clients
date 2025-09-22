@@ -1,0 +1,386 @@
+'use client';
+
+import type { StageComponent, CommentEntry } from '@/types/project';
+import { ComponentCommentThread } from '@/components/shared/component-comment-thread';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Send, Link, CheckSquare, CheckCircle2, FileText, ExternalLink, CalendarCheck, ListTodo, PenTool, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+
+interface ClientStageComponentsProps {
+  components: StageComponent[];
+  projectId: string;
+  comments: CommentEntry[];
+  onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
+}
+
+export function ClientStageComponents({
+  components,
+  projectId,
+  comments,
+  onUpdateComponent
+}: ClientStageComponentsProps) {
+  if (!components || components.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-border p-6 text-center">
+        <FileText className="mx-auto h-6 w-6 text-muted-foreground mb-2" />
+        <p className="text-sm text-muted-foreground">No hay componentes en esta etapa</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Tu proveedor aún no ha agregado contenido a esta etapa
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {components.map((component) => (
+        <ClientComponentCard
+          key={component.id}
+          component={component}
+          projectId={projectId}
+          comments={comments}
+          onUpdateComponent={onUpdateComponent}
+        />
+      ))}
+    </div>
+  );
+}
+
+interface ClientComponentCardProps {
+  component: StageComponent;
+  projectId: string;
+  comments: CommentEntry[];
+  onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
+}
+
+function ClientComponentCard({
+  component,
+  projectId,
+  comments,
+  onUpdateComponent
+}: ClientComponentCardProps) {
+  const getComponentIcon = (type: string) => {
+    switch (type) {
+      case 'upload_request': return Link;
+      case 'checklist': return CheckSquare;
+      case 'approval': return CheckCircle2;
+      case 'text_block': return FileText;
+      case 'link': return ExternalLink;
+      case 'milestone': return CalendarCheck;
+      case 'tasklist': return ListTodo;
+      case 'prototype': return PenTool;
+      default: return FileText;
+    }
+  };
+
+  const getComponentTitle = (type: string) => {
+    switch (type) {
+      case 'upload_request': return 'Solicitud de Enlaces';
+      case 'checklist': return 'Lista de Verificación';
+      case 'approval': return 'Solicitud de Aprobación';
+      case 'text_block': return 'Nota/Descripción';
+      case 'link': return 'Enlace Externo';
+      case 'milestone': return 'Hito';
+      case 'tasklist': return 'Lista de Tareas';
+      case 'prototype': return 'Prototipo';
+      default: return 'Componente';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'todo': return 'outline';
+      case 'in_progress': return 'default';
+      case 'waiting_client': return 'warning';
+      case 'in_review': return 'secondary';
+      case 'approved': return 'success';
+      case 'blocked': return 'destructive';
+      case 'done': return 'success';
+      default: return 'outline';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'todo': return 'Por hacer';
+      case 'in_progress': return 'En progreso';
+      case 'waiting_client': return 'Esperando cliente';
+      case 'in_review': return 'En revisión';
+      case 'approved': return 'Aprobado';
+      case 'blocked': return 'Bloqueado';
+      case 'done': return 'Completado';
+      default: return status;
+    }
+  };
+
+  const ComponentIcon = getComponentIcon(component.component_type);
+
+  return (
+    <div className="group rounded-xl border border-border/50 bg-gradient-to-br from-white to-gray-50/30 p-4 hover:shadow-lg transition-all duration-300">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          {/* Icono del componente */}
+          <div className={`flex h-6 w-6 items-center justify-center rounded-lg shadow-sm ${
+            component.status === 'done'
+              ? 'bg-gradient-to-r from-green-500 to-green-600'
+              : component.status === 'waiting_client'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600'
+              : component.status === 'blocked'
+              ? 'bg-gradient-to-r from-red-500 to-red-600'
+              : 'bg-gradient-to-r from-blue-500 to-blue-600'
+          }`}>
+            <ComponentIcon className="h-3 w-3 text-white" />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs shadow-sm bg-white/80">
+              {getComponentTitle(component.component_type)}
+            </Badge>
+            <Badge variant={getStatusColor(component.status)} className="text-xs shadow-sm">
+              {getStatusText(component.status)}
+            </Badge>
+          </div>
+        </div>
+      </div>
+
+      <ComponentContent component={component} onUpdateComponent={onUpdateComponent} />
+
+      {/* URL Submission for upload_request components */}
+      {component.component_type === 'upload_request' && (
+        <URLSubmissionForm
+          component={component}
+          onUpdateComponent={onUpdateComponent}
+        />
+      )}
+
+      <ComponentCommentThread
+        componentId={component.id}
+        componentTitle={getComponentTitle(component.component_type)}
+        projectId={projectId}
+        comments={comments}
+        isCompact={true}
+      />
+    </div>
+  );
+}
+
+function ComponentContent({
+  component,
+  onUpdateComponent
+}: {
+  component: StageComponent;
+  onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
+}) {
+  switch (component.component_type) {
+    case 'text_block':
+      return (
+        <div className="space-y-2">
+          <p className="text-sm text-foreground">
+            {(component.config?.content as string) || 'Sin contenido'}
+          </p>
+        </div>
+      );
+
+    case 'upload_request':
+      return (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            {(component.config?.description as string) || 'Solicitud de enlaces'}
+          </p>
+          {(component.config?.submitted_urls as string[])?.length > 0 ? (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-foreground">Enlaces enviados:</p>
+              {(component.config?.submitted_urls as string[]).map((url, index) => (
+                <a
+                  key={index}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-xs text-brand-600 hover:text-brand-700 underline truncate"
+                >
+                  {url}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Sin enlaces enviados aún
+            </p>
+          )}
+        </div>
+      );
+
+    case 'checklist':
+      return (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-foreground">Lista de verificación:</p>
+          {(component.config?.items as string[])?.length > 0 ? (
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              {(component.config.items as string[]).map((item, index) => (
+                <li key={index} className="flex items-center gap-2">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-brand-400" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted-foreground">Sin elementos definidos</p>
+          )}
+        </div>
+      );
+
+    case 'approval':
+      return (
+        <div className="space-y-2">
+          <p className="text-sm text-foreground">
+            {(component.config?.instructions as string) || 'Solicitud de aprobación'}
+          </p>
+        </div>
+      );
+
+    case 'link':
+      return (
+        <div className="space-y-2">
+          <p className="text-sm text-foreground">
+            {(component.config?.label as string) || 'Enlace externo'}
+          </p>
+          <a
+            href={component.config?.url as string}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-brand-600 hover:text-brand-700 underline"
+          >
+            {component.config?.url as string}
+          </a>
+        </div>
+      );
+
+    case 'prototype':
+      return (
+        <div className="space-y-2">
+          <p className="text-sm text-foreground">
+            {(component.config?.description as string) || 'Prototipo listo para revisión'}
+          </p>
+          {component.config?.url ? (
+            <a
+              href={String(component.config.url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-brand-600 hover:text-brand-700 underline"
+            >
+              Ver prototipo
+            </a>
+          ) : null}
+        </div>
+      );
+
+    case 'milestone':
+      return (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-foreground">
+            {(component.config?.title as string) || 'Hito'}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {(component.config?.description as string) || 'Hito entregable'}
+          </p>
+        </div>
+      );
+
+    case 'tasklist':
+      return (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-foreground">Lista de tareas:</p>
+          {(component.config?.items as string[])?.length > 0 ? (
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              {(component.config.items as string[]).map((item, index) => (
+                <li key={index} className="flex items-center gap-2">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-brand-400" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted-foreground">Sin tareas definidas</p>
+          )}
+        </div>
+      );
+
+    default:
+      return (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Tipo de componente no reconocido: {component.component_type}</p>
+          <p className="text-xs text-muted-foreground">
+            Este tipo de componente puede requerir una actualización de la aplicación.
+          </p>
+        </div>
+      );
+  }
+}
+
+interface URLSubmissionFormProps {
+  component: StageComponent;
+  onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
+}
+
+function URLSubmissionForm({ component, onUpdateComponent }: URLSubmissionFormProps) {
+  const [newUrl, setNewUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmitUrl = async () => {
+    if (!newUrl.trim() || !onUpdateComponent) return;
+
+    setIsSubmitting(true);
+    try {
+      const currentUrls = (component.config?.submitted_urls as string[]) || [];
+      const updatedUrls = [...currentUrls, newUrl.trim()];
+
+      await onUpdateComponent(component.id, {
+        config: {
+          ...component.config,
+          submitted_urls: updatedUrls
+        }
+      });
+
+      setNewUrl('');
+    } catch (error) {
+      console.error('Error submitting URL:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmitUrl();
+    }
+  };
+
+  return (
+    <div className="mt-3 p-3 bg-brand-50/50 rounded-lg border border-brand-200/50">
+      <label className="text-xs font-medium text-brand-700 mb-2 block">
+        Enviar enlace
+      </label>
+      <div className="flex gap-2">
+        <Input
+          value={newUrl}
+          onChange={(e) => setNewUrl(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="https://drive.google.com/..."
+          className="flex-1 text-sm"
+          disabled={isSubmitting}
+        />
+        <Button
+          onClick={handleSubmitUrl}
+          disabled={!newUrl.trim() || isSubmitting}
+          size="sm"
+          className="px-3"
+        >
+          <Send className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
+  );
+}

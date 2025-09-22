@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, MessageSquare, X, AlertCircle } from 'lucide-react';
+import { Send, MessageSquare, X, AlertCircle, Trash2 } from 'lucide-react';
 import type { CommentEntry } from '@/types/project';
 import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { createComment } from '@/actions/comments';
+import { createComment, deleteComment } from '@/actions/comments';
 import { useFormStatus, useFormState } from 'react-dom';
 import { toast } from 'sonner';
 
@@ -19,6 +19,7 @@ interface StageCommentThreadProps {
   isOpen: boolean;
   onClose: () => void;
   projectId: string;
+  currentUserId?: string;
 }
 
 const initialState: { error?: string; success?: boolean; message?: string } = {};
@@ -29,11 +30,29 @@ export function StageCommentThread({
   comments,
   isOpen,
   onClose,
-  projectId
+  projectId,
+  currentUserId
 }: StageCommentThreadProps) {
   const [state, formAction] = useFormState(createComment, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const stageComments = comments.filter(comment => comment.stage_id === stageId);
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este comentario?')) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('commentId', commentId);
+    formData.append('projectId', projectId);
+
+    const result = await deleteComment(null, formData);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success('Comentario eliminado correctamente');
+    }
+  };
 
   useEffect(() => {
     if (state?.success) {
@@ -77,12 +96,24 @@ export function StageCommentThread({
               .map((comment) => (
                 <div key={comment.id} className="rounded-xl border border-border bg-gray-50 p-3">
                   <div className="flex items-center justify-between text-xs mb-2">
-                    <Badge variant={comment.author_type === 'provider' ? 'default' : 'secondary'} className="text-xs">
-                      {comment.author_type === 'provider' ? 'Proveedor' : 'Cliente'}
-                    </Badge>
-                    <time className="text-muted-foreground">
-                      {formatDate(comment.created_at)}
-                    </time>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={comment.author_type === 'provider' ? 'default' : 'secondary'} className="text-xs">
+                        {comment.author_type === 'provider' ? 'Proveedor' : 'Cliente'}
+                      </Badge>
+                      <time className="text-muted-foreground">
+                        {formatDate(comment.created_at)}
+                      </time>
+                    </div>
+                    {currentUserId && comment.created_by === currentUserId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                   <p className="text-sm text-foreground">{comment.body}</p>
                 </div>

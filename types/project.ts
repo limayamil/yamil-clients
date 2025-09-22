@@ -56,6 +56,7 @@ export interface FileEntry {
   mime?: string | null;
   size?: number | null;
   uploaded_at: string;
+  created_by?: string | null;
 }
 
 export interface CommentEntry {
@@ -66,6 +67,7 @@ export interface CommentEntry {
   author_type: 'provider' | 'client';
   body: string;
   created_at: string;
+  created_by?: string | null;
   mentions?: Record<string, unknown> | null;
 }
 

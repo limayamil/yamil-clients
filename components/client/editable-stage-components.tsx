@@ -94,7 +94,10 @@ export function EditableStageComponents({
           <Plus className="mx-auto h-6 w-6 text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">No hay componentes en esta etapa</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Usa las opciones de la etapa para agregar contenido
+            {readonly
+              ? "Tu proveedor aún no ha agregado contenido a esta etapa"
+              : "Usa las opciones de la etapa para agregar contenido"
+            }
           </p>
         </div>
       )}

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
+import { addStageLink, deleteFile } from '@/actions/files';
 
 interface StageLinkPanelProps {
   stageId: string;
@@ -18,6 +19,7 @@ interface StageLinkPanelProps {
   onClose: () => void;
   onLinkAdded?: (link: { url: string; title: string }) => void;
   projectId: string;
+  currentUserId?: string;
 }
 
 interface SubmittedLink {
@@ -34,14 +36,18 @@ export function StageLinkPanel({
   isOpen,
   onClose,
   onLinkAdded,
-  projectId
+  projectId,
+  currentUserId
 }: StageLinkPanelProps) {
   const [newUrl, setNewUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Filter links for this stage (reusing the files structure)
-  const stageLinks = links.filter(link => link.stage_id === stageId);
+  // Filter links for this stage (only get URLs, not regular files)
+  const stageLinks = links.filter(link =>
+    link.stage_id === stageId &&
+    (link.mime === 'text/uri-list' || link.storage_path?.startsWith('http'))
+  );
 
   const validateUrl = (url: string): boolean => {
     try {
@@ -84,20 +90,29 @@ export function StageLinkPanel({
     try {
       const finalTitle = linkTitle.trim() || extractTitleFromUrl(newUrl.trim());
 
-      // Here would be the API call to save the link
-      // For now, just simulate the action
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Create FormData and call the addStageLink action
+      const formData = new FormData();
+      formData.append('projectId', projectId);
+      formData.append('stageId', stageId);
+      formData.append('title', finalTitle);
+      formData.append('url', newUrl.trim());
 
-      if (onLinkAdded) {
-        onLinkAdded({
-          url: newUrl.trim(),
-          title: finalTitle
-        });
+      const result = await addStageLink(null, formData);
+
+      if (result.error) {
+        toast.error(result.error);
+        console.error('Error adding stage link:', result.error);
+        return;
       }
 
       toast.success('Enlace compartido correctamente');
       setNewUrl('');
       setLinkTitle('');
+
+      // Cerrar el panel después de un breve delay para mostrar el éxito
+      setTimeout(() => {
+        onClose();
+      }, 1000);
     } catch (error) {
       console.error('Error submitting link:', error);
       toast.error('Error al compartir el enlace');
@@ -110,6 +125,23 @@ export function StageLinkPanel({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmitLink();
+    }
+  };
+
+  const handleDeleteLink = async (linkId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este enlace?')) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('fileId', linkId);
+    formData.append('projectId', projectId);
+
+    const result = await deleteFile(null, formData);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success('Enlace eliminado correctamente');
     }
   };
 
@@ -228,9 +260,16 @@ export function StageLinkPanel({
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        {currentUserId && link.created_by === currentUserId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteLink(link.id)}
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>

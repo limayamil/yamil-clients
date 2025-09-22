@@ -35,5 +35,5 @@ export default async function ClientProjectPage({ params }: ClientProjectPagePro
     stagesCount: project.stages?.length || 0
   });
 
-  return <ClientProjectDetail project={project} clientEmail={user.email} />;
+  return <ClientProjectDetail project={project} clientEmail={user.email} currentUserId={user.id} />;
 }
