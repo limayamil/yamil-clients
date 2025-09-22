@@ -16,6 +16,7 @@ import { ActivityPanel } from '@/components/shared/activity-panel';
 import { ProjectLinksPanel } from '@/components/shared/project-links-panel';
 import { ProjectMinutesPanel } from '@/components/shared/project-minutes-panel';
 import { GanttTimeline } from '@/components/client/gantt-timeline';
+import { MobileTimeline } from '@/components/client/mobile-timeline';
 import { EditableStageCard } from '@/components/client/editable-stage-card';
 import { StageCommentThread } from '@/components/client/stage-comment-thread';
 import { StageLinkPanel } from '@/components/client/stage-link-panel';
@@ -221,17 +222,17 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       <Breadcrumb items={breadcrumbItems} />
 
       {/* Header Mejorado */}
-      <header className="relative overflow-hidden rounded-3xl border border-border/50 shadow-xl bg-gradient-to-br from-white via-brand-50/30 to-brand-100/40 backdrop-blur-sm">
+      <header className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/50 shadow-xl bg-gradient-to-br from-white via-brand-50/30 to-brand-100/40 backdrop-blur-sm">
         {/* Gradiente de fondo decorativo */}
         <div className="absolute inset-0 bg-gradient-to-r from-brand-500/5 via-transparent to-brand-600/5"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-radial from-brand-200/20 to-transparent blur-3xl"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 lg:w-96 lg:h-96 bg-gradient-radial from-brand-200/20 to-transparent blur-2xl lg:blur-3xl"></div>
 
-        <div className="relative p-4 md:p-6 lg:p-8">
-          <div className="flex flex-col gap-4 md:gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8">
+          <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-3 min-w-0 flex-1">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex items-center gap-3">
@@ -307,20 +308,20 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 mt-6">
-            <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-white to-blue-50/30 p-4 shadow-sm space-y-2">
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4 sm:mt-6">
+            <div className="rounded-xl sm:rounded-2xl border border-border/50 bg-gradient-to-br from-white to-blue-50/30 p-3 sm:p-4 shadow-sm space-y-2">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-blue-600" />
                 <p className="text-xs uppercase text-muted-foreground">Cliente</p>
               </div>
-              <p className="text-lg font-semibold text-foreground">{project.client_name}</p>
+              <p className="text-base sm:text-lg font-semibold text-foreground">{project.client_name}</p>
             </div>
             <EditableDateTile
               label="Fecha límite"
               value={project.deadline}
               onSave={handleUpdateDeadline}
             />
-            <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-white to-green-50/30 p-4 shadow-sm space-y-2">
+            <div className="rounded-xl sm:rounded-2xl border border-border/50 bg-gradient-to-br from-white to-green-50/30 p-3 sm:p-4 shadow-sm space-y-2 sm:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-green-600" />
                 <p className="text-xs uppercase text-muted-foreground">Fechas del proyecto</p>
@@ -347,12 +348,25 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
       </header>
 
       {/* Cronograma Visual */}
-      <GanttTimeline
-        stages={project.stages ?? []}
-        projectStartDate={project.start_date}
-        projectEndDate={project.end_date}
-        projectDeadline={project.deadline}
-      />
+      {/* Versión móvil simplificada */}
+      <div className="block sm:hidden">
+        <MobileTimeline
+          stages={project.stages ?? []}
+          projectStartDate={project.start_date}
+          projectEndDate={project.end_date}
+          projectDeadline={project.deadline}
+        />
+      </div>
+
+      {/* Versión desktop completa */}
+      <div className="hidden sm:block">
+        <GanttTimeline
+          stages={project.stages ?? []}
+          projectStartDate={project.start_date}
+          projectEndDate={project.end_date}
+          projectDeadline={project.deadline}
+        />
+      </div>
       {/* Grid de Etapas Editables */}
       <section className="space-y-4 md:space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -442,7 +456,7 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
       />
 
       {/* Sección de Links y Minutas */}
-      <section className="grid gap-6 xl:grid-cols-2">
+      <section className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         <ProjectLinksPanel
           links={project.links ?? []}
           projectId={project.id}

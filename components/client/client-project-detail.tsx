@@ -10,6 +10,7 @@ import { ActivityPanel } from '@/components/shared/activity-panel';
 import { ProjectLinksPanel } from '@/components/shared/project-links-panel';
 import { ProjectMinutesPanel } from '@/components/shared/project-minutes-panel';
 import { GanttTimeline } from '@/components/client/gantt-timeline';
+import { MobileTimeline } from '@/components/client/mobile-timeline';
 import { EditableStageCard } from '@/components/client/editable-stage-card';
 import { StageCommentThread } from '@/components/client/stage-comment-thread';
 import { StageLinkPanel } from '@/components/client/stage-link-panel';
@@ -241,12 +242,25 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
       </header>
 
       {/* Cronograma Visual */}
-      <GanttTimeline
-        stages={project.stages ?? []}
-        projectStartDate={project.start_date}
-        projectEndDate={project.end_date}
-        projectDeadline={project.deadline}
-      />
+      {/* Versión móvil simplificada */}
+      <div className="block sm:hidden">
+        <MobileTimeline
+          stages={project.stages ?? []}
+          projectStartDate={project.start_date}
+          projectEndDate={project.end_date}
+          projectDeadline={project.deadline}
+        />
+      </div>
+
+      {/* Versión desktop completa */}
+      <div className="hidden sm:block">
+        <GanttTimeline
+          stages={project.stages ?? []}
+          projectStartDate={project.start_date}
+          projectEndDate={project.end_date}
+          projectDeadline={project.deadline}
+        />
+      </div>
 
       {/* Grid de Etapas Editables */}
       <section className="space-y-3 sm:space-y-4 md:space-y-6">

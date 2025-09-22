@@ -241,9 +241,9 @@ export function EditableStageCard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-brand-100/50 hover:scale-105"
+                    className="h-11 w-11 sm:h-8 sm:w-8 p-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 hover:bg-brand-100/50 hover:scale-105 touch-manipulation"
                   >
-                    <MoreVertical className="h-4 w-4" />
+                    <MoreVertical className="h-5 w-5 sm:h-4 sm:w-4" />
                   </Button>
                 </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 border-border/50 shadow-xl">
@@ -367,17 +367,17 @@ export function EditableStageCard({
             )}
 
             {/* Acciones rápidas mejoradas */}
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/30">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-4 pt-4 border-t border-border/30">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onToggleComments?.(stage.id)}
-                className="h-8 text-xs hover:bg-blue-100/50 hover:text-blue-700 transition-colors duration-200 gap-1.5"
+                className="h-11 sm:h-8 text-xs hover:bg-blue-100/50 hover:text-blue-700 transition-colors duration-200 gap-1.5 justify-start sm:justify-center touch-manipulation"
               >
-                <MessageSquare className="h-3 w-3" />
+                <MessageSquare className="h-4 w-4 sm:h-3 sm:w-3" />
                 <span>Comentar</span>
                 {totalCommentsCount > 0 && (
-                  <span className="bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center">
+                  <span className="bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center ml-auto sm:ml-0">
                     {totalCommentsCount}
                   </span>
                 )}
@@ -386,25 +386,25 @@ export function EditableStageCard({
                 variant="ghost"
                 size="sm"
                 onClick={() => onUploadFiles?.(stage.id)}
-                className="h-8 text-xs hover:bg-green-100/50 hover:text-green-700 transition-colors duration-200 gap-1.5"
+                className="h-11 sm:h-8 text-xs hover:bg-green-100/50 hover:text-green-700 transition-colors duration-200 gap-1.5 justify-start sm:justify-center touch-manipulation"
               >
-                <Link className="h-3 w-3" />
+                <Link className="h-4 w-4 sm:h-3 sm:w-3" />
                 <span>Compartir enlace</span>
                 {stageLinksCount > 0 && (
-                  <span className="bg-green-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center">
+                  <span className="bg-green-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center ml-auto sm:ml-0">
                     {stageLinksCount}
                   </span>
                 )}
               </Button>
-              <div className="flex-1" />
+              <div className="flex-1 hidden sm:block" />
               {viewMode === 'provider' && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowAddMenu(true)}
-                  className="h-8 text-xs hover:bg-brand-100/50 hover:text-brand-700 transition-all duration-200 hover:scale-105"
+                  className="h-11 sm:h-8 text-xs hover:bg-brand-100/50 hover:text-brand-700 transition-all duration-200 hover:scale-105 justify-start sm:justify-center touch-manipulation"
                 >
-                  <Plus className="h-3 w-3 mr-1.5" />
+                  <Plus className="h-4 w-4 sm:h-3 sm:w-3 mr-1.5" />
                   Agregar
                 </Button>
               )}

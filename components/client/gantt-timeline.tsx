@@ -146,12 +146,15 @@ export function GanttTimeline({ stages, projectStartDate, projectEndDate, projec
 
       {/* Tabla tipo Gantt */}
       <div className="overflow-x-auto">
-        <div className="min-w-[800px]">
+        <div className="min-w-full">
           {/* Header de meses */}
           <div className="flex border-b border-border/30 bg-gray-50/50">
             {/* Columna de etapas */}
-            <div className="w-48 flex-shrink-0 bg-gray-100/50 p-4 border-r border-border/30">
-              <h4 className="text-sm font-semibold text-muted-foreground text-center uppercase tracking-wide">Etapas</h4>
+            <div className="w-32 sm:w-40 lg:w-48 flex-shrink-0 bg-gray-100/50 p-2 sm:p-3 lg:p-4 border-r border-border/30">
+              <h4 className="text-xs sm:text-sm font-semibold text-muted-foreground text-center uppercase tracking-wide">
+                <span className="hidden sm:inline">Etapas</span>
+                <span className="sm:hidden">Et.</span>
+              </h4>
             </div>
 
             {/* Columnas de tiempo */}
@@ -159,11 +162,14 @@ export function GanttTimeline({ stages, projectStartDate, projectEndDate, projec
               {timeline.months.map((month, index) => (
                 <div
                   key={`${month.name}-${month.year}`}
-                  className="flex-1 p-4 text-center border-r border-border/30 bg-gray-50/50"
-                  style={{ minWidth: '120px' }}
+                  className="flex-1 p-2 sm:p-3 lg:p-4 text-center border-r border-border/30 bg-gray-50/50"
+                  style={{ minWidth: '60px' }}
                 >
-                  <div className="text-sm font-semibold text-foreground capitalize">{month.name.toLowerCase()}</div>
-                  <div className="text-xs text-muted-foreground">{month.year}</div>
+                  <div className="text-xs sm:text-sm font-semibold text-foreground capitalize">
+                    <span className="hidden sm:inline">{month.name.toLowerCase()}</span>
+                    <span className="sm:hidden">{month.name.toLowerCase().slice(0, 3)}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground hidden sm:block">{month.year}</div>
                 </div>
               ))}
             </div>
@@ -174,26 +180,28 @@ export function GanttTimeline({ stages, projectStartDate, projectEndDate, projec
             {/* Línea de "hoy" */}
             <div
               className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-20 shadow-lg"
-              style={{ left: `calc(12rem + ${timeline.todayPosition}% * (100% - 12rem) / 100)` }}
+              style={{ left: `calc(8rem + ${timeline.todayPosition}% * (100% - 8rem) / 100)` }}
             />
 
             {timeline.stages.map((stage, stageIndex) => (
               <div key={stage.id} className="flex border-b border-border/30 hover:bg-brand-50/20 transition-colors">
                 {/* Nombre de la etapa */}
-                <div className="w-48 flex-shrink-0 p-4 border-r border-border/30 bg-gray-50/30">
-                  <div className="text-sm font-medium text-foreground truncate">
-                    Etapa {stageIndex + 1}
+                <div className="w-32 sm:w-40 lg:w-48 flex-shrink-0 p-2 sm:p-3 lg:p-4 border-r border-border/30 bg-gray-50/30">
+                  <div className="text-xs sm:text-sm font-medium text-foreground truncate">
+                    <span className="hidden sm:inline">Etapa {stageIndex + 1}</span>
+                    <span className="sm:hidden">E{stageIndex + 1}</span>
                   </div>
                   <div className="text-xs text-muted-foreground truncate mt-1">
-                    {stage.title}
+                    <span className="hidden sm:inline">{stage.title}</span>
+                    <span className="sm:hidden">{stage.title.slice(0, 12)}{stage.title.length > 12 ? '...' : ''}</span>
                   </div>
                 </div>
 
                 {/* Área del timeline */}
-                <div className="flex-1 relative h-12 flex items-center">
+                <div className="flex-1 relative h-8 sm:h-10 lg:h-12 flex items-center">
                   {/* Barra de la etapa */}
                   <div
-                    className={`absolute h-4 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg group cursor-pointer ${getStageColor(stage.status)}`}
+                    className={`absolute h-3 sm:h-4 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg group cursor-pointer ${getStageColor(stage.status)}`}
                     style={{
                       left: `${stage.leftPosition}%`,
                       width: `${stage.width}%`,
@@ -225,31 +233,34 @@ export function GanttTimeline({ stages, projectStartDate, projectEndDate, projec
       </div>
 
       {/* Footer con información adicional */}
-      <div className="p-4 bg-gray-50/50 border-t border-border/30">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-4">
+      <div className="p-2 sm:p-3 lg:p-4 bg-gray-50/50 border-t border-border/30">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs text-muted-foreground">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-red-500 rounded"></div>
               <span>Hoy</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               <div className="flex items-center gap-1">
                 <div className={`w-3 h-3 ${getStageStatusColors('done').solid} rounded`}></div>
-                <span>Completado</span>
+                <span className="hidden sm:inline">Completado</span>
+                <span className="sm:hidden">Hecho</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className={`w-3 h-3 ${getStageStatusColors('waiting_client').solid} rounded`}></div>
-                <span>En espera</span>
+                <span className="hidden sm:inline">En espera</span>
+                <span className="sm:hidden">Espera</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className={`w-3 h-3 ${getStageStatusColors('in_review').solid} rounded`}></div>
-                <span>En revisión</span>
+                <span className="hidden sm:inline">En revisión</span>
+                <span className="sm:hidden">Revisión</span>
               </div>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <div className="font-medium">Total: {timeline.totalDays} días</div>
-            <div className="text-xs">{formatDate(timeline.startDate.toISOString())} → {formatDate(timeline.endDate.toISOString())}</div>
+            <div className="text-xs hidden sm:block">{formatDate(timeline.startDate.toISOString())} → {formatDate(timeline.endDate.toISOString())}</div>
           </div>
         </div>
       </div>
