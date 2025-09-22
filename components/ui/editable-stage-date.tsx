@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Calendar, Check, X, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatDateForInput, parseDateFromInput } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface EditableStageDateProps {
@@ -31,16 +31,7 @@ export function EditableStageDate({
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Formatear valor inicial
-  const formatDateForInput = (dateString?: string | null): string => {
-    if (!dateString) return '';
-    try {
-      const date = new Date(dateString);
-      return date.toISOString().split('T')[0]; // YYYY-MM-DD format
-    } catch {
-      return '';
-    }
-  };
+  // Usar la utilidad para formatear fechas para inputs
 
   // Inicializar valor del input cuando se entra en modo edición
   useEffect(() => {
@@ -71,9 +62,9 @@ export function EditableStageDate({
 
     try {
       setIsLoading(true);
-      // Convertir fecha local a ISO string
-      const date = new Date(inputValue + 'T00:00:00.000Z');
-      await onSave(date.toISOString());
+      // Usar la utilidad para parsear la fecha en GMT-3
+      const dateToSave = parseDateFromInput(inputValue);
+      await onSave(dateToSave);
       setIsEditing(false);
       toast.success(`${getDateTypeLabel(dateType)} actualizada`);
     } catch (error) {

@@ -13,13 +13,114 @@ export function formatCurrency(amount: number, locale = 'es-ES', currency = 'USD
 }
 
 export function formatDate(date: string | Date, locale = 'es-ES', options?: Intl.DateTimeFormatOptions) {
-  const d = typeof date === 'string' ? new Date(date) : date;
+  let d: Date;
+
+  if (typeof date === 'string') {
+    // Si la fecha es solo YYYY-MM-DD (sin hora), interpretarla como hora local para evitar problemas de zona horaria
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const [year, month, day] = date.split('-').map(Number);
+      d = new Date(year, month - 1, day); // Crear como fecha local
+    } else {
+      d = new Date(date);
+    }
+  } else {
+    d = date;
+  }
+
+
   return new Intl.DateTimeFormat(locale, {
     day: '2-digit',
-    month: 'short',
+    month: '2-digit',
     year: 'numeric',
     ...options
   }).format(d);
+}
+
+// Zona horaria de Argentina (GMT-3)
+const ARGENTINA_TIMEZONE = 'America/Buenos_Aires';
+
+/**
+ * Crea una fecha en la zona horaria de Argentina (GMT-3) a partir de un string YYYY-MM-DD
+ */
+export function createDateInArgentinaTimezone(dateString: string): Date {
+  // Crear fecha en la zona horaria de Argentina a las 00:00:00
+  const date = new Date(`${dateString}T00:00:00`);
+
+  // Convertir a UTC considerando el offset de Argentina (-3 horas)
+  const offsetMinutes = 3 * 60; // GMT-3 = -180 minutos
+  const utcDate = new Date(date.getTime() + (offsetMinutes * 60 * 1000));
+
+  return utcDate;
+}
+
+/**
+ * Convierte una fecha a formato YYYY-MM-DD para inputs, considerando la zona horaria de Argentina
+ */
+export function formatDateForInput(date: string | Date | null | undefined): string {
+  if (!date) return '';
+
+  try {
+    let d: Date;
+
+    if (typeof date === 'string') {
+      // Si la fecha es solo YYYY-MM-DD (sin hora), interpretarla como fecha local
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const [year, month, day] = date.split('-').map(Number);
+        d = new Date(year, month - 1, day); // Crear como fecha local
+      } else {
+        // Para fechas con timezone, convertir a zona horaria de Argentina
+        d = new Date(date);
+        const argentinaDate = new Intl.DateTimeFormat('sv-SE', {
+          timeZone: ARGENTINA_TIMEZONE,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).format(d);
+        return argentinaDate;
+      }
+    } else {
+      d = date;
+    }
+
+    // Para fechas locales, usar el formato directo
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Parsea una fecha desde un input (YYYY-MM-DD) y la devuelve como string de fecha simple
+ * para evitar problemas de zona horaria
+ */
+export function parseDateFromInput(inputValue: string): string {
+  if (!inputValue.trim()) {
+    throw new Error('Fecha inválida');
+  }
+
+  try {
+    // Validar formato YYYY-MM-DD
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(inputValue)) {
+      throw new Error('Formato de fecha inválido');
+    }
+
+    const [year, month, day] = inputValue.split('-').map(Number);
+
+    if (!year || !month || !day || month < 1 || month > 12 || day < 1 || day > 31) {
+      throw new Error('Fecha inválida');
+    }
+
+    // Devolver como datetime a medianoche UTC para evitar problemas de zona horaria
+    // pero manteniendo la fecha correcta
+    return `${inputValue}T00:00:00.000Z`;
+  } catch (error) {
+    console.error('Error parsing date:', error);
+    throw new Error('Fecha inválida');
+  }
 }
 
 export function getStageStatusVariant(status: string) {

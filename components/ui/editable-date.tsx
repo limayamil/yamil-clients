@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Edit3, Check, X, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatDateForInput, parseDateFromInput } from '@/lib/utils';
 
 interface EditableDateProps {
   value: string | null | undefined;
@@ -27,31 +27,33 @@ export function EditableDate({
   allowNull = true
 }: EditableDateProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(value || '');
+  const [editValue, setEditValue] = useState(formatDateForInput(value));
   const [isLoading, setIsLoading] = useState(false);
 
   const displayValue = value ? formatDate(value) : placeholder;
 
   const handleSave = async () => {
-    if (editValue === value) {
+    const currentFormattedValue = formatDateForInput(value);
+    if (editValue === currentFormattedValue) {
       setIsEditing(false);
       return;
     }
 
     setIsLoading(true);
     try {
-      await onSave(editValue || null);
+      const dateToSave = editValue ? parseDateFromInput(editValue) : null;
+      await onSave(dateToSave);
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving date:', error);
-      setEditValue(value || '');
+      setEditValue(formatDateForInput(value));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
-    setEditValue(value || '');
+    setEditValue(formatDateForInput(value));
     setIsEditing(false);
   };
 
@@ -82,7 +84,7 @@ export function EditableDate({
             size="sm"
             onClick={handleSave}
             loading={isLoading}
-            disabled={editValue === value}
+            disabled={editValue === formatDateForInput(value)}
           >
             <Check className="h-4 w-4" />
             Guardar
@@ -119,7 +121,12 @@ export function EditableDate({
         !disabled && 'hover:bg-muted/30',
         className
       )}
-      onClick={() => !disabled && setIsEditing(true)}
+      onClick={() => {
+        if (!disabled) {
+          setEditValue(formatDateForInput(value));
+          setIsEditing(true);
+        }
+      }}
     >
       <div className="flex items-center gap-2">
         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -138,6 +145,7 @@ export function EditableDate({
           className="absolute -right-1 -top-1 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
           onClick={(e) => {
             e.stopPropagation();
+            setEditValue(formatDateForInput(value));
             setIsEditing(true);
           }}
         >
