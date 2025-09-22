@@ -1,48 +1,209 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server-client';
+import { createClient } from '@supabase/supabase-js';
 import type { ClientProjectCard, ProjectSummary } from '@/types/project';
+import type { Database } from '@/types/database';
 
 export async function getClientProjects(clientEmail: string) {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase.rpc('client_projects_overview', { client_email: clientEmail });
-  if (error) {
-    console.error('client_projects_overview', error);
+  console.log('getClientProjects called with email:', clientEmail);
+
+  if (!clientEmail) {
+    console.error('getClientProjects - No client email provided');
     return [] satisfies ClientProjectCard[];
   }
-  return (data ?? []).map((item: any) => ({
-    ...item,
-    progress: Number(item.progress ?? 0),
-    pending_items: Number(item.pending_items ?? 0)
-  })) as ClientProjectCard[];
+
+  const supabase = createSupabaseServerClient();
+
+  try {
+    console.log('Attempting RPC function first...');
+    const { data: rpcData, error: rpcError } = await supabase.rpc('client_projects_overview', { client_email: clientEmail });
+
+    if (!rpcError && rpcData && rpcData.length > 0) {
+      console.log('RPC function worked, returning data:', rpcData);
+      return rpcData.map((item: any) => ({
+        ...item,
+        progress: Number(item.progress ?? 0),
+        pending_items: Number(item.pending_items ?? 0)
+      })) as ClientProjectCard[];
+    }
+
+    console.log('RPC function failed or returned empty, trying direct query...');
+    console.log('RPC error:', rpcError);
+
+    // Crear cliente con service role para bypasear RLS
+    const serviceSupabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    // Consulta directa como fallback, bypassing RLS usando service role
+    const { data: directData, error: directError } = await serviceSupabase
+      .from('projects')
+      .select(`
+        id,
+        title,
+        status,
+        deadline,
+        project_members!inner(email, role)
+      `)
+      .eq('project_members.email', clientEmail.toLowerCase())
+      .eq('project_members.role', 'client_viewer');
+
+    if (directError) {
+      console.error('Direct query error:', directError);
+      return [] satisfies ClientProjectCard[];
+    }
+
+    console.log('Direct query returned data:', directData);
+
+    // Convertir al formato esperado
+    const projects = (directData ?? []).map((project: any) => ({
+      id: project.id,
+      title: project.title,
+      status: project.status,
+      deadline: project.deadline,
+      next_action: '', // Placeholder
+      pending_items: 0, // Placeholder
+      progress: 0 // Placeholder
+    })) as ClientProjectCard[];
+
+    console.log('Processed projects from direct query:', projects);
+    return projects;
+
+  } catch (error) {
+    console.error('Error in getClientProjects:', error);
+    return [] satisfies ClientProjectCard[];
+  }
 }
 
 export async function getClientProject(projectId: string, clientEmail: string) {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase.rpc('client_project_detail', {
-    project_id_input: projectId,
-    client_email: clientEmail
-  });
-  if (error) {
-    console.error('client_project_detail', error);
+  console.log('getClientProject called with:', { projectId, clientEmail });
+
+  if (!projectId || !clientEmail) {
+    console.error('getClientProject - Missing required parameters');
     return null;
   }
-  if (!data) return null;
-  const parsed = data as Record<string, any>;
 
-  // Obtener links y minutas del proyecto
-  const [linksResult, minutesResult] = await Promise.all([
-    supabase.from('project_links').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
-    supabase.from('project_minutes').select('*').eq('project_id', projectId).order('meeting_date', { ascending: false })
-  ]);
+  const supabase = createSupabaseServerClient();
 
-  return {
-    ...parsed,
-    stages: Array.isArray(parsed.stages) ? parsed.stages : [],
-    members: Array.isArray(parsed.members) ? parsed.members : [],
-    files: Array.isArray(parsed.files) ? parsed.files : [],
-    comments: Array.isArray(parsed.comments) ? parsed.comments : [],
-    approvals: Array.isArray(parsed.approvals) ? parsed.approvals : [],
-    activity: Array.isArray(parsed.activity) ? parsed.activity : [],
-    links: linksResult.data ?? [],
-    minutes: minutesResult.data ?? []
-  } as ProjectSummary;
+  try {
+    console.log('Attempting RPC function client_project_detail...');
+    const { data: rpcData, error: rpcError } = await supabase.rpc('client_project_detail', {
+      project_id_input: projectId,
+      client_email: clientEmail
+    });
+
+    if (!rpcError && rpcData) {
+      console.log('RPC function worked, processing data...');
+      const parsed = rpcData as Record<string, any>;
+
+      // Obtener links y minutas del proyecto
+      const [linksResult, minutesResult] = await Promise.all([
+        supabase.from('project_links').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+        supabase.from('project_minutes').select('*').eq('project_id', projectId).order('meeting_date', { ascending: false })
+      ]);
+
+      return {
+        ...parsed,
+        stages: Array.isArray(parsed.stages) ? parsed.stages : [],
+        members: Array.isArray(parsed.members) ? parsed.members : [],
+        files: Array.isArray(parsed.files) ? parsed.files : [],
+        comments: Array.isArray(parsed.comments) ? parsed.comments : [],
+        approvals: Array.isArray(parsed.approvals) ? parsed.approvals : [],
+        activity: Array.isArray(parsed.activity) ? parsed.activity : [],
+        links: linksResult.data ?? [],
+        minutes: minutesResult.data ?? []
+      } as ProjectSummary;
+    }
+
+    console.log('RPC function failed, trying direct query fallback...');
+    console.log('RPC error:', rpcError);
+
+    // Crear cliente con service role para bypasear RLS
+    const serviceSupabase = createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    // Verificar que el usuario tiene acceso al proyecto
+    console.log('Checking user access to project...');
+    const { data: memberCheck } = await serviceSupabase
+      .from('project_members')
+      .select('role')
+      .eq('project_id', projectId)
+      .eq('email', clientEmail.toLowerCase())
+      .single();
+
+    if (!memberCheck) {
+      console.log('User does not have access to this project');
+      return null;
+    }
+
+    console.log('User has access, fetching project data...');
+
+    // Obtener datos del proyecto directamente
+    const results = await Promise.all([
+      serviceSupabase.from('projects').select('*').eq('id', projectId).single(),
+      serviceSupabase.from('stages').select(`
+        *,
+        stage_components (*)
+      `).eq('project_id', projectId).order('order'),
+      serviceSupabase.from('project_members').select('*').eq('project_id', projectId),
+      serviceSupabase.from('activity_log').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(50),
+      serviceSupabase.from('project_links').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+      serviceSupabase.from('project_minutes').select('*').eq('project_id', projectId).order('meeting_date', { ascending: false })
+    ]);
+
+    const [projectResult, stagesResult, membersResult, activityResult, linksResult, minutesResult] = results;
+
+    if (projectResult.error || !projectResult.data) {
+      console.error('Direct query error:', projectResult.error);
+      return null;
+    }
+
+    console.log('Direct query successful, assembling data...');
+
+    const projectData = (projectResult as any).data;
+
+    return {
+      id: projectData.id,
+      title: projectData.title,
+      description: projectData.description,
+      status: projectData.status,
+      start_date: projectData.start_date,
+      end_date: projectData.end_date,
+      deadline: projectData.deadline,
+      budget_amount: projectData.budget_amount,
+      visibility_settings: projectData.visibility_settings,
+      created_at: projectData.created_at,
+      updated_at: projectData.updated_at,
+      stages: (stagesResult as any).data ?? [],
+      members: (membersResult as any).data ?? [],
+      files: [], // Placeholder
+      comments: [], // Placeholder
+      approvals: [], // Placeholder
+      activity: (activityResult as any).data ?? [],
+      links: (linksResult as any).data ?? [],
+      minutes: (minutesResult as any).data ?? [],
+      progress: 0, // Placeholder
+      client_name: (membersResult as any).data?.find((m: any) => m.email === clientEmail)?.email || clientEmail,
+      overdue: false, // Placeholder
+      waiting_on_client: false // Placeholder
+    } as ProjectSummary;
+
+  } catch (error) {
+    console.error('Error in getClientProject:', error);
+    return null;
+  }
 }

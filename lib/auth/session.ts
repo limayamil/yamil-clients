@@ -12,12 +12,15 @@ const CACHE_DURATION = 5000; // 5 segundos de cache
 export async function getUser(): Promise<User | null> {
   // Verificar cache
   if (userCache && (Date.now() - userCache.timestamp) < CACHE_DURATION) {
+    console.log('Returning cached user:', userCache.user?.id || 'null');
     return userCache.user;
   }
 
   try {
     const cookieStore = cookies();
     const supabase = createServerComponentClient<Database>({ cookies: () => cookieStore });
+
+    console.log('Getting user from Supabase...');
 
     // Use getUser() for security - authenticates by contacting Supabase Auth server
     const result = await withAuthRateLimit(
@@ -34,9 +37,12 @@ export async function getUser(): Promise<User | null> {
     }
 
     if (!user) {
+      console.log('No user found in session');
       userCache = { user: null, timestamp: Date.now() };
       return null;
     }
+
+    console.log('User found:', user.id, 'role:', user.user_metadata?.role);
 
     // Cachear el resultado
     userCache = { user, timestamp: Date.now() };

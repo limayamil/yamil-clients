@@ -288,3 +288,21 @@ export function getNavItemColors(href: string) {
 
   return colorMap[href as keyof typeof colorMap] || colorMap['/dashboard'];
 }
+
+/**
+ * Extrae el username de un email (la parte antes del @)
+ * para usar como clientId en las URLs
+ */
+export function getUsernameFromEmail(email: string): string {
+  if (!email || !email.includes('@')) {
+    throw new Error('Email inválido');
+  }
+
+  const username = email.split('@')[0];
+
+  if (!username) {
+    throw new Error('Username extraído está vacío');
+  }
+
+  return username;
+}

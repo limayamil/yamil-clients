@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getUser } from './session';
 import type { User } from '@supabase/supabase-js';
+import { getUsernameFromEmail } from '@/lib/utils';
 
 export async function requireUser(): Promise<User> {
   const user = await getUser();
@@ -17,7 +18,12 @@ export async function requireRole(roles: Array<'provider' | 'client'>): Promise<
   }
 
   if (!roles.includes(role)) {
-    redirect(role === 'client' ? `/c/${user.email}/projects` : '/dashboard');
+    if (role === 'client' && user.email) {
+      const username = getUsernameFromEmail(user.email);
+      redirect(`/c/${username}/projects`);
+    } else {
+      redirect('/dashboard');
+    }
   }
   return user;
 }
