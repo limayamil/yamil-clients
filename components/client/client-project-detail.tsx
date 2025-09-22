@@ -18,6 +18,32 @@ import { Home, FolderKanban, Clock, Calendar, Target, Users, CheckCircle2, Alert
 import { addStageComponent, updateStageComponent, deleteStageComponent, updateStage } from '@/actions/stages';
 import { toast } from 'sonner';
 
+// Función helper para traducir estados del proyecto
+const getProjectStatusText = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'in_progress':
+    case 'en_progreso':
+      return 'En progreso';
+    case 'completed':
+    case 'completado':
+      return 'Completado';
+    case 'on_hold':
+    case 'pausado':
+      return 'Pausado';
+    case 'cancelled':
+    case 'cancelado':
+      return 'Cancelado';
+    case 'pending':
+    case 'pendiente':
+      return 'Pendiente';
+    case 'planning':
+    case 'planificacion':
+      return 'Planificación';
+    default:
+      return status;
+  }
+};
+
 interface ClientProjectDetailProps {
   project: ProjectSummary;
   clientEmail: string;
@@ -62,7 +88,6 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
     const result = await addStageComponent(null, formData);
     if (result.error) {
       toast.error('Error al agregar componente');
-      console.error('Error adding component:', result.error);
     } else {
       toast.success('Componente agregado correctamente');
     }
@@ -78,7 +103,6 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
     const result = await updateStageComponent(null, formData);
     if (result.error) {
       toast.error('Error al actualizar componente');
-      console.error('Error updating component:', result.error);
     } else {
       toast.success('Componente actualizado correctamente');
     }
@@ -92,7 +116,6 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
     const result = await deleteStageComponent(null, formData);
     if (result.error) {
       toast.error('Error al eliminar componente');
-      console.error('Error deleting component:', result.error);
     } else {
       toast.success('Componente eliminado correctamente');
     }
@@ -112,7 +135,6 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
     const result = await updateStage(null, formData);
     if (result.error) {
       toast.error('Error al actualizar etapa');
-      console.error('Error updating stage:', result.error);
     } else {
       toast.success('Etapa actualizada correctamente');
     }
@@ -122,61 +144,65 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
     <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       <Breadcrumb items={breadcrumbItems} />
 
-      {/* Header Mejorado - Completamente Responsive */}
-      <header className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-border/50 shadow-xl bg-gradient-to-br from-white via-brand-50/30 to-brand-100/40 backdrop-blur-sm">
+      {/* Header Completamente Rediseñado - Mobile First */}
+      <header className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/50 shadow-xl bg-gradient-to-br from-white via-brand-50/30 to-brand-100/40 backdrop-blur-sm">
         {/* Gradiente de fondo decorativo */}
         <div className="absolute inset-0 bg-gradient-to-r from-brand-500/5 via-transparent to-brand-600/5"></div>
-        <div className="absolute top-0 right-0 w-48 h-48 sm:w-72 sm:h-72 lg:w-96 lg:h-96 bg-gradient-radial from-brand-200/20 to-transparent blur-3xl"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 lg:w-72 lg:h-72 bg-gradient-radial from-brand-200/20 to-transparent blur-2xl"></div>
 
-        <div className="relative p-3 sm:p-4 md:p-6 lg:p-8">
-          <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2 sm:space-y-3 min-w-0 flex-1">
-              {/* Título y Badge - Stack en móvil */}
-              <div className="flex flex-col gap-2 sm:gap-3">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 shadow-lg">
-                    <FolderKanban className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                  </div>
-                  <h1 className="text-lg sm:text-2xl md:text-3xl font-semibold text-foreground bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text leading-tight">
+        <div className="relative p-4 sm:p-6 lg:p-8">
+          {/* Layout Mobile-First: Stack completo en móvil, grid en desktop */}
+          <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start">
+
+            {/* Columna 1: Información del proyecto */}
+            <div className="lg:col-span-2 space-y-3">
+              {/* Título con ícono */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-xl lg:rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 shadow-lg flex-shrink-0">
+                  <FolderKanban className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-semibold text-foreground bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text leading-tight break-words">
                     {project.title}
                   </h1>
-                </div>
 
-                {/* Badge siempre debajo del título en móvil */}
-                <div className="flex items-center gap-2 ml-10 sm:ml-13">
-                  {project.overdue ? (
-                    <Badge variant="destructive" className="w-fit animate-pulse shadow-sm text-xs">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      {project.status}
-                    </Badge>
-                  ) : project.waiting_on_client ? (
-                    <Badge variant="warning" className="w-fit shadow-sm text-xs">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {project.status}
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="w-fit shadow-sm text-xs">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      {project.status}
-                    </Badge>
-                  )}
+                  {/* Badge de estado - siempre debajo del título */}
+                  <div className="mt-2 flex items-center gap-2">
+                    {project.overdue ? (
+                      <Badge variant="destructive" className="w-fit animate-pulse shadow-sm">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        {getProjectStatusText(project.status)}
+                      </Badge>
+                    ) : project.waiting_on_client ? (
+                      <Badge variant="warning" className="w-fit shadow-sm">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {getProjectStatusText(project.status)}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="w-fit shadow-sm">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        {getProjectStatusText(project.status)}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Descripción */}
               {project.description && (
-                <p className="text-xs sm:text-sm md:text-base text-muted-foreground line-clamp-2 ml-10 sm:ml-13">
-                  {project.description}
-                </p>
+                <div className="pl-13 lg:pl-15">
+                  <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
+                    {project.description}
+                  </p>
+                </div>
               )}
 
               {/* Etapa actual */}
               {activeStage && (
-                <div className="flex items-center gap-2 text-xs sm:text-sm ml-10 sm:ml-13">
-                  <div className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-brand-100/50 border border-brand-200/50">
-                    <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-brand-600" />
-                    <span className="font-medium text-brand-800 hidden sm:inline">Etapa actual:</span>
-                    <span className="font-medium text-brand-800 sm:hidden">Actual:</span>
+                <div className="pl-13 lg:pl-15">
+                  <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-100/50 border border-brand-200/50">
+                    <Zap className="h-4 w-4 text-brand-600" />
+                    <span className="font-medium text-brand-800 text-sm">Etapa actual:</span>
                     <Badge variant="outline" className="text-xs bg-white/80 text-brand-700 border-brand-300">
                       {activeStage.title}
                     </Badge>
@@ -185,28 +211,28 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
               )}
             </div>
 
-            {/* Sección de progreso - Stack en móvil y tablet */}
-            <div className="flex flex-col gap-3 sm:gap-4 lg:items-end border-t border-border/30 pt-3 lg:border-t-0 lg:pt-0">
-              <div className="flex items-center justify-between lg:justify-end gap-4">
-                <div className="text-left lg:text-right">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Target className="h-4 w-4 text-brand-600" />
-                    <span className="text-xs text-muted-foreground uppercase tracking-wide lg:hidden">Progreso</span>
-                    <p className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-brand-600 to-brand-700 bg-clip-text text-transparent">
+            {/* Columna 2: Progreso - En móvil va después del contenido principal */}
+            <div className="lg:col-span-1">
+              <div className="bg-white/50 backdrop-blur-sm rounded-xl border border-border/30 p-4 lg:p-6">
+                <div className="text-center lg:text-right space-y-3">
+                  <div className="flex items-center justify-center lg:justify-end gap-2">
+                    <Target className="h-5 w-5 text-brand-600" />
+                    <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-brand-600 to-brand-700 bg-clip-text text-transparent">
                       {Math.round(project.progress)}%
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide hidden lg:block">Progreso</p>
-                </div>
-              </div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+                    Progreso del proyecto
+                  </p>
 
-              <div className="w-full sm:max-w-xs lg:w-48">
-                <div className="relative">
-                  <Progress
-                    value={project.progress}
-                    className="h-2 sm:h-3 bg-gradient-to-r from-gray-100 to-gray-200 shadow-inner"
-                  />
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-brand-400/20 to-brand-600/20 animate-pulse"></div>
+                  {/* Barra de progreso */}
+                  <div className="relative">
+                    <Progress
+                      value={project.progress}
+                      className="h-3 bg-gradient-to-r from-gray-100 to-gray-200 shadow-inner"
+                    />
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-brand-400/20 to-brand-600/20"></div>
+                  </div>
                 </div>
               </div>
             </div>

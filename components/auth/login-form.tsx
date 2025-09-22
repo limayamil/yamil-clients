@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PasswordSignInInput, passwordSignInSchema } from '@/lib/validators/auth';
@@ -29,12 +29,28 @@ export function LoginForm() {
   const [state, formAction] = useFormState<FormState | undefined, FormData>(signInWithPassword, initialState);
   const [isMagicLinkMode, setMagicLinkMode] = useState(false);
   const [isSending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = handleSubmit((values) => {
-    const fd = new FormData();
-    fd.append('email', values.email);
-    fd.append('password', values.password);
-    formAction(fd);
+  // Mostrar toast cuando hay errores de autenticación
+  useEffect(() => {
+    if (state?.error?.auth) {
+      toast.error(state.error.auth[0]);
+    }
+  }, [state?.error]);
+
+  const onSubmit = handleSubmit(async (values) => {
+    if (isSubmitting) return; // Prevenir envíos múltiples
+
+    setIsSubmitting(true);
+    try {
+      const fd = new FormData();
+      fd.append('email', values.email);
+      fd.append('password', values.password);
+      formAction(fd);
+    } finally {
+      // Reset después de un delay para permitir que la redirección suceda
+      setTimeout(() => setIsSubmitting(false), 2000);
+    }
   });
 
   const onSendMagicLink = (data: PasswordSignInInput) => {
@@ -74,14 +90,14 @@ export function LoginForm() {
           </div>
         )}
         {state?.error?.auth && <p className="text-sm text-error">{state.error.auth[0]}</p>}
-        <SubmitButton disabled={isMagicLinkMode} label={t('cta')} />
+        <SubmitButton disabled={isMagicLinkMode || isSubmitting} label={t('cta')} />
       </form>
       <div className="space-y-2">
         <Button
           type="button"
           variant="secondary"
           className="w-full"
-          disabled={isSending}
+          disabled={isSending || isSubmitting}
           onClick={handleSubmit((values) => {
             setMagicLinkMode(true);
             onSendMagicLink(values);

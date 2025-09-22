@@ -149,12 +149,10 @@ export function EditableStageCard({
 
       if (result.error) {
         toast.error('Error al actualizar la fecha');
-        console.error('Error updating stage date:', result.error);
       } else {
         toast.success('Fecha actualizada');
       }
     } catch (error) {
-      console.error('Error in handleUpdateStageDate:', error);
       toast.error('Error al actualizar la fecha');
     }
   };
@@ -363,7 +361,6 @@ export function EditableStageCard({
                 onDeleteComponent={onDeleteComponent}
                 onAddComponent={(stageId, component) => {
                   // Esta función no se usa actualmente, los componentes se agregan a través del dropdown
-                  console.log('Adding full component:', component, 'to stage:', stageId);
                 }}
                 readonly={false}
               />

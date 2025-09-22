@@ -101,7 +101,6 @@ export function StageLinkPanel({
 
       if (result.error) {
         toast.error(result.error);
-        console.error('Error adding stage link:', result.error);
         return;
       }
 
@@ -114,7 +113,6 @@ export function StageLinkPanel({
         onClose();
       }, 1000);
     } catch (error) {
-      console.error('Error submitting link:', error);
       toast.error('Error al compartir el enlace');
     } finally {
       setIsSubmitting(false);

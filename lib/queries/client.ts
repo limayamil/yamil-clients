@@ -4,30 +4,22 @@ import type { ClientProjectCard, ProjectSummary } from '@/types/project';
 import type { Database } from '@/types/database';
 
 export async function getClientProjects(clientEmail: string) {
-  console.log('getClientProjects called with email:', clientEmail);
-
   if (!clientEmail) {
-    console.error('getClientProjects - No client email provided');
     return [] satisfies ClientProjectCard[];
   }
 
   const supabase = createSupabaseServerClient();
 
   try {
-    console.log('Attempting RPC function first...');
     const { data: rpcData, error: rpcError } = await supabase.rpc('client_projects_overview', { client_email: clientEmail });
 
     if (!rpcError && rpcData && rpcData.length > 0) {
-      console.log('RPC function worked, returning data:', rpcData);
       return rpcData.map((item: any) => ({
         ...item,
         progress: Number(item.progress ?? 0),
         pending_items: Number(item.pending_items ?? 0)
       })) as ClientProjectCard[];
     }
-
-    console.log('RPC function failed or returned empty, trying direct query...');
-    console.log('RPC error:', rpcError);
 
     // Crear cliente con service role para bypasear RLS
     const serviceSupabase = createClient<Database>(
@@ -59,8 +51,6 @@ export async function getClientProjects(clientEmail: string) {
       return [] satisfies ClientProjectCard[];
     }
 
-    console.log('Direct query returned data:', directData);
-
     // Convertir al formato esperado
     const projects = (directData ?? []).map((project: any) => ({
       id: project.id,
@@ -72,7 +62,6 @@ export async function getClientProjects(clientEmail: string) {
       progress: 0 // Placeholder
     })) as ClientProjectCard[];
 
-    console.log('Processed projects from direct query:', projects);
     return projects;
 
   } catch (error) {
@@ -82,34 +71,19 @@ export async function getClientProjects(clientEmail: string) {
 }
 
 export async function getClientProject(projectId: string, clientEmail: string) {
-  console.log('getClientProject called with:', { projectId, clientEmail });
-
   if (!projectId || !clientEmail) {
-    console.error('getClientProject - Missing required parameters');
     return null;
   }
 
   const supabase = createSupabaseServerClient();
 
   try {
-    console.log('Attempting RPC function client_project_detail...');
     const { data: rpcData, error: rpcError } = await supabase.rpc('client_project_detail', {
       project_id_input: projectId,
       client_email: clientEmail
     });
 
     if (!rpcError && rpcData) {
-      console.log('RPC function worked, processing data...');
-      console.log('RPC data structure:', {
-        hasStages: Array.isArray(rpcData.stages),
-        stagesCount: Array.isArray(rpcData.stages) ? rpcData.stages.length : 0,
-        stagesWithComponents: Array.isArray(rpcData.stages) ?
-          rpcData.stages.map((s: any) => ({
-            id: s.id,
-            title: s.title,
-            componentsCount: s.components?.length || 0
-          })) : []
-      });
 
       const parsed = rpcData as Record<string, any>;
 
@@ -132,14 +106,6 @@ export async function getClientProject(projectId: string, clientEmail: string) {
       } as ProjectSummary;
     }
 
-    console.log('RPC function failed, trying direct query fallback...');
-    console.log('RPC error details:', {
-      message: rpcError?.message,
-      details: rpcError?.details,
-      hint: rpcError?.hint,
-      code: rpcError?.code
-    });
-
     // Crear cliente con service role para bypasear RLS
     const serviceSupabase = createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -153,7 +119,6 @@ export async function getClientProject(projectId: string, clientEmail: string) {
     );
 
     // Verificar que el usuario tiene acceso al proyecto
-    console.log('Checking user access to project...');
     const { data: memberCheck } = await serviceSupabase
       .from('project_members')
       .select('role')
@@ -162,11 +127,8 @@ export async function getClientProject(projectId: string, clientEmail: string) {
       .single();
 
     if (!memberCheck) {
-      console.log('User does not have access to this project');
       return null;
     }
-
-    console.log('User has access, fetching project data...');
 
     // Obtener datos del proyecto directamente
     const results = await Promise.all([
@@ -190,8 +152,6 @@ export async function getClientProject(projectId: string, clientEmail: string) {
       return null;
     }
 
-    console.log('Direct query successful, assembling data...');
-
     const projectData = (projectResult as any).data;
     const rawStages = (stagesResult as any).data ?? [];
 
@@ -200,12 +160,6 @@ export async function getClientProject(projectId: string, clientEmail: string) {
       ...stage,
       components: stage.stage_components || []
     }));
-
-    console.log('Transformed stages with components:', transformedStages.map((s: any) => ({
-      id: s.id,
-      title: s.title,
-      componentsCount: s.components?.length || 0
-    })));
 
     return {
       id: projectData.id,

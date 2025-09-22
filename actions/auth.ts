@@ -24,24 +24,35 @@ export async function signInWithPassword(_: unknown, formData: FormData) {
 
   const { email, password } = parsed.data;
 
-  console.log('Attempting login for:', email);
-
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
   });
 
   if (error) {
-    console.error('Login error:', error);
-    return { error: { auth: [error.message] } };
+    // Manejo específico para rate limiting
+    if (error.status === 429 || error.message.includes('rate limit')) {
+      return {
+        error: {
+          auth: ['Demasiados intentos de login. Por favor espera unos minutos antes de intentar de nuevo.']
+        }
+      };
+    }
+
+    // Otros errores de autenticación
+    let errorMessage = error.message;
+    if (error.message.includes('Invalid login credentials')) {
+      errorMessage = 'Credenciales incorrectas. Verifica tu email y contraseña.';
+    } else if (error.message.includes('Email not confirmed')) {
+      errorMessage = 'Por favor confirma tu email antes de iniciar sesión.';
+    }
+
+    return { error: { auth: [errorMessage] } };
   }
 
   if (!data.user) {
-    console.error('No user data returned from login');
     return { error: { auth: ['No se pudo obtener la información del usuario'] } };
   }
-
-  console.log('Login successful for user:', data.user.id);
 
   // Limpiar cache de autenticación para evitar problemas de sesión
   clearAllAuthCache();
@@ -55,8 +66,6 @@ export async function signInWithPassword(_: unknown, formData: FormData) {
   // El user viene en la respuesta del signInWithPassword
   const user = data.user;
   const role = user?.user_metadata?.role as 'provider' | 'client' | undefined;
-
-  console.log('User role:', role);
 
   // Si no hay rol definido, manejar el error
   if (!role) {
@@ -72,11 +81,9 @@ export async function signInWithPassword(_: unknown, formData: FormData) {
 
   if (role === 'client' && user?.email) {
     const username = getUsernameFromEmail(user.email);
-    console.log('Redirecting client to:', `/c/${username}/projects`);
     redirect(`/c/${username}/projects`);
   }
 
-  console.log('Redirecting provider to dashboard');
   redirect('/dashboard');
 }
 
