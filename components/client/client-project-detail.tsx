@@ -247,6 +247,7 @@ export function ClientProjectDetail({ project, clientEmail }: ClientProjectDetai
                     onUpdateStage={handleUpdateStage}
                     onToggleComments={handleToggleComments}
                     onUploadFiles={handleShareLinks}
+                    defaultExpanded={isActiveStage}
                     className={`transition-all duration-300 ${
                       isActiveStage
                         ? 'ring-2 ring-brand-500/20 shadow-lg shadow-brand-500/10 bg-gradient-to-br from-white to-brand-50/30'

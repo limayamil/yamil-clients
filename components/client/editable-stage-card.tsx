@@ -45,6 +45,7 @@ interface EditableStageCardProps {
   onUpdateStage?: (stageId: string, updates: Partial<Stage>) => void;
   onToggleComments?: (stageId: string) => void;
   onUploadFiles?: (stageId: string) => void;
+  defaultExpanded?: boolean;
   className?: string;
 }
 
@@ -58,9 +59,10 @@ export function EditableStageCard({
   onUpdateStage,
   onToggleComments,
   onUploadFiles,
+  defaultExpanded = true,
   className
 }: EditableStageCardProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 

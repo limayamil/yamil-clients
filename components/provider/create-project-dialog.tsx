@@ -30,13 +30,13 @@ export function CreateProjectDialog({ clients, templates }: CreateProjectDialogP
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Crear proyecto desde plantilla</DialogTitle>
-          <DialogDescription>Seleccioná una plantilla base y asigná el cliente correspondiente.</DialogDescription>
+          <DialogTitle>Crear nuevo proyecto</DialogTitle>
+          <DialogDescription>Seleccioná una plantilla base y personaliza las etapas según tus necesidades.</DialogDescription>
         </DialogHeader>
         <form action={formAction} className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground" htmlFor="template">
-              Plantilla
+              Plantilla base
             </label>
             <select id="template" name="template" className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm">
               {templates.map((template) => (
@@ -45,6 +45,9 @@ export function CreateProjectDialog({ clients, templates }: CreateProjectDialogP
                 </option>
               ))}
             </select>
+            <p className="text-xs text-muted-foreground">
+              Las etapas de la plantilla servirán como punto de partida. Podrás editarlas, agregar nuevas o eliminar las que no necesites.
+            </p>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">

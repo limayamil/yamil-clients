@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { cn, getNavItemColors } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+// import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { logout } from '@/actions/user';
 import { useSidebar } from '@/hooks/use-sidebar';
 
@@ -26,7 +26,7 @@ export function ClientShell({ children, clientId, userEmail }: { children: React
     <div className="flex min-h-screen bg-gradient-to-br from-brand-50/70 to-brand-100/50">
       <aside
         className={cn(
-          'fixed z-40 flex h-full flex-col border-r border-border bg-white shadow-xl transition-all duration-300 ease-out',
+          'fixed z-40 flex h-full flex-col border-r border-border bg-background shadow-xl transition-all duration-300 ease-out',
           // Mobile behavior
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
           // Desktop width
@@ -152,7 +152,7 @@ export function ClientShell({ children, clientId, userEmail }: { children: React
         "flex flex-1 flex-col transition-all duration-300",
         isCollapsed ? "lg:pl-16" : "lg:pl-72"
       )}>
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-white px-4 sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -166,7 +166,6 @@ export function ClientShell({ children, clientId, userEmail }: { children: React
             <h1 className="text-lg font-semibold text-foreground hidden sm:block">Proyectos</h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
-            <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"
@@ -180,7 +179,9 @@ export function ClientShell({ children, clientId, userEmail }: { children: React
             </Avatar>
           </div>
         </header>
-        <main className="flex-1 px-4 sm:px-6 pb-10 pt-8">{children}</main>
+        <main className="flex-1 px-4 sm:px-6 pb-10 pt-8">
+          <div className="mx-auto max-w-[1366px]">{children}</div>
+        </main>
       </div>
     </div>
   );

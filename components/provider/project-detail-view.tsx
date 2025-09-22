@@ -26,6 +26,7 @@ import { addStageComponent, updateStageComponent, deleteStageComponent, updateSt
 import { Home, FolderKanban, Clock, Calendar, Target, Users, CheckCircle2, AlertCircle, Zap, Settings, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProjectMembersManager } from './project-members-manager';
+import { StageManagementPanel } from './stage-management-panel';
 
 interface ProjectDetailViewProps {
   project: ProjectSummary;
@@ -394,6 +395,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                     onUpdateStage={handleUpdateStage}
                     onToggleComments={handleToggleComments}
                     onUploadFiles={handleShareLinks}
+                    defaultExpanded={isActiveStage}
                     className={`transition-all duration-300 ${
                       isActiveStage
                         ? 'ring-2 ring-brand-500/20 shadow-lg shadow-brand-500/10 bg-gradient-to-br from-white to-brand-50/30'
@@ -424,6 +426,16 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
           members={project.project_members || []}
         />
       </section>
+
+      {/* Gestión de Etapas */}
+      <StageManagementPanel
+        stages={project.stages ?? []}
+        projectId={project.id}
+        onStagesUpdated={() => {
+          // This would trigger a refetch in the actual implementation
+          window.location.reload();
+        }}
+      />
 
       {/* Sección de Links y Minutas */}
       <section className="grid gap-6 xl:grid-cols-2">

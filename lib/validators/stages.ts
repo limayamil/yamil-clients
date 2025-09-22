@@ -72,3 +72,29 @@ export const updateStageSchema = z.object({
   planned_end: z.string().datetime().optional(),
   deadline: z.string().datetime().optional()
 });
+
+export const createStageSchema = z.object({
+  projectId: projectIdSchema,
+  title: z.string().min(1, 'El título es requerido').max(200, 'El título es muy largo'),
+  description: z.string().optional(),
+  type: z.enum(['intake', 'materials', 'design', 'development', 'review', 'handoff', 'custom']).default('custom'),
+  status: z.enum(['todo', 'waiting_client', 'in_review', 'approved', 'blocked', 'done']).default('todo'),
+  planned_start: z.string().transform((val) => val || null).pipe(z.string().datetime().nullable()).optional(),
+  planned_end: z.string().transform((val) => val || null).pipe(z.string().datetime().nullable()).optional(),
+  deadline: z.string().transform((val) => val || null).pipe(z.string().datetime().nullable()).optional(),
+  owner: z.enum(['provider', 'client']).default('provider'),
+  insertAfterStageId: z.string().uuid().optional()
+});
+
+export const deleteStageSchema = z.object({
+  stageId: z.string().uuid(),
+  projectId: projectIdSchema,
+  confirmDeletion: z.boolean().refine((val) => val === true, {
+    message: 'Debe confirmar la eliminación'
+  })
+});
+
+export const reorderStagesSchema = z.object({
+  projectId: projectIdSchema,
+  stageIds: z.array(z.string().uuid()).min(1, 'Debe proporcionar al menos un ID de etapa')
+});
