@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 export function useSidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Colapsado por defecto
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -14,6 +14,9 @@ export function useSidebar() {
       const saved = localStorage.getItem('sidebar-collapsed');
       if (saved) {
         setIsCollapsed(JSON.parse(saved));
+      } else {
+        // Si no hay estado guardado, usar colapsado por defecto
+        setIsCollapsed(true);
       }
     }
   }, []);
@@ -36,7 +39,7 @@ export function useSidebar() {
   };
 
   return {
-    isCollapsed: mounted ? isCollapsed : false,
+    isCollapsed: mounted ? isCollapsed : true, // Colapsado por defecto también en SSR
     isMobileOpen,
     toggleCollapsed,
     toggleMobile,

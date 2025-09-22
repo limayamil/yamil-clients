@@ -319,6 +319,7 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
           onClose={() => setActiveCommentStage(null)}
           projectId={project.id}
           currentUserId={currentUserId}
+          stageComponents={project.stages?.find(s => s.id === activeCommentStage)?.components || []}
         />
       )}
 

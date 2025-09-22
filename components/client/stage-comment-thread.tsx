@@ -20,6 +20,7 @@ interface StageCommentThreadProps {
   onClose: () => void;
   projectId: string;
   currentUserId?: string;
+  stageComponents?: Array<{ id: string; component_type: string; config?: any }>;
 }
 
 const initialState: { error?: string; success?: boolean; message?: string } = {};
@@ -31,11 +32,20 @@ export function StageCommentThread({
   isOpen,
   onClose,
   projectId,
-  currentUserId
+  currentUserId,
+  stageComponents = []
 }: StageCommentThreadProps) {
   const [state, formAction] = useFormState(createComment, initialState);
   const formRef = useRef<HTMLFormElement>(null);
-  const stageComments = comments.filter(comment => comment.stage_id === stageId);
+
+  // Get component IDs for this stage
+  const componentIds = stageComponents.map(comp => comp.id);
+
+  // Include both stage-level comments and component-level comments for this stage
+  const stageComments = comments.filter(comment =>
+    comment.stage_id === stageId ||
+    (comment.component_id && componentIds.includes(comment.component_id))
+  );
 
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm('¿Estás seguro de que quieres eliminar este comentario?')) {
@@ -96,10 +106,28 @@ export function StageCommentThread({
               .map((comment) => (
                 <div key={comment.id} className="rounded-xl border border-border bg-gray-50 p-3">
                   <div className="flex items-center justify-between text-xs mb-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant={comment.author_type === 'provider' ? 'default' : 'secondary'} className="text-xs">
                         {comment.author_type === 'provider' ? 'Proveedor' : 'Cliente'}
                       </Badge>
+                      {comment.component_id && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-300">
+                          {(() => {
+                            const componentType = stageComponents.find(comp => comp.id === comment.component_id)?.component_type;
+                            switch (componentType) {
+                              case 'checklist': return 'Checklist';
+                              case 'upload_request': return 'Subir archivo';
+                              case 'approval': return 'Aprobación';
+                              case 'text_block': return 'Texto';
+                              case 'link': return 'Enlace';
+                              case 'milestone': return 'Hito';
+                              case 'tasklist': return 'Lista de tareas';
+                              case 'prototype': return 'Prototipo';
+                              default: return 'Componente';
+                            }
+                          })()}
+                        </Badge>
+                      )}
                       <time className="text-muted-foreground">
                         {formatDate(comment.created_at)}
                       </time>

@@ -466,6 +466,7 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
           onClose={() => setActiveCommentStage(null)}
           projectId={project.id}
           currentUserId={currentUserId}
+          stageComponents={project.stages?.find(s => s.id === activeCommentStage)?.components || []}
         />
       )}
 
