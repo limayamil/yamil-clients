@@ -33,6 +33,7 @@ export const addStageComponentSchema = z.object({
     'milestone',
     'tasklist'
   ]),
+  title: z.string().max(200, 'El título es muy largo').optional(),
   config: z.string().transform((str, ctx) => {
     try {
       return JSON.parse(str);
@@ -46,6 +47,7 @@ export const addStageComponentSchema = z.object({
 export const updateStageComponentSchema = z.object({
   componentId: z.string().uuid(),
   projectId: projectIdSchema,
+  title: z.string().max(200, 'El título es muy largo').optional(),
   config: z.string().transform((str, ctx) => {
     try {
       return JSON.parse(str);

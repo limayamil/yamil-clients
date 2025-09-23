@@ -75,13 +75,17 @@ function ClientComponentCard({
     }
   };
 
-  const getComponentTitle = (type: string) => {
-    switch (type) {
+  const getComponentTitle = (component: StageComponent) => {
+    if (component.title) {
+      return component.title;
+    }
+    // Fallback to type-based title
+    switch (component.component_type) {
       case 'upload_request': return 'Solicitud de Enlaces';
       case 'checklist': return 'Lista de Verificación';
       case 'approval': return 'Solicitud de Aprobación';
-      case 'text_block': return 'Nota/Descripción';
-      case 'link': return 'Enlace Externo';
+      case 'text_block': return 'Nota';
+      case 'link': return 'Enlace';
       case 'milestone': return 'Hito';
       case 'tasklist': return 'Lista de Tareas';
       case 'prototype': return 'Prototipo';
@@ -135,9 +139,9 @@ function ClientComponentCard({
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs shadow-sm bg-white/80">
-              {getComponentTitle(component.component_type)}
-            </Badge>
+            <h4 className="text-sm font-medium text-foreground">
+              {getComponentTitle(component)}
+            </h4>
             <Badge variant={getStatusColor(component.status)} className="text-xs shadow-sm">
               {getStatusText(component.status)}
             </Badge>
@@ -157,7 +161,7 @@ function ClientComponentCard({
 
       <ComponentCommentThread
         componentId={component.id}
-        componentTitle={getComponentTitle(component.component_type)}
+        componentTitle={getComponentTitle(component)}
         projectId={projectId}
         comments={comments}
         isCompact={true}

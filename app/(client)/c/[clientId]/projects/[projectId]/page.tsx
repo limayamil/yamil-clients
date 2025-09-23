@@ -4,6 +4,7 @@ import { getClientProject } from '@/lib/queries/client';
 import { ClientProjectDetail } from '@/components/client/client-project-detail';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface ClientProjectPageProps {
   params: { clientId: string; projectId: string };

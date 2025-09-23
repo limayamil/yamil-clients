@@ -142,6 +142,7 @@ export async function addStageComponent(_: unknown, formData: FormData) {
     .insert({
       stage_id: parsed.data.stageId,
       component_type: parsed.data.componentType,
+      title: parsed.data.title,
       config: parsed.data.config,
       status: 'todo'
     })
@@ -198,6 +199,7 @@ export async function updateStageComponent(_: unknown, formData: FormData) {
 
   // Preparar datos para actualizar
   const updateData: any = {};
+  if (parsed.data.title !== undefined) updateData.title = parsed.data.title;
   if (parsed.data.config !== undefined) updateData.config = parsed.data.config;
   if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
 
@@ -218,7 +220,10 @@ export async function updateStageComponent(_: unknown, formData: FormData) {
     }
   });
 
+  // Revalidar tanto rutas de provider como de cliente
   revalidatePath(`/projects/${parsed.data.projectId}`);
+  revalidatePath(`/c`, 'layout'); // Revalidar todas las rutas de cliente
+
   return { success: true };
 }
 

@@ -78,6 +78,8 @@ export async function getClientProject(projectId: string, clientEmail: string) {
   const supabase = createSupabaseServerClient();
 
   try {
+    // TEMPORALMENTE DESHABILITADA: La RPC no incluye el campo 'title' en stage_components
+    /*
     const { data: rpcData, error: rpcError } = await supabase.rpc('client_project_detail', {
       project_id_input: projectId,
       client_email: clientEmail
@@ -105,6 +107,7 @@ export async function getClientProject(projectId: string, clientEmail: string) {
         minutes: minutesResult.data ?? []
       } as ProjectSummary;
     }
+    */
 
     // Crear cliente con service role para bypasear RLS
     const serviceSupabase = createClient<Database>(
@@ -135,7 +138,7 @@ export async function getClientProject(projectId: string, clientEmail: string) {
       serviceSupabase.from('projects').select('*').eq('id', projectId).single(),
       serviceSupabase.from('stages').select(`
         *,
-        stage_components (*)
+        stage_components (id, stage_id, component_type, title, config, status, metadata, created_at)
       `).eq('project_id', projectId).order('order'),
       serviceSupabase.from('project_members').select('*').eq('project_id', projectId),
       serviceSupabase.from('comments').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),

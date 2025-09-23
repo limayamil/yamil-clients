@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import {
   Plus,
@@ -27,6 +28,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { LoadingButton, LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ActionLoading } from '@/components/ui/loading-overlay';
 import { toast } from 'sonner';
 import type { Stage } from '@/types/project';
 import { createStage, deleteStage, reorderStages } from '@/actions/stages';
@@ -104,6 +107,8 @@ export function StageManagementPanel({ stages, projectId, onStagesUpdated }: Sta
 
   const handleCreateStage = async (insertAfterStageId?: string) => {
     setIsLoading(true);
+    toast.loading('Creando etapa...', { id: 'create-stage' });
+
     try {
       const formData = new FormData();
       formData.append('projectId', projectId);
@@ -123,10 +128,10 @@ export function StageManagementPanel({ stages, projectId, onStagesUpdated }: Sta
       const result = await createStage(null, formData);
 
       if (result.error) {
-        toast.error('Error al crear la etapa');
+        toast.error('Error al crear la etapa', { id: 'create-stage' });
         console.error('Error creating stage:', result.error);
       } else {
-        toast.success('Etapa creada correctamente');
+        toast.success('Etapa creada correctamente', { id: 'create-stage' });
         setIsCreateDialogOpen(false);
         setCreateFormData({
           title: '',
@@ -142,7 +147,7 @@ export function StageManagementPanel({ stages, projectId, onStagesUpdated }: Sta
       }
     } catch (error) {
       console.error('Error in handleCreateStage:', error);
-      toast.error('Error al crear la etapa');
+      toast.error('Error al crear la etapa', { id: 'create-stage' });
     } finally {
       setIsLoading(false);
     }
@@ -154,6 +159,8 @@ export function StageManagementPanel({ stages, projectId, onStagesUpdated }: Sta
     }
 
     setIsLoading(true);
+    toast.loading('Eliminando etapa...', { id: `delete-stage-${stageId}` });
+
     try {
       const formData = new FormData();
       formData.append('stageId', stageId);
@@ -163,15 +170,15 @@ export function StageManagementPanel({ stages, projectId, onStagesUpdated }: Sta
       const result = await deleteStage(null, formData);
 
       if (result.error) {
-        toast.error('Error al eliminar la etapa');
+        toast.error('Error al eliminar la etapa', { id: `delete-stage-${stageId}` });
         console.error('Error deleting stage:', result.error);
       } else {
-        toast.success('Etapa eliminada correctamente');
+        toast.success('Etapa eliminada correctamente', { id: `delete-stage-${stageId}` });
         onStagesUpdated?.();
       }
     } catch (error) {
       console.error('Error in handleDeleteStage:', error);
-      toast.error('Error al eliminar la etapa');
+      toast.error('Error al eliminar la etapa', { id: `delete-stage-${stageId}` });
     } finally {
       setIsLoading(false);
     }
@@ -185,6 +192,8 @@ export function StageManagementPanel({ stages, projectId, onStagesUpdated }: Sta
     }
 
     setIsLoading(true);
+    toast.loading('Reordenando etapas...', { id: 'reorder-stages' });
+
     try {
       const reorderedStages = Array.from(stages);
       const [reorderedItem] = reorderedStages.splice(source.index, 1);
@@ -199,15 +208,15 @@ export function StageManagementPanel({ stages, projectId, onStagesUpdated }: Sta
       const result = await reorderStages(null, formData);
 
       if (result.error) {
-        toast.error('Error al reordenar las etapas');
+        toast.error('Error al reordenar las etapas', { id: 'reorder-stages' });
         console.error('Error reordering stages:', result.error);
       } else {
-        toast.success('Etapas reordenadas correctamente');
+        toast.success('Etapas reordenadas correctamente', { id: 'reorder-stages' });
         onStagesUpdated?.();
       }
     } catch (error) {
       console.error('Error in handleDragEnd:', error);
-      toast.error('Error al reordenar las etapas');
+      toast.error('Error al reordenar las etapas', { id: 'reorder-stages' });
     } finally {
       setIsLoading(false);
     }
@@ -225,10 +234,21 @@ export function StageManagementPanel({ stages, projectId, onStagesUpdated }: Sta
           </CardTitle>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="h-8">
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar Etapa
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button size="sm" className="h-8" disabled={isLoading}>
+                  <LoadingButton
+                    isLoading={isLoading}
+                    loadingText="Creando..."
+                    variant="dots"
+                    size="sm"
+                  >
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar Etapa
+                    </>
+                  </LoadingButton>
+                </Button>
+              </motion.div>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
@@ -332,12 +352,23 @@ export function StageManagementPanel({ stages, projectId, onStagesUpdated }: Sta
                   </Select>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={isLoading}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={() => handleCreateStage()} disabled={isLoading || !createFormData.title.trim()}>
-                    {isLoading ? 'Creando...' : 'Crear Etapa'}
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={isLoading}>
+                      Cancelar
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: isLoading ? 1 : 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button onClick={() => handleCreateStage()} disabled={isLoading || !createFormData.title.trim()}>
+                      <LoadingButton
+                        isLoading={isLoading}
+                        loadingText="Creando..."
+                        variant="pulse"
+                        size="sm"
+                      >
+                        Crear Etapa
+                      </LoadingButton>
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
             </DialogContent>

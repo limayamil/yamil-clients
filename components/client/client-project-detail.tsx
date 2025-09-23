@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -52,6 +53,7 @@ interface ClientProjectDetailProps {
 }
 
 export function ClientProjectDetail({ project, clientEmail, currentUserId }: ClientProjectDetailProps) {
+  const router = useRouter();
   const [activeCommentStage, setActiveCommentStage] = useState<string | null>(null);
   const [activeFileStage, setActiveFileStage] = useState<string | null>(null);
   const pendingApproval = project.approvals?.find((approval) => approval.status === 'requested');
@@ -98,14 +100,17 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
     const formData = new FormData();
     formData.append('componentId', componentId);
     formData.append('projectId', project.id);
+    if (updates.title !== undefined) formData.append('title', updates.title || '');
     if (updates.config) formData.append('config', JSON.stringify(updates.config));
     if (updates.status) formData.append('status', updates.status);
 
     const result = await updateStageComponent(null, formData);
+
     if (result.error) {
       toast.error('Error al actualizar componente');
     } else {
       toast.success('Componente actualizado correctamente');
+      router.refresh();
     }
   };
 

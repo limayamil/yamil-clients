@@ -16,6 +16,7 @@ export interface StageComponent {
     | 'link'
     | 'milestone'
     | 'tasklist';
+  title?: string | null;
   config: Record<string, unknown>;
   status: StageStatus;
   metadata?: Record<string, unknown> | null;

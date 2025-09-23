@@ -156,68 +156,106 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
   };
 
   const handleAddComponent = async (stageId: string, componentType: string) => {
-    const formData = new FormData();
-    formData.append('stageId', stageId);
-    formData.append('projectId', project.id);
-    formData.append('componentType', componentType);
-    formData.append('config', JSON.stringify({}));
+    // Mostrar feedback inmediato
+    toast.loading('Agregando componente...', { id: `add-${stageId}` });
 
-    const result = await addStageComponent(null, formData);
-    if (result.error) {
-      toast.error('Error al agregar componente');
-      console.error('Error adding component:', result.error);
-    } else {
-      toast.success('Componente agregado correctamente');
+    try {
+      const formData = new FormData();
+      formData.append('stageId', stageId);
+      formData.append('projectId', project.id);
+      formData.append('componentType', componentType);
+      formData.append('config', JSON.stringify({}));
+
+      const result = await addStageComponent(null, formData);
+
+      if (result.error) {
+        toast.error('Error al agregar componente', { id: `add-${stageId}` });
+        console.error('Error adding component:', result.error);
+      } else {
+        toast.success('Componente agregado correctamente', { id: `add-${stageId}` });
+      }
+    } catch (error) {
+      toast.error('Error al agregar componente', { id: `add-${stageId}` });
+      console.error('Error adding component:', error);
     }
   };
 
   const handleUpdateComponent = async (componentId: string, updates: Partial<StageComponent>) => {
-    const formData = new FormData();
-    formData.append('componentId', componentId);
-    formData.append('projectId', project.id);
-    if (updates.config) formData.append('config', JSON.stringify(updates.config));
-    if (updates.status) formData.append('status', updates.status);
+    // Mostrar feedback inmediato
+    toast.loading('Actualizando componente...', { id: `update-${componentId}` });
 
-    const result = await updateStageComponent(null, formData);
-    if (result.error) {
-      toast.error('Error al actualizar componente');
-      console.error('Error updating component:', result.error);
-    } else {
-      toast.success('Componente actualizado correctamente');
+    try {
+      const formData = new FormData();
+      formData.append('componentId', componentId);
+      formData.append('projectId', project.id);
+      if (updates.config) formData.append('config', JSON.stringify(updates.config));
+      if (updates.status) formData.append('status', updates.status);
+      if (updates.title) formData.append('title', updates.title);
+
+      const result = await updateStageComponent(null, formData);
+
+      if (result.error) {
+        toast.error('Error al actualizar componente', { id: `update-${componentId}` });
+        console.error('Error updating component:', result.error);
+      } else {
+        toast.success('Componente actualizado correctamente', { id: `update-${componentId}` });
+      }
+    } catch (error) {
+      toast.error('Error al actualizar componente', { id: `update-${componentId}` });
+      console.error('Error updating component:', error);
     }
   };
 
   const handleDeleteComponent = async (componentId: string) => {
-    const formData = new FormData();
-    formData.append('componentId', componentId);
-    formData.append('projectId', project.id);
+    // Mostrar confirmación con animación
+    toast.loading('Eliminando componente...', { id: `delete-${componentId}` });
 
-    const result = await deleteStageComponent(null, formData);
-    if (result.error) {
-      toast.error('Error al eliminar componente');
-      console.error('Error deleting component:', result.error);
-    } else {
-      toast.success('Componente eliminado correctamente');
+    try {
+      const formData = new FormData();
+      formData.append('componentId', componentId);
+      formData.append('projectId', project.id);
+
+      const result = await deleteStageComponent(null, formData);
+
+      if (result.error) {
+        toast.error('Error al eliminar componente', { id: `delete-${componentId}` });
+        console.error('Error deleting component:', result.error);
+      } else {
+        toast.success('Componente eliminado correctamente', { id: `delete-${componentId}` });
+      }
+    } catch (error) {
+      toast.error('Error al eliminar componente', { id: `delete-${componentId}` });
+      console.error('Error deleting component:', error);
     }
   };
 
   const handleUpdateStage = async (stageId: string, updates: Partial<Stage>) => {
-    const formData = new FormData();
-    formData.append('stageId', stageId);
-    formData.append('projectId', project.id);
-    if (updates.status) formData.append('status', updates.status);
-    if (updates.title) formData.append('title', updates.title);
-    if (updates.description) formData.append('description', updates.description);
-    if (updates.planned_start) formData.append('planned_start', updates.planned_start);
-    if (updates.planned_end) formData.append('planned_end', updates.planned_end);
-    if (updates.deadline) formData.append('deadline', updates.deadline);
+    // Determinar el tipo de actualización para el mensaje apropiado
+    const updateType = updates.status ? 'estado de la etapa' : 'etapa';
+    toast.loading(`Actualizando ${updateType}...`, { id: `stage-${stageId}` });
 
-    const result = await updateStage(null, formData);
-    if (result.error) {
-      toast.error('Error al actualizar etapa');
-      console.error('Error updating stage:', result.error);
-    } else {
-      toast.success('Etapa actualizada correctamente');
+    try {
+      const formData = new FormData();
+      formData.append('stageId', stageId);
+      formData.append('projectId', project.id);
+      if (updates.status) formData.append('status', updates.status);
+      if (updates.title) formData.append('title', updates.title);
+      if (updates.description) formData.append('description', updates.description);
+      if (updates.planned_start) formData.append('planned_start', updates.planned_start);
+      if (updates.planned_end) formData.append('planned_end', updates.planned_end);
+      if (updates.deadline) formData.append('deadline', updates.deadline);
+
+      const result = await updateStage(null, formData);
+
+      if (result.error) {
+        toast.error(`Error al actualizar ${updateType}`, { id: `stage-${stageId}` });
+        console.error('Error updating stage:', result.error);
+      } else {
+        toast.success(`${updateType.charAt(0).toUpperCase() + updateType.slice(1)} actualizada correctamente`, { id: `stage-${stageId}` });
+      }
+    } catch (error) {
+      toast.error(`Error al actualizar ${updateType}`, { id: `stage-${stageId}` });
+      console.error('Error updating stage:', error);
     }
   };
 

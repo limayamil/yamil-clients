@@ -1,5 +1,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server-client';
+import { createClient } from '@supabase/supabase-js';
 import type { ProjectSummary } from '@/types/project';
+import type { Database } from '@/types/database';
 
 export async function getProviderDashboardProjects(userId: string) {
   const supabase = createSupabaseServerClient();
@@ -21,6 +23,9 @@ export async function getProviderDashboardProjects(userId: string) {
 
 export async function getProviderProject(projectId: string) {
   const supabase = createSupabaseServerClient();
+
+  // TEMPORALMENTE DESHABILITADA: La RPC no incluye el campo 'title' en stage_components
+  /*
   const { data, error } = await supabase.rpc('provider_project_detail', { project_id_input: projectId });
   if (error) {
     console.error('provider_project_detail', error);
@@ -48,6 +53,72 @@ export async function getProviderProject(projectId: string) {
     minutes: minutesResult.data ?? [],
     project_members: projectMembersResult.data ?? []
   } as ProjectSummary;
+  */
+
+  // FALLBACK: Usar consultas directas que SÍ incluyen el campo 'title'
+  try {
+    // Obtener datos del proyecto directamente
+    const results = await Promise.all([
+      supabase.from('projects').select('*').eq('id', projectId).single(),
+      supabase.from('stages').select(`
+        *,
+        stage_components (id, stage_id, component_type, title, config, status, metadata, created_at)
+      `).eq('project_id', projectId).order('order'),
+      supabase.from('project_members').select('*').eq('project_id', projectId),
+      supabase.from('comments').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+      supabase.from('files').select('*').eq('project_id', projectId).order('uploaded_at', { ascending: false }),
+      supabase.from('activity_log').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(50),
+      supabase.from('project_links').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+      supabase.from('project_minutes').select('*').eq('project_id', projectId).order('meeting_date', { ascending: false })
+    ]);
+
+    const [projectResult, stagesResult, membersResult, commentsResult, filesResult, activityResult, linksResult, minutesResult] = results;
+
+    if (projectResult.error || !projectResult.data) {
+      console.error('Direct query error:', projectResult.error);
+      return null;
+    }
+
+    const projectData = (projectResult as any).data;
+    const rawStages = (stagesResult as any).data ?? [];
+
+    // Transform stage_components to components field for each stage
+    const transformedStages = rawStages.map((stage: any) => ({
+      ...stage,
+      components: stage.stage_components || []
+    }));
+
+    return {
+      id: projectData.id,
+      title: projectData.title,
+      description: projectData.description,
+      status: projectData.status,
+      start_date: projectData.start_date,
+      end_date: projectData.end_date,
+      deadline: projectData.deadline,
+      budget_amount: projectData.budget_amount,
+      visibility_settings: projectData.visibility_settings,
+      created_at: projectData.created_at,
+      updated_at: projectData.updated_at,
+      stages: transformedStages,
+      members: (membersResult as any).data ?? [],
+      files: (filesResult as any).data ?? [],
+      comments: (commentsResult as any).data ?? [],
+      approvals: [], // Placeholder
+      activity: (activityResult as any).data ?? [],
+      links: (linksResult as any).data ?? [],
+      minutes: (minutesResult as any).data ?? [],
+      project_members: (membersResult as any).data ?? [],
+      progress: 0, // Placeholder
+      client_name: 'Cliente', // Placeholder
+      overdue: false, // Placeholder
+      waiting_on_client: false // Placeholder
+    } as ProjectSummary;
+
+  } catch (error) {
+    console.error('Error in getProviderProject:', error);
+    return null;
+  }
 }
 
 export async function getActiveClients() {

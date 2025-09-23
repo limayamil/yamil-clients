@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   Edit,
@@ -28,6 +29,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DynamicChecklist } from '@/components/client/dynamic-checklist';
 import { ComponentCommentThread } from '@/components/shared/component-comment-thread';
+import { CreatingComponentSkeleton, DeletingComponentSkeleton } from '@/components/ui/skeleton-component';
+import { ActionLoading } from '@/components/ui/loading-overlay';
+import { LoadingButton } from '@/components/ui/loading-spinner';
 
 interface EditableStageComponentsProps {
   components: StageComponent[];
@@ -51,47 +55,181 @@ export function EditableStageComponents({
   readonly = false
 }: EditableStageComponentsProps) {
   const [editingComponent, setEditingComponent] = useState<string | null>(null);
+  const [loadingStates, setLoadingStates] = useState<{
+    updating: Set<string>;
+    deleting: Set<string>;
+    creating: boolean;
+  }>({
+    updating: new Set(),
+    deleting: new Set(),
+    creating: false
+  });
+
+  const [deletingComponents, setDeletingComponents] = useState<Set<string>>(new Set());
 
   const handleEdit = (componentId: string) => {
     if (readonly) return;
     setEditingComponent(componentId);
   };
 
-  const handleSave = (component: StageComponent, updates: any) => {
-    onUpdateComponent?.(component.id, { ...component, config: { ...component.config, ...updates } });
-    setEditingComponent(null);
+  const handleSave = async (component: StageComponent, updates: any) => {
+    const { title, ...configUpdates } = updates;
+    const componentUpdates: Partial<StageComponent> = {
+      config: { ...component.config, ...configUpdates }
+    };
+
+    if (title !== undefined) {
+      componentUpdates.title = title;
+    }
+
+    // Agregar loading state
+    setLoadingStates(prev => ({
+      ...prev,
+      updating: new Set([...prev.updating, component.id])
+    }));
+
+    try {
+      await onUpdateComponent?.(component.id, componentUpdates);
+      setEditingComponent(null);
+    } finally {
+      // Remover loading state
+      setLoadingStates(prev => {
+        const newUpdating = new Set(prev.updating);
+        newUpdating.delete(component.id);
+        return { ...prev, updating: newUpdating };
+      });
+    }
   };
 
   const handleCancel = () => {
     setEditingComponent(null);
   };
 
-  const handleDelete = (componentId: string) => {
+  const handleDelete = async (componentId: string) => {
     if (readonly) return;
-    onDeleteComponent?.(componentId);
+
+    // Agregar a la lista de elementos que se están eliminando
+    setDeletingComponents(prev => new Set([...prev, componentId]));
+
+    // Agregar loading state
+    setLoadingStates(prev => ({
+      ...prev,
+      deleting: new Set([...prev.deleting, componentId])
+    }));
+
+    try {
+      // Esperar un poco para mostrar la animación de eliminación
+      await new Promise(resolve => setTimeout(resolve, 600));
+      await onDeleteComponent?.(componentId);
+    } finally {
+      // Cleanup states
+      setDeletingComponents(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(componentId);
+        return newSet;
+      });
+
+      setLoadingStates(prev => {
+        const newDeleting = new Set(prev.deleting);
+        newDeleting.delete(componentId);
+        return { ...prev, deleting: newDeleting };
+      });
+    }
   };
 
   return (
     <div className="space-y-4">
-      {components.map((component) => (
-        <EditableComponentCard
-          key={component.id}
-          component={component}
-          isEditing={editingComponent === component.id}
-          readonly={readonly}
-          projectId={projectId}
-          comments={comments}
-          onEdit={() => handleEdit(component.id)}
-          onSave={(updates) => handleSave(component, updates)}
-          onCancel={handleCancel}
-          onDelete={() => handleDelete(component.id)}
-          onUpdateComponent={onUpdateComponent}
-        />
-      ))}
+      <AnimatePresence mode="popLayout">
+        {components.map((component) => {
+          // Si el componente está siendo eliminado, mostrar skeleton de eliminación
+          if (deletingComponents.has(component.id)) {
+            return (
+              <motion.div
+                key={`deleting-${component.id}`}
+                layout
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <DeletingComponentSkeleton />
+              </motion.div>
+            );
+          }
 
-      {components.length === 0 && (
-        <div className="rounded-xl border border-dashed border-border p-6 text-center">
-          <Plus className="mx-auto h-6 w-6 text-muted-foreground mb-2" />
+          return (
+            <motion.div
+              key={component.id}
+              layout
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              transition={{
+                type: "spring",
+                stiffness: 200,
+                damping: 20,
+                layout: { duration: 0.3 }
+              }}
+            >
+              <ActionLoading
+                isLoading={loadingStates.updating.has(component.id)}
+                action="updating"
+              >
+                <EditableComponentCard
+                  component={component}
+                  isEditing={editingComponent === component.id}
+                  readonly={readonly}
+                  projectId={projectId}
+                  comments={comments}
+                  onEdit={() => handleEdit(component.id)}
+                  onSave={(updates) => handleSave(component, updates)}
+                  onCancel={handleCancel}
+                  onDelete={() => handleDelete(component.id)}
+                  onUpdateComponent={onUpdateComponent}
+                  isLoading={loadingStates.updating.has(component.id) || loadingStates.deleting.has(component.id)}
+                />
+              </ActionLoading>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+
+      {/* Loading state para crear componentes */}
+      {loadingStates.creating && (
+        <motion.div
+          layout
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -20, scale: 0.95 }}
+          transition={{
+            type: "spring",
+            stiffness: 200,
+            damping: 20
+          }}
+        >
+          <CreatingComponentSkeleton />
+        </motion.div>
+      )}
+
+      {components.length === 0 && !loadingStates.creating && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="rounded-xl border border-dashed border-border p-6 text-center"
+        >
+          <motion.div
+            animate={{
+              scale: [1, 1.05, 1],
+              opacity: [0.5, 1, 0.5]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
+            <Plus className="mx-auto h-6 w-6 text-muted-foreground mb-2" />
+          </motion.div>
           <p className="text-sm text-muted-foreground">No hay componentes en esta etapa</p>
           <p className="text-xs text-muted-foreground mt-1">
             {readonly
@@ -99,7 +237,7 @@ export function EditableStageComponents({
               : "Usa las opciones de la etapa para agregar contenido"
             }
           </p>
-        </div>
+        </motion.div>
       )}
     </div>
   );
@@ -116,6 +254,7 @@ interface EditableComponentCardProps {
   onCancel: () => void;
   onDelete: () => void;
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
+  isLoading?: boolean;
 }
 
 function EditableComponentCard({
@@ -128,26 +267,45 @@ function EditableComponentCard({
   onSave,
   onCancel,
   onDelete,
-  onUpdateComponent
+  onUpdateComponent,
+  isLoading = false
 }: EditableComponentCardProps) {
-  const [editData, setEditData] = useState<any>(component.config);
+  const [editData, setEditData] = useState<any>({
+    ...component.config,
+    title: component.title
+  });
 
-  const handleSave = () => {
-    onSave(editData);
-  };
+  // Sincronizar estado local cuando el componente cambia desde el servidor
+  useEffect(() => {
+    setEditData({
+      ...component.config,
+      title: component.title
+    });
+  }, [component.config, component.title]);
 
-  const handleCancel = () => {
-    setEditData(component.config);
+  const handleSave = useCallback((updates: any) => {
+    onSave(updates);
+  }, [onSave]);
+
+  const handleCancel = useCallback(() => {
+    setEditData({
+      ...component.config,
+      title: component.title
+    });
     onCancel();
-  };
+  }, [component.config, component.title, onCancel]);
+
+  const handleDataChange = useCallback((newData: any) => {
+    setEditData(newData);
+  }, []);
 
   if (isEditing) {
     return (
       <EditMode
         component={component}
         editData={editData}
-        onDataChange={setEditData}
-        onSave={handleSave}
+        onDataChange={handleDataChange}
+        onSave={(updates) => handleSave(updates)}
         onCancel={handleCancel}
       />
     );
@@ -162,6 +320,7 @@ function EditableComponentCard({
       onEdit={onEdit}
       onDelete={onDelete}
       onUpdateComponent={onUpdateComponent}
+      isLoading={isLoading}
     />
   );
 }
@@ -173,7 +332,8 @@ function ViewMode({
   comments,
   onEdit,
   onDelete,
-  onUpdateComponent
+  onUpdateComponent,
+  isLoading = false
 }: {
   component: StageComponent;
   readonly: boolean;
@@ -182,6 +342,7 @@ function ViewMode({
   onEdit: () => void;
   onDelete: () => void;
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
+  isLoading?: boolean;
 }) {
   const getComponentIcon = (type: string) => {
     switch (type) {
@@ -194,13 +355,17 @@ function ViewMode({
     }
   };
 
-  const getComponentTitle = (type: string) => {
-    switch (type) {
+  const getComponentTitle = (component: StageComponent) => {
+    if (component.title) {
+      return component.title;
+    }
+    // Fallback to type-based title
+    switch (component.component_type) {
       case 'upload_request': return 'Solicitud de Enlaces';
       case 'checklist': return 'Lista de Verificación';
       case 'approval': return 'Solicitud de Aprobación';
-      case 'text_block': return 'Nota/Descripción';
-      case 'link': return 'Enlace Externo';
+      case 'text_block': return 'Nota';
+      case 'link': return 'Enlace';
       case 'milestone': return 'Hito';
       case 'tasklist': return 'Lista de Tareas';
       case 'prototype': return 'Prototipo';
@@ -256,7 +421,14 @@ function ViewMode({
   const StatusIcon = getStatusIcon(component.status);
 
   return (
-    <div className="group rounded-xl border border-border/50 bg-gradient-to-br from-white to-gray-50/30 p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+    <motion.div
+      layout
+      whileHover={{ scale: isLoading ? 1 : 1.02 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className={`group rounded-xl border border-border/50 bg-gradient-to-br from-white to-gray-50/30 p-4 transition-all duration-300 ${
+        isLoading ? 'opacity-70 pointer-events-none' : 'hover:shadow-lg'
+      }`}
+    >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           {/* Icono del componente */}
@@ -273,9 +445,9 @@ function ViewMode({
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs shadow-sm bg-white/80">
-              {getComponentTitle(component.component_type)}
-            </Badge>
+            <h4 className="text-sm font-medium text-foreground">
+              {getComponentTitle(component)}
+            </h4>
             {readonly ? (
               <Badge variant={getStatusColor(component.status)} className="text-xs shadow-sm">
                 <StatusIcon className="h-3 w-3 mr-1" />
@@ -315,24 +487,33 @@ function ViewMode({
           </div>
         </div>
         {!readonly && (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onEdit}
-              className="h-7 w-7 p-0 hover:bg-blue-100/50 hover:text-blue-700 hover:scale-105 transition-all duration-200"
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onDelete}
-              className="h-7 w-7 p-0 hover:bg-red-100/50 hover:text-red-700 hover:scale-105 transition-all duration-200"
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
+          <motion.div
+            className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200"
+            animate={{ opacity: isLoading ? 0 : undefined }}
+          >
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onEdit}
+                disabled={isLoading}
+                className="h-7 w-7 p-0 hover:bg-blue-100/50 hover:text-blue-700 transition-all duration-200"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onDelete}
+                disabled={isLoading}
+                className="h-7 w-7 p-0 hover:bg-red-100/50 hover:text-red-700 transition-all duration-200"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </motion.div>
+          </motion.div>
         )}
       </div>
 
@@ -348,12 +529,12 @@ function ViewMode({
 
       <ComponentCommentThread
         componentId={component.id}
-        componentTitle={getComponentTitle(component.component_type)}
+        componentTitle={getComponentTitle(component)}
         projectId={projectId}
         comments={comments}
         isCompact={true}
       />
-    </div>
+    </motion.div>
   );
 }
 
@@ -367,9 +548,20 @@ function EditMode({
   component: StageComponent;
   editData: any;
   onDataChange: (data: any) => void;
-  onSave: () => void;
+  onSave: (data: any) => void;
   onCancel: () => void;
 }) {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(editData);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const getComponentIcon = (type: string) => {
     switch (type) {
       case 'upload_request': return Paperclip;
@@ -384,7 +576,14 @@ function EditMode({
   const ComponentIcon = getComponentIcon(component.component_type);
 
   return (
-    <div className="rounded-xl border border-brand-200/50 bg-gradient-to-br from-brand-50/50 to-white shadow-lg p-4">
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.2 }}
+      className="rounded-xl border border-brand-200/50 bg-gradient-to-br from-brand-50/50 to-white shadow-lg p-4"
+    >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 shadow-sm">
@@ -396,23 +595,38 @@ function EditMode({
           </Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onCancel}
-            className="h-7 hover:bg-red-100/50 hover:text-red-700 transition-colors duration-200"
-          >
-            <X className="h-3 w-3 mr-1" />
-            Cancelar
-          </Button>
-          <Button
-            size="sm"
-            onClick={onSave}
-            className="h-7 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 shadow-sm transition-all duration-200 hover:scale-105"
-          >
-            <Save className="h-3 w-3 mr-1" />
-            Guardar
-          </Button>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCancel}
+              disabled={isSaving}
+              className="h-7 hover:bg-red-100/50 hover:text-red-700 transition-colors duration-200"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Cancelar
+            </Button>
+          </motion.div>
+          <motion.div whileHover={{ scale: isSaving ? 1 : 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="h-7 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 shadow-sm transition-all duration-200"
+            >
+              <LoadingButton
+                isLoading={isSaving}
+                loadingText="Guardando..."
+                variant="default"
+                size="sm"
+              >
+                <>
+                  <Save className="h-3 w-3 mr-1" />
+                  Guardar
+                </>
+              </LoadingButton>
+            </Button>
+          </motion.div>
         </div>
       </div>
 
@@ -421,7 +635,7 @@ function EditMode({
         data={editData}
         onChange={onDataChange}
       />
-    </div>
+    </motion.div>
   );
 }
 
@@ -515,7 +729,31 @@ function ComponentContent({ component }: { component: StageComponent }) {
   }
 }
 
-function ComponentEditor({
+// Separate TitleField component to prevent re-creation on each render
+const TitleField = memo(function TitleField({
+  value,
+  onChange,
+  placeholder
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div>
+      <label className="text-sm font-medium text-foreground mb-1 block">
+        Título
+      </label>
+      <Input
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+});
+
+const ComponentEditor = memo(function ComponentEditor({
   component,
   data,
   onChange
@@ -524,14 +762,33 @@ function ComponentEditor({
   data: any;
   onChange: (data: any) => void;
 }) {
-  const updateField = (field: string, value: any) => {
+  const updateField = useCallback((field: string, value: any) => {
     onChange({ ...data, [field]: value });
+  }, [data, onChange]);
+
+  const getDefaultTitle = (type: string) => {
+    switch (type) {
+      case 'upload_request': return 'Solicitud de Enlaces';
+      case 'checklist': return 'Lista de Verificación';
+      case 'approval': return 'Solicitud de Aprobación';
+      case 'text_block': return 'Nota';
+      case 'link': return 'Enlace';
+      case 'milestone': return 'Hito';
+      case 'tasklist': return 'Lista de Tareas';
+      case 'prototype': return 'Prototipo';
+      default: return 'Componente';
+    }
   };
 
   switch (component.component_type) {
     case 'text_block':
       return (
         <div className="space-y-3">
+          <TitleField
+            value={data.title}
+            onChange={(value) => updateField('title', value)}
+            placeholder={getDefaultTitle(component.component_type)}
+          />
           <div>
             <label className="text-sm font-medium text-foreground mb-1 block">
               Contenido
@@ -549,6 +806,11 @@ function ComponentEditor({
     case 'upload_request':
       return (
         <div className="space-y-3">
+          <TitleField
+            value={data.title}
+            onChange={(value) => updateField('title', value)}
+            placeholder={getDefaultTitle(component.component_type)}
+          />
           <div>
             <label className="text-sm font-medium text-foreground mb-1 block">
               Descripción
@@ -576,6 +838,11 @@ function ComponentEditor({
     case 'checklist':
       return (
         <div className="space-y-3">
+          <TitleField
+            value={data.title}
+            onChange={(value) => updateField('title', value)}
+            placeholder={getDefaultTitle(component.component_type)}
+          />
           <div>
             <label className="text-sm font-medium text-foreground mb-1 block">
               Items de la lista
@@ -593,6 +860,11 @@ function ComponentEditor({
     case 'approval':
       return (
         <div className="space-y-3">
+          <TitleField
+            value={data.title}
+            onChange={(value) => updateField('title', value)}
+            placeholder={getDefaultTitle(component.component_type)}
+          />
           <div>
             <label className="text-sm font-medium text-foreground mb-1 block">
               Instrucciones para la aprobación
@@ -610,6 +882,11 @@ function ComponentEditor({
     case 'link':
       return (
         <div className="space-y-3">
+          <TitleField
+            value={data.title}
+            onChange={(value) => updateField('title', value)}
+            placeholder={getDefaultTitle(component.component_type)}
+          />
           <div>
             <label className="text-sm font-medium text-foreground mb-1 block">
               Etiqueta del enlace
@@ -646,7 +923,7 @@ function ComponentEditor({
         </div>
       );
   }
-}
+});
 
 interface URLSubmissionFormProps {
   component: StageComponent;

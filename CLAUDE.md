@@ -268,3 +268,37 @@ const handleUpload = async (files: File[]) => {
 - **Migration**: Project-level comments replaced with component-specific discussions
 - **UI**: Compact collapsed state with full expansion for detailed discussions
 - **Access Control**: Same RLS policies apply to component-level comments
+
+## Critical Debugging & Development Patterns
+
+### Dual-View Architecture Debugging
+**IMPORTANT**: FlowSync has TWO separate views with different data sources that must BOTH be considered:
+
+#### Provider View (`/projects/[projectId]`)
+- **Data Source**: `getProviderProject()` in `/lib/queries/provider.ts`
+- **RPC Function**: `provider_project_detail`
+- **Components**: Uses `StageComponentRenderer` and provider-specific components
+
+#### Client View (`/c/[clientId]/projects/[projectId]`)
+- **Data Source**: `getClientProject()` in `/lib/queries/client.ts`
+- **RPC Function**: `client_project_detail`
+- **Components**: Uses `EditableStageComponents` and client-specific components
+
+### Common Debugging Mistake
+When troubleshooting data issues (especially missing fields like `title` in stage_components):
+
+❌ **Wrong Approach**: Only checking one view or assuming both use the same data source
+✅ **Correct Approach**: Always verify BOTH `getProviderProject()` AND `getClientProject()` functions
+
+### RPC Function Issues
+Both RPC functions (`provider_project_detail` and `client_project_detail`) may not include all necessary fields:
+- If RPC returns incomplete data, implement fallback to direct SQL queries
+- Always explicitly specify required fields in `stage_components` selection
+- Test changes in BOTH provider and client views
+
+### Debugging Checklist for Data Issues
+1. **Identify the current view**: Provider (`/projects/`) vs Client (`/c/`)
+2. **Check the correct data source**: `getProviderProject` vs `getClientProject`
+3. **Verify RPC vs direct queries**: RPC may return incomplete data
+4. **Test in both views**: Changes must work for both provider and client interfaces
+5. **Check explicit field selection**: Use `stage_components (id, title, config, ...)` instead of `(*)`

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare,
   Paperclip,
@@ -190,17 +191,31 @@ export function EditableStageCard({
   ).length;
 
   return (
-    <Card ref={cardRef} className={`group transition-all duration-300 hover:shadow-lg ${className}`}>
+    <motion.div
+      ref={cardRef}
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ y: -2 }}
+      className={className}
+    >
+      <Card className="group transition-all duration-300 hover:shadow-lg">
       <CardHeader className="pb-3 relative">
         {/* Gradiente decorativo sutil */}
         <div className={`absolute inset-0 bg-gradient-to-b ${getStageTypeColors(stage.type).gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-xl`}></div>
 
         <div className="relative flex items-center justify-between">
-          <Button
-            variant="ghost"
-            className="h-auto p-0 justify-start gap-3 text-left flex-1 hover:bg-transparent"
-            onClick={() => setIsExpanded(!isExpanded)}
+          <motion.div
+            className="flex-1"
+            whileHover={{ scale: 1.001 }}
+            whileTap={{ scale: 0.998 }}
           >
+            <Button
+              variant="ghost"
+              className="h-auto p-0 justify-start gap-3 text-left flex-1 hover:bg-transparent w-full"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
             <div className="flex items-center gap-3">
               {/* Icono de tipo de etapa */}
               <div className={`flex h-8 w-8 items-center justify-center rounded-xl shadow-sm transition-colors duration-200 ${getStageTypeColors(stage.type).solid}`}>
@@ -232,19 +247,26 @@ export function EditableStageCard({
                 <p className="text-sm text-muted-foreground truncate">{stage.description}</p>
               )}
             </div>
-          </Button>
+            </Button>
+          </motion.div>
 
           <div className="flex items-center gap-2 ml-3">
             {viewMode === 'provider' && (
               <DropdownMenu open={showAddMenu} onOpenChange={setShowAddMenu}>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-11 w-11 sm:h-8 sm:w-8 p-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 hover:bg-brand-100/50 hover:scale-105 touch-manipulation"
+                  <motion.div
+                    whileHover={{ scale: 1.05, rotate: 90 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    <MoreVertical className="h-5 w-5 sm:h-4 sm:w-4" />
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-11 w-11 sm:h-8 sm:w-8 p-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 hover:bg-brand-100/50 touch-manipulation"
+                    >
+                      <MoreVertical className="h-5 w-5 sm:h-4 sm:w-4" />
+                    </Button>
+                  </motion.div>
                 </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 border-border/50 shadow-xl">
                 {/* Cambiar estado de etapa */}
@@ -341,8 +363,16 @@ export function EditableStageCard({
         </div>
       </CardHeader>
 
-      {isExpanded && (
-        <CardContent className="pt-0">
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            style={{ overflow: 'hidden' }}
+          >
+            <CardContent className="pt-0">
             {/* Componentes editables o de solo lectura según el modo */}
             {viewMode === 'client' ? (
               <ClientStageComponents
@@ -367,50 +397,131 @@ export function EditableStageCard({
             )}
 
             {/* Acciones rápidas mejoradas */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-4 pt-4 border-t border-border/30">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onToggleComments?.(stage.id)}
-                className="h-11 sm:h-8 text-xs hover:bg-blue-100/50 hover:text-blue-700 transition-colors duration-200 gap-1.5 justify-start sm:justify-center touch-manipulation"
+            <motion.div
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-4 pt-4 border-t border-border/30"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
+            >
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex-1 sm:flex-none"
               >
-                <MessageSquare className="h-4 w-4 sm:h-3 sm:w-3" />
-                <span>Comentar</span>
-                {totalCommentsCount > 0 && (
-                  <span className="bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center ml-auto sm:ml-0">
-                    {totalCommentsCount}
-                  </span>
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onUploadFiles?.(stage.id)}
-                className="h-11 sm:h-8 text-xs hover:bg-green-100/50 hover:text-green-700 transition-colors duration-200 gap-1.5 justify-start sm:justify-center touch-manipulation"
-              >
-                <Link className="h-4 w-4 sm:h-3 sm:w-3" />
-                <span>Compartir enlace</span>
-                {stageLinksCount > 0 && (
-                  <span className="bg-green-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center ml-auto sm:ml-0">
-                    {stageLinksCount}
-                  </span>
-                )}
-              </Button>
-              <div className="flex-1 hidden sm:block" />
-              {viewMode === 'provider' && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowAddMenu(true)}
-                  className="h-11 sm:h-8 text-xs hover:bg-brand-100/50 hover:text-brand-700 transition-all duration-200 hover:scale-105 justify-start sm:justify-center touch-manipulation"
+                  onClick={() => onToggleComments?.(stage.id)}
+                  className="h-11 sm:h-8 text-xs hover:bg-blue-100/50 hover:text-blue-700 transition-colors duration-200 gap-1.5 justify-start sm:justify-center touch-manipulation w-full sm:w-auto"
                 >
-                  <Plus className="h-4 w-4 sm:h-3 sm:w-3 mr-1.5" />
-                  Agregar
+                  <motion.div
+                    animate={totalCommentsCount > 0 ? {
+                      scale: [1, 1.1, 1],
+                      rotate: [0, 5, -5, 0]
+                    } : {}}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 3
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4 sm:h-3 sm:w-3" />
+                  </motion.div>
+                  <span>Comentar</span>
+                  <AnimatePresence>
+                    {totalCommentsCount > 0 && (
+                      <motion.span
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        className="bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center ml-auto sm:ml-0"
+                      >
+                        {totalCommentsCount}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </Button>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex-1 sm:flex-none"
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onUploadFiles?.(stage.id)}
+                  className="h-11 sm:h-8 text-xs hover:bg-green-100/50 hover:text-green-700 transition-colors duration-200 gap-1.5 justify-start sm:justify-center touch-manipulation w-full sm:w-auto"
+                >
+                  <motion.div
+                    animate={stageLinksCount > 0 ? {
+                      y: [0, -2, 0],
+                      opacity: [1, 0.8, 1]
+                    } : {}}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      repeatDelay: 4
+                    }}
+                  >
+                    <Link className="h-4 w-4 sm:h-3 sm:w-3" />
+                  </motion.div>
+                  <span>Compartir enlace</span>
+                  <AnimatePresence>
+                    {stageLinksCount > 0 && (
+                      <motion.span
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        className="bg-green-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center ml-auto sm:ml-0"
+                      >
+                        {stageLinksCount}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Button>
+              </motion.div>
+
+              <div className="flex-1 hidden sm:block" />
+
+              {viewMode === 'provider' && (
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex-1 sm:flex-none"
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAddMenu(true)}
+                    className="h-11 sm:h-8 text-xs hover:bg-brand-100/50 hover:text-brand-700 transition-all duration-200 justify-start sm:justify-center touch-manipulation w-full sm:w-auto"
+                  >
+                    <motion.div
+                      animate={{
+                        rotate: [0, 180, 360]
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "linear",
+                        repeatDelay: 2
+                      }}
+                    >
+                      <Plus className="h-4 w-4 sm:h-3 sm:w-3 mr-1.5" />
+                    </motion.div>
+                    Agregar
+                  </Button>
+                </motion.div>
               )}
-            </div>
-        </CardContent>
-      )}
-    </Card>
+            </motion.div>
+            </CardContent>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </Card>
+    </motion.div>
   );
 }
