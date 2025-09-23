@@ -7,7 +7,7 @@ import { withAuthRateLimit } from './rate-limit-handler';
 // Cache para evitar múltiples llamadas en la misma request
 let sessionCache: { session: Session | null; timestamp: number } | null = null;
 let userCache: { user: User | null; timestamp: number } | null = null;
-const CACHE_DURATION = 5000; // 5 segundos de cache
+const CACHE_DURATION = 60000; // 60 segundos de cache para mejor persistencia
 
 export async function getUser(): Promise<User | null> {
   // Verificar cache

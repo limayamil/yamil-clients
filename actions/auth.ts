@@ -1,6 +1,6 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { z } from 'zod';
@@ -22,7 +22,7 @@ export async function signInWithPassword(_: unknown, formData: FormData) {
     };
   }
 
-  const { email, password } = parsed.data;
+  const { email, password, rememberMe } = parsed.data;
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -31,10 +31,10 @@ export async function signInWithPassword(_: unknown, formData: FormData) {
 
   if (error) {
     // Manejo específico para rate limiting
-    if (error.status === 429 || error.message.includes('rate limit')) {
+    if (error.status === 429 || error.message.includes('rate limit') || error.message.includes('too many')) {
       return {
         error: {
-          auth: ['Demasiados intentos de login. Por favor espera unos minutos antes de intentar de nuevo.']
+          auth: ['Has alcanzado el límite de intentos de login. Espera 2 minutos antes de volver a intentar.']
         }
       };
     }
@@ -57,10 +57,29 @@ export async function signInWithPassword(_: unknown, formData: FormData) {
   // Limpiar cache de autenticación para evitar problemas de sesión
   clearAllAuthCache();
 
+  // Configurar cookies persistentes si rememberMe está activado
+  if (rememberMe && data.session) {
+    const maxAge = 30 * 24 * 60 * 60; // 30 días en segundos
+    cookieStore.set('sb-access-token', data.session.access_token, {
+      maxAge,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/'
+    });
+    cookieStore.set('sb-refresh-token', data.session.refresh_token, {
+      maxAge,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/'
+    });
+  }
+
   await audit({
     action: 'auth.sign_in',
     actorType: 'system',
-    details: { email }
+    details: { email, rememberMe }
   });
 
   // El user viene en la respuesta del signInWithPassword
@@ -79,9 +98,26 @@ export async function signInWithPassword(_: unknown, formData: FormData) {
   // Pequeña pausa para asegurar que las cookies se configuren
   await new Promise(resolve => setTimeout(resolve, 100));
 
+  // Verificar si hay una URL de redirección
+  const headersList = headers();
+  const referer = headersList.get('referer');
+  const redirectTo = referer ? new URL(referer).searchParams.get('redirectTo') : null;
+
   if (role === 'client' && user?.email) {
     const username = getUsernameFromEmail(user.email);
-    redirect(`/c/${username}/projects`);
+    const clientBasePath = `/c/${username}`;
+
+    // Si hay redirectTo y es válido para el cliente, redirigir ahí
+    if (redirectTo && redirectTo.startsWith(clientBasePath)) {
+      redirect(redirectTo);
+    } else {
+      redirect(`${clientBasePath}/projects`);
+    }
+  }
+
+  // Para providers, verificar redirectTo válido
+  if (redirectTo && (redirectTo.startsWith('/dashboard') || redirectTo.startsWith('/projects'))) {
+    redirect(redirectTo);
   }
 
   redirect('/dashboard');

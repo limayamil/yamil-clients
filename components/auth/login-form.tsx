@@ -7,6 +7,7 @@ import { PasswordSignInInput, passwordSignInSchema } from '@/lib/validators/auth
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { signInWithPassword, sendMagicLink } from '@/actions/auth';
 import { useI18n } from '@/lib/i18n/provider';
 import { toast } from 'sonner';
@@ -23,6 +24,8 @@ export function LoginForm() {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors }
   } = useForm<PasswordSignInInput>({ resolver: zodResolver(passwordSignInSchema) });
 
@@ -34,7 +37,15 @@ export function LoginForm() {
   // Mostrar toast cuando hay errores de autenticación
   useEffect(() => {
     if (state?.error?.auth) {
-      toast.error(state.error.auth[0]);
+      const errorMessage = state.error.auth[0];
+      // Mejores mensajes de error específicos
+      if (errorMessage.includes('rate limit') || errorMessage.includes('intentos')) {
+        toast.error('Demasiados intentos de login. Espera 2 minutos antes de volver a intentar.', {
+          duration: 5000
+        });
+      } else {
+        toast.error(errorMessage, { duration: 4000 });
+      }
     }
   }, [state?.error]);
 
@@ -46,6 +57,7 @@ export function LoginForm() {
       const fd = new FormData();
       fd.append('email', values.email);
       fd.append('password', values.password);
+      fd.append('rememberMe', values.rememberMe ? 'true' : 'false');
       formAction(fd);
     } finally {
       // Reset después de un delay para permitir que la redirección suceda
@@ -89,6 +101,20 @@ export function LoginForm() {
             )}
           </div>
         )}
+        {!isMagicLinkMode && (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={watch('rememberMe') || false}
+              onCheckedChange={(checked) => setValue('rememberMe', checked)}
+            />
+            <label
+              onClick={() => setValue('rememberMe', !watch('rememberMe'))}
+              className="text-sm font-normal cursor-pointer"
+            >
+              Recordar mi sesión por 30 días
+            </label>
+          </div>
+        )}
         {state?.error?.auth && <p className="text-sm text-error">{state.error.auth[0]}</p>}
         <SubmitButton disabled={isMagicLinkMode || isSubmitting} label={t('cta')} />
       </form>
@@ -113,9 +139,18 @@ export function LoginForm() {
 
 function SubmitButton({ disabled, label }: { disabled: boolean; label: string }) {
   const status = useFormStatus();
+  const isLoading = disabled || status.pending;
+
   return (
-    <Button type="submit" className="w-full" disabled={disabled || status.pending}>
-      {status.pending ? '...' : label}
+    <Button type="submit" className="w-full" disabled={isLoading}>
+      {isLoading ? (
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          Iniciando sesión...
+        </div>
+      ) : (
+        label
+      )}
     </Button>
   );
 }

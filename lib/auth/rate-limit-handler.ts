@@ -18,8 +18,8 @@ export function isAuthRateLimitError(error: any): boolean {
  */
 export async function handleAuthRateLimit<T>(
   operation: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000
+  maxRetries: number = 2,
+  baseDelay: number = 2000
 ): Promise<T> {
   let lastError: any;
 
@@ -40,8 +40,8 @@ export async function handleAuthRateLimit<T>(
         break;
       }
 
-      // Exponential backoff con jitter
-      const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1000;
+      // Exponential backoff con jitter más conservador
+      const delay = baseDelay * Math.pow(1.5, attempt) + Math.random() * 500;
       console.warn(`Auth rate limit hit, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
 
       await new Promise(resolve => setTimeout(resolve, delay));
