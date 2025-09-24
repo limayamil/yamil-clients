@@ -28,7 +28,13 @@ interface JWTPayload {
   exp: number;
 }
 
-// Edge Runtime compatible base64 functions using Web APIs
+// Pure JavaScript base64 implementation that works in all environments
+const base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const base64Lookup = new Array(256);
+for (let i = 0; i < base64Chars.length; i++) {
+  base64Lookup[base64Chars.charCodeAt(i)] = i;
+}
+
 function utf8ToBase64(str: string): string {
   try {
     // Use TextEncoder which is standard Web API and works in Edge Runtime
@@ -37,35 +43,75 @@ function utf8ToBase64(str: string): string {
     return btoa(binString);
   } catch (error) {
     console.error('utf8ToBase64 error:', error);
-    // Fallback for development/node environments
-    return typeof btoa !== 'undefined'
-      ? btoa(unescape(encodeURIComponent(str)))
-      : Buffer.from(str, 'utf-8').toString('base64');
+    // Pure JS implementation
+    return customBase64Encode(str);
   }
+}
+
+function customBase64Encode(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let result = '';
+
+  for (let i = 0; i < bytes.length; i += 3) {
+    const byte1 = bytes[i];
+    const byte2 = i + 1 < bytes.length ? bytes[i + 1] : 0;
+    const byte3 = i + 2 < bytes.length ? bytes[i + 2] : 0;
+
+    const bitmap = (byte1 << 16) | (byte2 << 8) | byte3;
+
+    result += base64Chars[(bitmap >> 18) & 63];
+    result += base64Chars[(bitmap >> 12) & 63];
+    result += i + 1 < bytes.length ? base64Chars[(bitmap >> 6) & 63] : '=';
+    result += i + 2 < bytes.length ? base64Chars[bitmap & 63] : '=';
+  }
+
+  return result;
 }
 
 function base64ToUtf8(str: string): string {
   try {
-    // Use atob first, then TextDecoder for proper UTF-8 handling
-    const binString = atob(str);
-    const bytes = new Uint8Array(binString.length);
-    for (let i = 0; i < binString.length; i++) {
-      bytes[i] = binString.charCodeAt(i);
-    }
-    return new TextDecoder().decode(bytes);
-  } catch (error) {
-    console.error('base64ToUtf8 error with input:', str.substring(0, 20) + '...', error);
+    console.log('🔓 Using pure JS base64 decode for:', str.substring(0, 20) + '...');
 
-    // Fallback for development/node environments
-    try {
-      return typeof atob !== 'undefined'
-        ? decodeURIComponent(escape(atob(str)))
-        : Buffer.from(str, 'base64').toString('utf-8');
-    } catch (fallbackError) {
-      console.error('base64ToUtf8 fallback also failed:', fallbackError);
-      const errorMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
-      throw new Error(`Failed to decode base64 string: ${errorMessage}`);
+    // Remove padding
+    const cleanStr = str.replace(/[^A-Za-z0-9+/]/g, '');
+    const bytes = new Uint8Array((cleanStr.length * 3) / 4);
+    let byteIndex = 0;
+
+    for (let i = 0; i < cleanStr.length; i += 4) {
+      const char1 = base64Lookup[cleanStr.charCodeAt(i)] || 0;
+      const char2 = base64Lookup[cleanStr.charCodeAt(i + 1)] || 0;
+      const char3 = base64Lookup[cleanStr.charCodeAt(i + 2)] || 0;
+      const char4 = base64Lookup[cleanStr.charCodeAt(i + 3)] || 0;
+
+      const bitmap = (char1 << 18) | (char2 << 12) | (char3 << 6) | char4;
+
+      if (i + 1 < cleanStr.length) bytes[byteIndex++] = (bitmap >> 16) & 255;
+      if (i + 2 < cleanStr.length) bytes[byteIndex++] = (bitmap >> 8) & 255;
+      if (i + 3 < cleanStr.length) bytes[byteIndex++] = bitmap & 255;
     }
+
+    // Trim the array to actual length
+    const trimmedBytes = bytes.slice(0, byteIndex);
+    const result = new TextDecoder().decode(trimmedBytes);
+
+    console.log('🔓 Pure JS decode successful, length:', result.length);
+    return result;
+
+  } catch (error) {
+    console.error('❌ Pure JS base64 decode failed:', error);
+
+    // Final fallback using Node.js Buffer (development only)
+    if (typeof Buffer !== 'undefined') {
+      try {
+        const result = Buffer.from(str, 'base64').toString('utf-8');
+        console.log('🔄 Node.js Buffer fallback successful');
+        return result;
+      } catch (bufferError) {
+        console.error('❌ Buffer fallback failed:', bufferError);
+      }
+    }
+
+    throw new Error(`All base64 decode methods failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
