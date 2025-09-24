@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server-client';
 import { audit } from '@/lib/observability/audit';
 import { revalidatePath } from 'next/cache';
-import { getUser } from '@/lib/auth/session';
+import { getCurrentUser } from '@/lib/auth/simple-auth';
 import {
   updateProjectBasicInfoSchema,
   updateProjectDatesSchema,
@@ -52,7 +52,7 @@ export async function createProjectFromTemplate(_: unknown, formData: FormData) 
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
   // Authentication check - usar nuestra función optimizada
-  const user = await getUser();
+  const user = await getCurrentUser();
   const userId = user?.id;
   if (!userId) return { error: { auth: ['No user'] } };
 
@@ -84,7 +84,7 @@ export async function updateProjectBasicInfo(formData: FormData) {
   const parsed = updateProjectBasicInfoSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const user = await getUser();
+  const user = await getCurrentUser();
   const userId = user?.id;
   if (!userId) return { error: { auth: ['No user'] } };
 
@@ -115,7 +115,7 @@ export async function updateProjectDates(formData: FormData) {
   const parsed = updateProjectDatesSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const user = await getUser();
+  const user = await getCurrentUser();
   const userId = user?.id;
   if (!userId) return { error: { auth: ['No user'] } };
 
@@ -148,7 +148,7 @@ export async function updateProjectStatus(formData: FormData) {
   const parsed = updateProjectStatusSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const user = await getUser();
+  const user = await getCurrentUser();
   const userId = user?.id;
   if (!userId) return { error: { auth: ['No user'] } };
 
@@ -176,7 +176,7 @@ export async function updateProjectCurrentStage(formData: FormData) {
   const parsed = updateProjectStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const user = await getUser();
+  const user = await getCurrentUser();
   const userId = user?.id;
   if (!userId) return { error: { auth: ['No user'] } };
 

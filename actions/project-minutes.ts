@@ -1,7 +1,7 @@
 'use server';
 
 import { createSupabaseServerClient } from '@/lib/supabase/server-client';
-import { getUser } from '@/lib/auth/session';
+import { getCurrentUser } from '@/lib/auth/simple-auth';
 import { audit } from '@/lib/observability/audit';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -28,7 +28,7 @@ const deleteMinuteSchema = z.object({
 
 export async function addProjectMinute(formData: FormData) {
   try {
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user?.id) {
       return { error: { auth: ['No tienes permisos para realizar esta acción'] } };
     }
@@ -112,7 +112,7 @@ export async function addProjectMinute(formData: FormData) {
 
 export async function updateProjectMinute(formData: FormData) {
   try {
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user?.id) {
       return { error: { auth: ['No tienes permisos para realizar esta acción'] } };
     }
@@ -187,7 +187,7 @@ export async function updateProjectMinute(formData: FormData) {
 
 export async function deleteProjectMinute(formData: FormData) {
   try {
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user?.id) {
       return { error: { auth: ['No tienes permisos para realizar esta acción'] } };
     }
@@ -244,7 +244,7 @@ export async function deleteProjectMinute(formData: FormData) {
 
 export async function getProjectMinute(projectId: string, meetingDate: string) {
   try {
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user?.id) {
       return { error: { auth: ['No tienes permisos para realizar esta acción'] } };
     }

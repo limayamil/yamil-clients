@@ -3,7 +3,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server-client';
 import { audit } from '@/lib/observability/audit';
 import { revalidatePath } from 'next/cache';
-import { getUser } from '@/lib/auth/session';
+import { getCurrentUser } from '@/lib/auth/simple-auth';
 import {
   addProjectMemberSchema,
   removeProjectMemberSchema,
@@ -37,7 +37,7 @@ export async function addProjectMember(formData: FormData) {
   }
 
   // Verificar que el usuario sea un proveedor
-  const user = await getUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     return { error: { auth: ['No autorizado'] } };
   }
@@ -108,7 +108,7 @@ export async function removeProjectMember(formData: FormData) {
   }
 
   // Verificar que el usuario sea un proveedor
-  const user = await getUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     return { error: { auth: ['No autorizado'] } };
   }
@@ -146,7 +146,7 @@ export async function updateProjectMemberRole(formData: FormData) {
   }
 
   // Verificar que el usuario sea un proveedor
-  const user = await getUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     return { error: { auth: ['No autorizado'] } };
   }
@@ -181,7 +181,7 @@ export async function getProjectMembers(projectId: string) {
   const supabase = createSupabaseServerClient();
 
   // Verificar que el usuario tenga acceso
-  const user = await getUser();
+  const user = await getCurrentUser();
   if (!user?.id) {
     return [];
   }

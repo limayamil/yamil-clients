@@ -1,7 +1,7 @@
 'use server';
 
 import { createSupabaseServerClient } from '@/lib/supabase/server-client';
-import { getUser } from '@/lib/auth/session';
+import { getCurrentUser } from '@/lib/auth/simple-auth';
 import {
   requestMaterialsSchema,
   requestApprovalSchema,
@@ -117,7 +117,7 @@ export async function addStageComponent(_: unknown, formData: FormData) {
   const parsed = addStageComponentSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const user = await getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que el usuario tiene acceso al proyecto
@@ -169,7 +169,7 @@ export async function updateStageComponent(_: unknown, formData: FormData) {
   const parsed = updateStageComponentSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const user = await getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que el componente existe y el usuario tiene acceso
@@ -229,7 +229,7 @@ export async function deleteStageComponent(_: unknown, formData: FormData) {
   const parsed = deleteStageComponentSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const user = await getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que el componente existe y el usuario tiene acceso
@@ -282,7 +282,7 @@ export async function updateStage(_: unknown, formData: FormData) {
   const parsed = updateStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const user = await getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que la etapa existe y el usuario tiene acceso
@@ -340,7 +340,7 @@ export async function createStage(_: unknown, formData: FormData) {
   const parsed = createStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const user = await getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar acceso al proyecto
@@ -439,7 +439,7 @@ export async function deleteStage(_: unknown, formData: FormData) {
   const parsed = deleteStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const user = await getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que la etapa existe y obtener información
@@ -510,7 +510,7 @@ export async function reorderStages(_: unknown, formData: FormData) {
   const parsed = reorderStagesSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const user = await getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que todas las etapas pertenecen al proyecto

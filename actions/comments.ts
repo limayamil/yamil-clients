@@ -6,7 +6,7 @@ import { createCommentSchema, updateCommentSchema } from '@/lib/validators/comme
 import { z } from 'zod';
 import { audit } from '@/lib/observability/audit';
 import { rateLimitCurrentUser } from '@/lib/security/rate-limit';
-import { getUser } from '@/lib/auth/session';
+import { getCurrentUser } from '@/lib/auth/simple-auth';
 
 interface CommentActionState {
   error?: string;
@@ -46,7 +46,7 @@ export async function createComment(_: unknown, formData: FormData): Promise<Com
     }
 
     // Authentication check - usar nuestra función optimizada
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user) {
       return {
         error: 'Debes estar autenticado para comentar',
@@ -55,7 +55,7 @@ export async function createComment(_: unknown, formData: FormData): Promise<Com
     }
 
     // Authorization check for project access
-    const userRole = user.user_metadata?.role as 'provider' | 'client';
+    const userRole = user.role as 'provider' | 'client';
     if (!userRole) {
       return {
         error: 'Rol de usuario no válido',
@@ -175,7 +175,7 @@ export async function deleteComment(_: unknown, formData: FormData): Promise<Com
     }
 
     // Authentication check
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user) {
       return {
         error: 'Debes estar autenticado para eliminar comentarios',
@@ -183,7 +183,7 @@ export async function deleteComment(_: unknown, formData: FormData): Promise<Com
       };
     }
 
-    const userRole = user.user_metadata?.role as 'provider' | 'client';
+    const userRole = user.role as 'provider' | 'client';
     if (!userRole) {
       return {
         error: 'Rol de usuario no válido',
@@ -319,7 +319,7 @@ export async function updateComment(_: unknown, formData: FormData): Promise<Com
     }
 
     // Authentication check
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user) {
       return {
         error: 'Debes estar autenticado para editar comentarios',
@@ -327,7 +327,7 @@ export async function updateComment(_: unknown, formData: FormData): Promise<Com
       };
     }
 
-    const userRole = user.user_metadata?.role as 'provider' | 'client';
+    const userRole = user.role as 'provider' | 'client';
     if (!userRole) {
       return {
         error: 'Rol de usuario no válido',

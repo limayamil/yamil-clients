@@ -1,7 +1,7 @@
 'use server';
 
 import { createSupabaseServerClient } from '@/lib/supabase/server-client';
-import { getUser } from '@/lib/auth/session';
+import { getCurrentUser } from '@/lib/auth/simple-auth';
 import { audit } from '@/lib/observability/audit';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -26,7 +26,7 @@ const deleteLinkSchema = z.object({
 
 export async function addProjectLink(formData: FormData) {
   try {
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user?.id) {
       return { error: { auth: ['No tienes permisos para realizar esta acción'] } };
     }
@@ -91,7 +91,7 @@ export async function addProjectLink(formData: FormData) {
 
 export async function updateProjectLink(formData: FormData) {
   try {
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user?.id) {
       return { error: { auth: ['No tienes permisos para realizar esta acción'] } };
     }
@@ -143,7 +143,7 @@ export async function updateProjectLink(formData: FormData) {
 
 export async function deleteProjectLink(formData: FormData) {
   try {
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user?.id) {
       return { error: { auth: ['No tienes permisos para realizar esta acción'] } };
     }

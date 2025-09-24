@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase/server-client';
 import { rateLimitCurrentUser } from '@/lib/security/rate-limit';
 import { audit } from '@/lib/observability/audit';
-import { getUser } from '@/lib/auth/session';
+import { getCurrentUser } from '@/lib/auth/simple-auth';
 
 // File upload validation schema
 const fileUploadSchema = z.object({
@@ -113,7 +113,7 @@ export async function uploadFileRecord(_: unknown, formData: FormData) {
     }
 
     // Authentication check - usar nuestra función optimizada
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user) {
       return {
         error: 'Debes estar autenticado para subir archivos',
@@ -123,7 +123,7 @@ export async function uploadFileRecord(_: unknown, formData: FormData) {
 
     // user is already available from getUser() call above
 
-    const userRole = user.user_metadata?.role as 'provider' | 'client';
+    const userRole = user.role as 'provider' | 'client';
     if (!userRole) {
       return {
         error: 'Rol de usuario no válido',
@@ -250,7 +250,7 @@ export async function deleteFile(_: unknown, formData: FormData) {
     }
 
     // Authentication check - usar nuestra función optimizada
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user) {
       return {
         error: 'Debes estar autenticado para eliminar archivos',
@@ -260,7 +260,7 @@ export async function deleteFile(_: unknown, formData: FormData) {
 
     // user is already available from getUser() call above
 
-    const userRole = user.user_metadata?.role as 'provider' | 'client';
+    const userRole = user.role as 'provider' | 'client';
     if (!userRole) {
       return {
         error: 'Rol de usuario no válido',
@@ -404,7 +404,7 @@ export async function addStageLink(_: unknown, formData: FormData) {
     }
 
     // Authentication check
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user) {
       return {
         error: 'Debes estar autenticado para agregar enlaces',
@@ -412,7 +412,7 @@ export async function addStageLink(_: unknown, formData: FormData) {
       };
     }
 
-    const userRole = user.user_metadata?.role as 'provider' | 'client';
+    const userRole = user.role as 'provider' | 'client';
     if (!userRole) {
       return {
         error: 'Rol de usuario no válido',
