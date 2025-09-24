@@ -150,10 +150,102 @@ The application follows a custom design system documented in `design.md`:
 
 ## Authentication System & Session Management
 
-### Login & Session Persistence
-The authentication system has been optimized for better UX and reliability:
+### Simple JWT Authentication System (Sept 2025)
+The authentication system was completely replaced with a custom JWT-based system for better production reliability and Edge Runtime compatibility:
 
-#### Key Improvements (Sept 2025)
+#### Key Features
+- **Email-only Login**: Simplified authentication without passwords - users enter email and get authenticated directly
+- **Custom JWT Implementation**: Pure JavaScript base64 encoding/decoding for Netlify Edge Runtime compatibility
+- **Simple Users Table**: New `simple_users` table separate from Supabase Auth for better control
+- **UUID Preservation**: Migrated existing user UUIDs to maintain data continuity
+- **Production-ready**: Comprehensive error handling, logging, and fallback mechanisms
+
+#### Edge Runtime Compatibility Solutions
+**CRITICAL**: Netlify Edge Runtime doesn't support `atob()` function, causing `InvalidCharacterError`:
+
+```typescript
+// ❌ Problematic - fails in Netlify Edge Runtime
+const decoded = atob(base64String);
+
+// ✅ Solution - Pure JavaScript implementation
+const base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const base64Lookup = new Array(256);
+for (let i = 0; i < base64Chars.length; i++) {
+  base64Lookup[base64Chars.charCodeAt(i)] = i;
+}
+
+function base64ToUtf8(str: string): string {
+  const cleanStr = str.replace(/[^A-Za-z0-9+/]/g, '');
+  const bytes = new Uint8Array((cleanStr.length * 3) / 4);
+  let byteIndex = 0;
+
+  for (let i = 0; i < cleanStr.length; i += 4) {
+    const char1 = base64Lookup[cleanStr.charCodeAt(i)] || 0;
+    const char2 = base64Lookup[cleanStr.charCodeAt(i + 1)] || 0;
+    const char3 = base64Lookup[cleanStr.charCodeAt(i + 2)] || 0;
+    const char4 = base64Lookup[cleanStr.charCodeAt(i + 3)] || 0;
+
+    const bitmap = (char1 << 18) | (char2 << 12) | (char3 << 6) | char4;
+
+    if (i + 1 < cleanStr.length) bytes[byteIndex++] = (bitmap >> 16) & 255;
+    if (i + 2 < cleanStr.length) bytes[byteIndex++] = (bitmap >> 8) & 255;
+    if (i + 3 < cleanStr.length) bytes[byteIndex++] = bitmap & 255;
+  }
+
+  return new TextDecoder().decode(bytes.slice(0, byteIndex));
+}
+```
+
+#### JWT Token Structure
+```typescript
+// Custom JWT implementation with Edge-compatible encoding
+const header = { alg: 'simple', typ: 'JWT' };
+const payload = {
+  userId: string,
+  email: string,
+  role: 'provider' | 'client',
+  iat: number,
+  exp: number  // 30 days expiration
+};
+const signature = base64(JWT_SECRET + encodedHeader + encodedPayload).substring(0, 32);
+const token = `${encodedHeader}.${encodedPayload}.${signature}`;
+```
+
+#### Production Authentication Issues & Solutions
+**Common Issue**: Provider authentication fails while client works in production:
+
+1. **Base64 Decoding Failures**: Use pure JavaScript implementation, never rely on `atob()`
+2. **JWT Verification Errors**: Implement comprehensive error handling with fallbacks
+3. **Cookie Parsing Issues**: Handle malformed cookies gracefully
+4. **Character Encoding**: Use TextEncoder/TextDecoder for proper UTF-8 handling
+
+#### Migration from Supabase Auth
+```sql
+-- Create simple_users table
+CREATE TABLE simple_users (
+  id uuid PRIMARY KEY,
+  email text UNIQUE NOT NULL,
+  role text NOT NULL CHECK (role IN ('provider', 'client')),
+  name text,
+  active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Migrate existing UUIDs to preserve data relationships
+UPDATE simple_users SET id = '26258cab-520f-499e-84c3-33dc04419e02'
+WHERE email = 'yamillues@gmail.com';
+```
+
+#### Key Implementation Files
+- **`/lib/auth/simple-auth.ts`**: Core JWT authentication system with Edge Runtime compatibility
+- **`/middleware.ts`**: Route protection using custom JWT verification
+- **`/supabase/migrations/0015_simple_auth_system.sql`**: Database schema for new auth system
+- **`/supabase/migrations/0016_migrate_existing_uuids.sql`**: UUID migration for data continuity
+
+### Legacy Session Management (Pre-Sept 2025)
+The previous authentication system used Supabase Auth with the following features:
+
+#### Key Improvements (Early Sept 2025)
 - **Persistent Sessions**: "Remember Me" checkbox enables 30-day session persistence
 - **Rate Limiting**: Intelligent backoff with 2-second base delay and reduced retry attempts
 - **Session Cache**: Extended from 5 to 60 seconds for better stability
@@ -373,3 +465,55 @@ Both RPC functions (`provider_project_detail` and `client_project_detail`) may n
 3. **Verify RPC vs direct queries**: RPC may return incomplete data
 4. **Test in both views**: Changes must work for both provider and client interfaces
 5. **Check explicit field selection**: Use `stage_components (id, title, config, ...)` instead of `(*)`
+
+### Stage Components Debugging Pattern
+**CRITICAL**: Stage components have complex data mapping that can fail at multiple points:
+
+#### Data Flow for Stage Components
+1. **Database**: `stage_components` table contains the actual component data
+2. **RPC Functions**: `provider_project_detail` and `client_project_detail` aggregate components into `stages.components`
+3. **Query Mapping**: Both query functions map `stage.stage_components` → `stage.components`
+4. **Component Rendering**: `StageComponentRenderer` and `EditableStageComponents` expect `stage.components[]`
+
+#### Common Stage Component Issues
+**Problem**: "Components not showing in provider/client view"
+
+**Debugging Steps**:
+1. **Verify RPC Output**: Check if RPC returns `stage_components` correctly nested in stages
+2. **Check Data Mapping**: Ensure `stage.stage_components` is properly mapped to `stage.components`
+3. **Validate Component Structure**: Components need `id`, `component_type`, `title`, `config` fields
+4. **Test Fallback Queries**: If RPC fails, direct queries should provide same data structure
+5. **Console Log Data**: Add temporary logging to trace data transformation
+
+#### Expected Data Structure
+```typescript
+// Expected structure after query transformation
+stage: {
+  id: string,
+  title: string,
+  components: [  // ← Must be named 'components', not 'stage_components'
+    {
+      id: string,
+      component_type: 'upload_request' | 'checklist' | 'approval' | 'text_block' | etc.,
+      title: string,
+      config: Record<string, any>,
+      status: string,
+      metadata: Record<string, any>
+    }
+  ]
+}
+```
+
+#### Component Rendering Validation
+```typescript
+// Both renderers check for empty components
+if (!stage.components || stage.components.length === 0) {
+  return <p>No components configured.</p>;
+}
+
+// Ensure components are properly mapped during query transformation
+const transformedStages = rawStages.map((stage: any) => ({
+  ...stage,
+  components: stage.stage_components || []  // ← Critical mapping
+}));
+```

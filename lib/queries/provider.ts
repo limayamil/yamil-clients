@@ -29,6 +29,19 @@ export async function getProviderProject(projectId: string) {
   if (!error && data) {
     const parsed = data as Record<string, any>;
 
+    console.log('🔍 [Provider] RPC data for project', projectId, ':', {
+      hasStages: Array.isArray(parsed.stages),
+      stagesCount: Array.isArray(parsed.stages) ? parsed.stages.length : 0,
+      stageComponentsCheck: Array.isArray(parsed.stages) ? parsed.stages.map((s: any) => ({
+        stageId: s.id,
+        stageTitle: s.title,
+        hasComponents: !!s.components,
+        hasStageComponents: !!s.stage_components,
+        componentsCount: Array.isArray(s.components) ? s.components.length : 0,
+        stageComponentsCount: Array.isArray(s.stage_components) ? s.stage_components.length : 0
+      })) : []
+    });
+
     // Obtener links, minutas y miembros del proyecto
     const [linksResult, minutesResult, projectMembersResult] = await Promise.all([
       supabase.from('project_links').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
@@ -36,12 +49,19 @@ export async function getProviderProject(projectId: string) {
       supabase.from('project_members').select('*').eq('project_id', projectId).order('created_at', { ascending: true })
     ]);
 
+    // RPC already returns stages with components in correct format - no transformation needed
+    const stages = Array.isArray(parsed.stages) ? parsed.stages : [];
+
+    console.log('🎭 [Provider] RPC returned stages:', stages.map((s: any) => ({
+      stageId: s.id,
+      stageTitle: s.title,
+      componentsCount: s.components?.length || 0,
+      components: s.components?.map((c: any) => ({ id: c.id, type: c.component_type, title: c.title })) || []
+    })));
+
     return {
       ...parsed,
-      stages: Array.isArray(parsed.stages) ? parsed.stages.map((stage: any) => ({
-        ...stage,
-        components: stage.stage_components || []
-      })) : [],
+      stages: stages,
       members: Array.isArray(parsed.members) ? parsed.members : [],
       files: Array.isArray(parsed.files) ? parsed.files : [],
       comments: Array.isArray(parsed.comments) ? parsed.comments : [],

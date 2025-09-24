@@ -87,21 +87,38 @@ export async function getClientProject(projectId: string, clientEmail: string) {
     if (!rpcError && rpcData) {
       const parsed = rpcData as Record<string, any>;
 
+      console.log('🔍 [Client] RPC data for project', projectId, ':', {
+        hasStages: Array.isArray(parsed.stages),
+        stagesCount: Array.isArray(parsed.stages) ? parsed.stages.length : 0,
+        stageComponentsCheck: Array.isArray(parsed.stages) ? parsed.stages.map((s: any) => ({
+          stageId: s.id,
+          stageTitle: s.title,
+          hasComponents: !!s.components,
+          hasStageComponents: !!s.stage_components,
+          componentsCount: Array.isArray(s.components) ? s.components.length : 0,
+          stageComponentsCount: Array.isArray(s.stage_components) ? s.stage_components.length : 0
+        })) : []
+      });
+
       // Obtener links y minutas del proyecto
       const [linksResult, minutesResult] = await Promise.all([
         supabase.from('project_links').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
         supabase.from('project_minutes').select('*').eq('project_id', projectId).order('meeting_date', { ascending: false })
       ]);
 
-      // Transform stages to ensure components field exists
-      const transformedStages = Array.isArray(parsed.stages) ? parsed.stages.map((stage: any) => ({
-        ...stage,
-        components: stage.components || []
-      })) : [];
+      // RPC already returns stages with components in correct format - no transformation needed
+      const stages = Array.isArray(parsed.stages) ? parsed.stages : [];
+
+      console.log('🎭 [Client] RPC returned stages:', stages.map((s: any) => ({
+        stageId: s.id,
+        stageTitle: s.title,
+        componentsCount: s.components?.length || 0,
+        components: s.components?.map((c: any) => ({ id: c.id, type: c.component_type, title: c.title })) || []
+      })));
 
       return {
         ...parsed,
-        stages: transformedStages,
+        stages: stages,
         members: Array.isArray(parsed.members) ? parsed.members : [],
         files: Array.isArray(parsed.files) ? parsed.files : [],
         comments: Array.isArray(parsed.comments) ? parsed.comments : [],

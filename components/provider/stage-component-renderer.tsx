@@ -16,7 +16,15 @@ interface StageComponentRendererProps {
 }
 
 export function StageComponentRenderer({ stage, projectId, comments, currentUser }: StageComponentRendererProps) {
+  console.log('🎭 [Provider] StageComponentRenderer for stage', stage.id, ':', {
+    stageTitle: stage.title,
+    hasComponents: !!stage.components,
+    componentsLength: stage.components?.length || 0,
+    components: stage.components?.map(c => ({ id: c.id, type: c.component_type, title: c.title })) || []
+  });
+
   if (!stage.components || stage.components.length === 0) {
+    console.log('🎭 [Provider] No components found for stage', stage.id);
     return <p className="text-sm text-muted-foreground">No components configured.</p>;
   }
 
