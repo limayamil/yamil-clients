@@ -3,9 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import type { ProjectSummary } from '@/types/project';
 import type { Database } from '@/types/database';
 
-export async function getProviderDashboardProjects(userId: string) {
+export async function getProviderDashboardProjects() {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await (supabase as any).rpc('provider_dashboard_projects', { provider_id: userId });
+  const { data, error } = await (supabase as any).rpc('provider_dashboard_projects');
   if (error) {
     console.error('provider_dashboard_projects', error);
     return [] satisfies ProjectSummary[];

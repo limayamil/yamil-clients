@@ -20,7 +20,7 @@ export default async function DashboardPage() {
     console.log('📡 Dashboard: Starting data queries...');
 
     const [projects, clients, templates] = await Promise.all([
-      getProviderDashboardProjects(user.id).catch(err => {
+      getProviderDashboardProjects().catch(err => {
         console.error('❌ getProviderDashboardProjects failed:', err);
         return [];
       }),
