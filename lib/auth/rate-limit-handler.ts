@@ -21,6 +21,11 @@ export async function handleAuthRateLimit<T>(
   maxRetries: number = 2,
   baseDelay: number = 2000
 ): Promise<T> {
+  // In development, use more lenient settings
+  if (process.env.NODE_ENV === 'development') {
+    maxRetries = Math.min(maxRetries, 1); // Reduce retries in dev
+    baseDelay = Math.max(baseDelay * 0.5, 500); // Reduce delay in dev
+  }
   let lastError: any;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {

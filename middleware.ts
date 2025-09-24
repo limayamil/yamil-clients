@@ -2,6 +2,7 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import type { Database } from '@/types/database';
+import type { User } from '@supabase/supabase-js';
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
@@ -14,24 +15,42 @@ export async function middleware(req: NextRequest) {
   }
 
   try {
-    const supabase = createMiddlewareClient<Database>({ req, res });
+    let user: User | null = null;
 
-    // Refresh session to maintain auth state
-    const { data: { session }, error } = await supabase.auth.getSession();
+    // Check if mock authentication is enabled in development
+    const isMockAuthEnabled = process.env.NODE_ENV === 'development' && process.env.MOCK_AUTH === 'true';
 
-    // If no session and trying to access protected routes, redirect to login
-    if (!session && !error && isProtectedRoute(req.nextUrl.pathname)) {
+    if (isMockAuthEnabled) {
+      // Get mock user from cookies
+      const userCookie = req.cookies.get('sb-user');
+      if (userCookie?.value) {
+        try {
+          user = JSON.parse(userCookie.value) as User;
+        } catch (error) {
+          console.warn('Failed to parse mock user cookie in middleware:', error);
+        }
+      }
+    } else {
+      // Use regular Supabase auth
+      const supabase = createMiddlewareClient<Database>({ req, res });
+      const { data: { session }, error } = await supabase.auth.getSession();
+      user = session?.user || null;
+    }
+
+    // If no user and trying to access protected routes, redirect to login
+    if (!user && isProtectedRoute(req.nextUrl.pathname)) {
       const redirectUrl = new URL('/login', req.url);
       // Add return URL for redirect after login
       redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
       return NextResponse.redirect(redirectUrl);
     }
 
-    // If has session but accessing login page, redirect to appropriate dashboard
-    if (session?.user && req.nextUrl.pathname === '/login') {
-      const role = session.user.user_metadata?.role as 'provider' | 'client' | undefined;
-      if (role === 'client' && session.user.email) {
-        const username = session.user.email.split('@')[0];
+    // If has user but accessing login page, redirect to appropriate dashboard
+    // EXCEPT when in mock auth mode - let client-side navigation handle it
+    if (user && req.nextUrl.pathname === '/login' && !isMockAuthEnabled) {
+      const role = user.user_metadata?.role as 'provider' | 'client' | undefined;
+      if (role === 'client' && user.email) {
+        const username = user.email.split('@')[0];
         return NextResponse.redirect(new URL(`/c/${username}/projects`, req.url));
       } else if (role === 'provider') {
         return NextResponse.redirect(new URL('/dashboard', req.url));

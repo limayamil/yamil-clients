@@ -3,6 +3,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Session, User } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 import { withAuthRateLimit } from './rate-limit-handler';
+import { isMockAuthEnabled, getMockUserFromCookies, createMockSession } from './mock-auth';
 
 // Cache para evitar múltiples llamadas en la misma request
 let sessionCache: { session: Session | null; timestamp: number } | null = null;
@@ -10,6 +11,15 @@ let userCache: { user: User | null; timestamp: number } | null = null;
 const CACHE_DURATION = 60000; // 60 segundos de cache para mejor persistencia
 
 export async function getUser(): Promise<User | null> {
+  // Check for mock authentication first
+  if (isMockAuthEnabled()) {
+    const mockUser = getMockUserFromCookies();
+    if (mockUser) {
+      userCache = { user: mockUser, timestamp: Date.now() };
+      return mockUser;
+    }
+  }
+
   // Verificar cache
   if (userCache && (Date.now() - userCache.timestamp) < CACHE_DURATION) {
     return userCache.user;
@@ -48,6 +58,16 @@ export async function getUser(): Promise<User | null> {
 }
 
 export async function getSession(): Promise<Session | null> {
+  // Check for mock authentication first
+  if (isMockAuthEnabled()) {
+    const mockUser = getMockUserFromCookies();
+    if (mockUser) {
+      const mockSession = createMockSession(mockUser);
+      sessionCache = { session: mockSession, timestamp: Date.now() };
+      return mockSession;
+    }
+  }
+
   // Verificar cache
   if (sessionCache && (Date.now() - sessionCache.timestamp) < CACHE_DURATION) {
     return sessionCache.session;

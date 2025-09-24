@@ -78,15 +78,13 @@ export async function getClientProject(projectId: string, clientEmail: string) {
   const supabase = createSupabaseServerClient();
 
   try {
-    // TEMPORALMENTE DESHABILITADA: La RPC no incluye el campo 'title' en stage_components
-    /*
+    // Try the RPC function first (now fixed to include title field)
     const { data: rpcData, error: rpcError } = await supabase.rpc('client_project_detail', {
       project_id_input: projectId,
       client_email: clientEmail
     });
 
     if (!rpcError && rpcData) {
-
       const parsed = rpcData as Record<string, any>;
 
       // Obtener links y minutas del proyecto
@@ -95,19 +93,28 @@ export async function getClientProject(projectId: string, clientEmail: string) {
         supabase.from('project_minutes').select('*').eq('project_id', projectId).order('meeting_date', { ascending: false })
       ]);
 
+      // Transform stages to ensure components field exists
+      const transformedStages = Array.isArray(parsed.stages) ? parsed.stages.map((stage: any) => ({
+        ...stage,
+        components: stage.components || []
+      })) : [];
+
       return {
         ...parsed,
-        stages: Array.isArray(parsed.stages) ? parsed.stages : [],
+        stages: transformedStages,
         members: Array.isArray(parsed.members) ? parsed.members : [],
         files: Array.isArray(parsed.files) ? parsed.files : [],
         comments: Array.isArray(parsed.comments) ? parsed.comments : [],
         approvals: Array.isArray(parsed.approvals) ? parsed.approvals : [],
         activity: Array.isArray(parsed.activity) ? parsed.activity : [],
         links: linksResult.data ?? [],
-        minutes: minutesResult.data ?? []
+        minutes: minutesResult.data ?? [],
+        progress: Number(parsed.progress ?? 0),
+        client_name: parsed.client_name || clientEmail,
+        overdue: false, // Placeholder
+        waiting_on_client: false // Placeholder
       } as ProjectSummary;
     }
-    */
 
     // Crear cliente con service role para bypasear RLS
     const serviceSupabase = createClient<Database>(
