@@ -70,7 +70,7 @@ export function LoginForm() {
       toast.success('¡Login exitoso! Redirigiendo...', { duration: 2000 });
       // Pequeña pausa para que se vean las cookies y luego redirect
       setTimeout(() => {
-        router.push(devState.redirectTo!);
+        router.push(devState.redirectTo! as any);
       }, 500);
       return;
     }
