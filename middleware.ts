@@ -32,7 +32,13 @@ export async function middleware(req: NextRequest) {
 
     // If has user but accessing login page, redirect to appropriate dashboard
     if (user && req.nextUrl.pathname === '/login') {
-      console.log('✅ User found, redirecting from login page');
+      console.log('✅ User found, redirecting from login page:', {
+        userEmail: user.email,
+        userRole: user.role,
+        isProvider: user.role === 'provider',
+        isClient: user.role === 'client'
+      });
+
       if (user.role === 'client') {
         const username = user.email.split('@')[0];
         const clientUrl = `/c/${username}/projects`;
@@ -40,8 +46,21 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(new URL(clientUrl, req.url));
       } else if (user.role === 'provider') {
         console.log('🎯 Provider redirect to: /dashboard');
-        return NextResponse.redirect(new URL('/dashboard', req.url));
+        const dashboardUrl = new URL('/dashboard', req.url);
+        console.log('🔗 Full redirect URL:', dashboardUrl.toString());
+        return NextResponse.redirect(dashboardUrl);
+      } else {
+        console.log('⚠️ Unknown user role:', user.role);
       }
+    }
+
+    // Log when accessing protected routes
+    if (user && (req.nextUrl.pathname === '/dashboard' || req.nextUrl.pathname.startsWith('/c/'))) {
+      console.log('🔐 Accessing protected route:', {
+        path: req.nextUrl.pathname,
+        userRole: user.role,
+        userEmail: user.email
+      });
     }
 
   } catch (error) {

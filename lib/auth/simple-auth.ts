@@ -160,6 +160,14 @@ export async function getCurrentUser(): Promise<SimpleUser | null> {
 export async function signInByEmail(email: string): Promise<{ success: boolean; redirectTo?: string; error?: string }> {
   try {
     console.log('🔍 signInByEmail: Starting for email:', email);
+    console.log('🌍 Environment check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 20) + '...',
+    });
+
     const cookieStore = cookies();
     const supabase = createSupabaseServerClient();
 
@@ -172,7 +180,12 @@ export async function signInByEmail(email: string): Promise<{ success: boolean; 
       .eq('active', true)
       .single();
 
-    console.log('📊 Database query result:', { user, error });
+    console.log('📊 Database query result:', {
+      hasUser: !!user,
+      userRole: user?.role,
+      userEmail: user?.email,
+      error: error?.message || 'none'
+    });
 
     if (error || !user) {
       console.log('❌ User not found or error occurred');
@@ -183,25 +196,46 @@ export async function signInByEmail(email: string): Promise<{ success: boolean; 
     }
 
     // Create JWT token
+    console.log('🎫 Creating JWT token for user:', {
+      userId: user.id,
+      userRole: user.role,
+      isProvider: user.role === 'provider'
+    });
+
     const token = createSimpleToken({
       userId: user.id,
       email: user.email,
       role: user.role as 'provider' | 'client'
     });
 
+    console.log('🎫 JWT token created:', {
+      tokenLength: token.length,
+      tokenPreview: token.substring(0, 50) + '...'
+    });
+
     // Set HTTP-only cookie
-    cookieStore.set('user_session', token, {
+    const cookieConfig = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       maxAge: 30 * 24 * 60 * 60, // 30 days
       path: '/'
-    });
+    };
+
+    console.log('🍪 Setting cookie with config:', cookieConfig);
+
+    cookieStore.set('user_session', token, cookieConfig);
 
     // Determine redirect based on role
     const redirectTo = user.role === 'provider'
       ? '/dashboard'
       : `/c/${user.email.split('@')[0]}/projects`;
+
+    console.log('🎯 Redirect determined:', {
+      userRole: user.role,
+      redirectTo,
+      isProvider: user.role === 'provider'
+    });
 
     return {
       success: true,
