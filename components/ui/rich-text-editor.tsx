@@ -201,7 +201,7 @@ export function RichTextEditor({
             <UnderlineIcon className="h-3 w-3" />
           </Button>
 
-          {mode !== 'inline' && (
+          {(mode === 'full' || mode === 'simple') && (
             <>
               <div className="w-px h-4 bg-border mx-1" />
 
