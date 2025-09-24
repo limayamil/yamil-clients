@@ -10,6 +10,8 @@ import type { ProjectMinuteEntry } from '@/types/project';
 import { Calendar, Plus, Edit, Trash2, FileText, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { RichTextViewer } from '@/components/ui/rich-text-viewer';
 
 interface ProjectMinutesPanelProps {
   minutes: ProjectMinuteEntry[];
@@ -139,38 +141,11 @@ export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: Pro
     }
   };
 
-  // Renderizar contenido markdown simplificado
-  const renderMarkdown = (content: string) => {
-    if (!content.trim()) return <p className="text-gray-500 italic">Sin contenido</p>;
-
-    return (
-      <div className="prose prose-sm max-w-none">
-        {content.split('\n').map((line, index) => {
-          if (line.startsWith('# ')) {
-            return <h1 key={index} className="text-lg font-bold mb-2">{line.slice(2)}</h1>;
-          }
-          if (line.startsWith('## ')) {
-            return <h2 key={index} className="text-base font-semibold mb-2">{line.slice(3)}</h2>;
-          }
-          if (line.startsWith('### ')) {
-            return <h3 key={index} className="text-sm font-medium mb-1">{line.slice(4)}</h3>;
-          }
-          if (line.startsWith('- ')) {
-            return <li key={index} className="text-sm mb-1">{line.slice(2)}</li>;
-          }
-          if (line.trim() === '') {
-            return <br key={index} />;
-          }
-          return <p key={index} className="text-sm mb-2">{line}</p>;
-        })}
-      </div>
-    );
-  };
 
   return (
     <>
       <Card className="relative overflow-hidden border-border/50 shadow-lg bg-gradient-to-br from-white to-purple-50/30">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-purple-100/20 to-transparent blur-2xl"></div>
+        <div className="absolute top-0 right-0 w-16 h-16 sm:w-32 sm:h-32 bg-gradient-radial from-purple-100/20 to-transparent blur-2xl"></div>
 
         <CardHeader className="relative">
           <div className="flex items-center justify-between">
@@ -231,15 +206,10 @@ export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: Pro
                         </div>
                         <div className="text-xs text-gray-600 line-clamp-3">
                           {minute.content_markdown.trim() ? (
-                            <div className="prose prose-xs max-w-none">
-                              {minute.content_markdown.split('\n').slice(0, 3).map((line, i) => (
-                                <span key={i}>
-                                  {line.replace(/^#+\s*/, '').replace(/^-\s*/, '• ')}
-                                  {i < 2 && <br />}
-                                </span>
-                              ))}
-                              {minute.content_markdown.split('\n').length > 3 && '...'}
-                            </div>
+                            <RichTextViewer
+                              content={minute.content_markdown}
+                              className="prose-xs text-xs line-clamp-3"
+                            />
                           ) : (
                             <span className="italic text-gray-400">Sin contenido</span>
                           )}
@@ -350,41 +320,35 @@ export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: Pro
               <label className="block text-sm font-medium mb-2">
                 Contenido de la minuta
                 {dialogState.mode !== 'view' && (
-                  <span className="text-xs text-gray-500 ml-2">(Markdown soportado)</span>
+                  <span className="text-xs text-gray-500 ml-2">(Texto enriquecido)</span>
                 )}
               </label>
 
               {dialogState.mode === 'view' ? (
                 <div className="min-h-[300px] p-4 border border-gray-200 rounded-lg bg-gray-50">
-                  {renderMarkdown(dialogState.content)}
+                  <RichTextViewer
+                    content={dialogState.content}
+                    fallback="<p class='text-gray-500 italic'>Sin contenido</p>"
+                  />
                 </div>
               ) : (
-                <textarea
+                <RichTextEditor
                   value={dialogState.content}
-                  onChange={(e) => setDialogState(prev => ({ ...prev, content: e.target.value }))}
+                  onChange={(content) => setDialogState(prev => ({ ...prev, content }))}
                   placeholder="Escribe el contenido de la minuta aquí...
 
-Puedes usar markdown:
-# Título principal
-## Subtítulo
-- Punto importante
-- Otro punto"
+Puedes usar el formateo enriquecido:
+• Texto en negrita, cursiva
+• Listas numeradas y con viñetas
+• Enlaces y más"
                   disabled={isLoadingMinute}
-                  className="w-full min-h-[300px] px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono"
                   maxLength={50000}
+                  mode="full"
+                  className="min-h-[300px]"
                 />
               )}
             </div>
 
-            {/* Preview en modo edición */}
-            {(dialogState.mode === 'create' || dialogState.mode === 'edit') && dialogState.content.trim() && (
-              <div>
-                <label className="block text-sm font-medium mb-2">Vista previa</label>
-                <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 max-h-40 overflow-y-auto">
-                  {renderMarkdown(dialogState.content)}
-                </div>
-              </div>
-            )}
 
             {/* Botones de acción */}
             <div className="flex items-center justify-between pt-4 border-t">

@@ -201,7 +201,7 @@ export function RichTextEditor({
             <UnderlineIcon className="h-3 w-3" />
           </Button>
 
-          {mode !== 'simple' && (
+          {mode !== 'inline' && (
             <>
               <div className="w-px h-4 bg-border mx-1" />
 
@@ -226,23 +226,23 @@ export function RichTextEditor({
               >
                 <ListOrdered className="h-3 w-3" />
               </Button>
+            </>
+          )}
 
-              {mode === 'full' && (
-                <>
-                  <div className="w-px h-4 bg-border mx-1" />
+          {mode === 'full' && (
+            <>
+              <div className="w-px h-4 bg-border mx-1" />
 
-                  <Button
-                    type="button"
-                    variant={editor.isActive('link') ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={setLink}
-                    disabled={disabled}
-                    className="h-8 w-8 p-0"
-                  >
-                    <LinkIcon className="h-3 w-3" />
-                  </Button>
-                </>
-              )}
+              <Button
+                type="button"
+                variant={editor.isActive('link') ? 'default' : 'ghost'}
+                size="sm"
+                onClick={setLink}
+                disabled={disabled}
+                className="h-8 w-8 p-0"
+              >
+                <LinkIcon className="h-3 w-3" />
+              </Button>
             </>
           )}
 

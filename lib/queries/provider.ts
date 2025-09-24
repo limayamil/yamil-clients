@@ -24,42 +24,43 @@ export async function getProviderDashboardProjects(userId: string) {
 export async function getProviderProject(projectId: string) {
   const supabase = createSupabaseServerClient();
 
-  // TEMPORALMENTE DESHABILITADA: La RPC no incluye el campo 'title' en stage_components
-  /*
+  // Intentar usar la RPC function que incluye el nombre del cliente
   const { data, error } = await supabase.rpc('provider_project_detail', { project_id_input: projectId });
-  if (error) {
-    console.error('provider_project_detail', error);
-    return null;
+  if (!error && data) {
+    const parsed = data as Record<string, any>;
+
+    // Obtener links, minutas y miembros del proyecto
+    const [linksResult, minutesResult, projectMembersResult] = await Promise.all([
+      supabase.from('project_links').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+      supabase.from('project_minutes').select('*').eq('project_id', projectId).order('meeting_date', { ascending: false }),
+      supabase.from('project_members').select('*').eq('project_id', projectId).order('created_at', { ascending: true })
+    ]);
+
+    return {
+      ...parsed,
+      stages: Array.isArray(parsed.stages) ? parsed.stages.map((stage: any) => ({
+        ...stage,
+        components: stage.stage_components || []
+      })) : [],
+      members: Array.isArray(parsed.members) ? parsed.members : [],
+      files: Array.isArray(parsed.files) ? parsed.files : [],
+      comments: Array.isArray(parsed.comments) ? parsed.comments : [],
+      approvals: Array.isArray(parsed.approvals) ? parsed.approvals : [],
+      activity: Array.isArray(parsed.activity) ? parsed.activity : [],
+      links: linksResult.data ?? [],
+      minutes: minutesResult.data ?? [],
+      project_members: projectMembersResult.data ?? []
+    } as ProjectSummary;
   }
-  if (!data) return null;
-  const parsed = data as Record<string, any>;
 
-  // Obtener links, minutas y miembros del proyecto
-  const [linksResult, minutesResult, projectMembersResult] = await Promise.all([
-    supabase.from('project_links').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
-    supabase.from('project_minutes').select('*').eq('project_id', projectId).order('meeting_date', { ascending: false }),
-    supabase.from('project_members').select('*').eq('project_id', projectId).order('created_at', { ascending: true })
-  ]);
-
-  return {
-    ...parsed,
-    stages: Array.isArray(parsed.stages) ? parsed.stages : [],
-    members: Array.isArray(parsed.members) ? parsed.members : [],
-    files: Array.isArray(parsed.files) ? parsed.files : [],
-    comments: Array.isArray(parsed.comments) ? parsed.comments : [],
-    approvals: Array.isArray(parsed.approvals) ? parsed.approvals : [],
-    activity: Array.isArray(parsed.activity) ? parsed.activity : [],
-    links: linksResult.data ?? [],
-    minutes: minutesResult.data ?? [],
-    project_members: projectMembersResult.data ?? []
-  } as ProjectSummary;
-  */
-
-  // FALLBACK: Usar consultas directas que SÍ incluyen el campo 'title'
+  // FALLBACK: Usar consultas directas si la RPC falla
   try {
-    // Obtener datos del proyecto directamente
+    // Obtener datos del proyecto con el nombre del cliente
     const results = await Promise.all([
-      supabase.from('projects').select('*').eq('id', projectId).single(),
+      supabase.from('projects').select(`
+        *,
+        clients (name)
+      `).eq('id', projectId).single(),
       supabase.from('stages').select(`
         *,
         stage_components (id, stage_id, component_type, title, config, status, metadata, created_at)
@@ -110,7 +111,7 @@ export async function getProviderProject(projectId: string) {
       minutes: (minutesResult as any).data ?? [],
       project_members: (membersResult as any).data ?? [],
       progress: 0, // Placeholder
-      client_name: 'Cliente', // Placeholder
+      client_name: (projectData.clients as any)?.name || 'Cliente',
       overdue: false, // Placeholder
       waiting_on_client: false // Placeholder
     } as ProjectSummary;

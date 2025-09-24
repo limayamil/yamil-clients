@@ -138,7 +138,7 @@ export function ProjectLinksPanel({ links, projectId, canEdit = false }: Project
 
   return (
     <Card className="relative overflow-hidden border-border/50 shadow-lg bg-gradient-to-br from-white to-blue-50/30">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-blue-100/20 to-transparent blur-2xl"></div>
+      <div className="absolute top-0 right-0 w-16 h-16 sm:w-32 sm:h-32 bg-gradient-radial from-blue-100/20 to-transparent blur-2xl"></div>
 
       <CardHeader className="relative">
         <div className="flex items-center justify-between">
