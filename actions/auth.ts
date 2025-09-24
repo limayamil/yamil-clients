@@ -22,7 +22,7 @@ export async function signInWithPassword(_: unknown, formData: FormData) {
     };
   }
 
-  const { email, password, rememberMe } = parsed.data;
+  const { email, password } = parsed.data;
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -57,29 +57,11 @@ export async function signInWithPassword(_: unknown, formData: FormData) {
   // Limpiar cache de autenticación para evitar problemas de sesión
   clearAllAuthCache();
 
-  // Configurar cookies persistentes si rememberMe está activado
-  if (rememberMe && data.session) {
-    const maxAge = 30 * 24 * 60 * 60; // 30 días en segundos
-    cookieStore.set('sb-access-token', data.session.access_token, {
-      maxAge,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/'
-    });
-    cookieStore.set('sb-refresh-token', data.session.refresh_token, {
-      maxAge,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/'
-    });
-  }
 
   await audit({
     action: 'auth.sign_in',
     actorType: 'system',
-    details: { email, rememberMe }
+    details: { email }
   });
 
   // El user viene en la respuesta del signInWithPassword

@@ -32,6 +32,8 @@ import { ComponentCommentThread } from '@/components/shared/component-comment-th
 import { CreatingComponentSkeleton, DeletingComponentSkeleton } from '@/components/ui/skeleton-component';
 import { ActionLoading } from '@/components/ui/loading-overlay';
 import { LoadingButton } from '@/components/ui/loading-spinner';
+import { RichTextViewer } from '@/components/ui/rich-text-viewer';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface EditableStageComponentsProps {
   components: StageComponent[];
@@ -42,6 +44,7 @@ interface EditableStageComponentsProps {
   onDeleteComponent?: (componentId: string) => void;
   onAddComponent?: (stageId: string, component: Omit<StageComponent, 'id' | 'stage_id'>) => void;
   readonly?: boolean;
+  currentUser?: { id: string; role: 'provider' | 'client' } | null;
 }
 
 export function EditableStageComponents({
@@ -52,7 +55,8 @@ export function EditableStageComponents({
   onUpdateComponent,
   onDeleteComponent,
   onAddComponent,
-  readonly = false
+  readonly = false,
+  currentUser
 }: EditableStageComponentsProps) {
   const [editingComponent, setEditingComponent] = useState<string | null>(null);
   const [loadingStates, setLoadingStates] = useState<{
@@ -186,6 +190,7 @@ export function EditableStageComponents({
                   onDelete={() => handleDelete(component.id)}
                   onUpdateComponent={onUpdateComponent}
                   isLoading={loadingStates.updating.has(component.id) || loadingStates.deleting.has(component.id)}
+                  currentUser={currentUser}
                 />
               </ActionLoading>
             </motion.div>
@@ -255,6 +260,7 @@ interface EditableComponentCardProps {
   onDelete: () => void;
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   isLoading?: boolean;
+  currentUser?: { id: string; role: 'provider' | 'client' } | null;
 }
 
 function EditableComponentCard({
@@ -268,7 +274,8 @@ function EditableComponentCard({
   onCancel,
   onDelete,
   onUpdateComponent,
-  isLoading = false
+  isLoading = false,
+  currentUser
 }: EditableComponentCardProps) {
   const [editData, setEditData] = useState<any>({
     ...component.config,
@@ -321,6 +328,7 @@ function EditableComponentCard({
       onDelete={onDelete}
       onUpdateComponent={onUpdateComponent}
       isLoading={isLoading}
+      currentUser={currentUser}
     />
   );
 }
@@ -333,7 +341,8 @@ function ViewMode({
   onEdit,
   onDelete,
   onUpdateComponent,
-  isLoading = false
+  isLoading = false,
+  currentUser
 }: {
   component: StageComponent;
   readonly: boolean;
@@ -343,6 +352,7 @@ function ViewMode({
   onDelete: () => void;
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   isLoading?: boolean;
+  currentUser?: { id: string; role: 'provider' | 'client' } | null;
 }) {
   const getComponentIcon = (type: string) => {
     switch (type) {
@@ -533,6 +543,7 @@ function ViewMode({
         projectId={projectId}
         comments={comments}
         isCompact={true}
+        currentUser={currentUser}
       />
     </motion.div>
   );
@@ -644,18 +655,20 @@ function ComponentContent({ component }: { component: StageComponent }) {
     case 'text_block':
       return (
         <div className="space-y-2">
-          <p className="text-sm text-foreground">
-            {(component.config?.content as string) || 'Sin contenido'}
-          </p>
+          <RichTextViewer
+            content={(component.config?.content as string) || 'Sin contenido'}
+            className="text-sm text-foreground"
+          />
         </div>
       );
 
     case 'upload_request':
       return (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            {(component.config?.description as string) || 'Solicitud de enlaces'}
-          </p>
+          <RichTextViewer
+            content={(component.config?.description as string) || 'Solicitud de enlaces'}
+            className="text-sm text-muted-foreground"
+          />
           {(component.config?.submitted_urls as string[])?.length > 0 ? (
             <div className="space-y-1">
               <p className="text-xs font-medium text-foreground">Enlaces enviados:</p>
@@ -691,9 +704,10 @@ function ComponentContent({ component }: { component: StageComponent }) {
     case 'approval':
       return (
         <div className="space-y-2">
-          <p className="text-sm text-foreground">
-            {(component.config?.instructions as string) || 'Solicitud de aprobación'}
-          </p>
+          <RichTextViewer
+            content={(component.config?.instructions as string) || 'Solicitud de aprobación'}
+            className="text-sm text-foreground"
+          />
           <p className="text-xs text-muted-foreground">
             Estado: {component.status}
           </p>
@@ -793,11 +807,12 @@ const ComponentEditor = memo(function ComponentEditor({
             <label className="text-sm font-medium text-foreground mb-1 block">
               Contenido
             </label>
-            <Textarea
+            <RichTextEditor
               value={data.content || ''}
-              onChange={(e) => updateField('content', e.target.value)}
+              onChange={(value) => updateField('content', value)}
               placeholder="Escribe el contenido de la nota..."
-              rows={4}
+              mode="full"
+              maxLength={10000}
             />
           </div>
         </div>
@@ -815,11 +830,12 @@ const ComponentEditor = memo(function ComponentEditor({
             <label className="text-sm font-medium text-foreground mb-1 block">
               Descripción
             </label>
-            <Textarea
+            <RichTextEditor
               value={data.description || ''}
-              onChange={(e) => updateField('description', e.target.value)}
+              onChange={(value) => updateField('description', value)}
               placeholder="Describe qué enlaces necesitas (ej: enlaces de Google Drive, Dropbox, etc.)..."
-              rows={3}
+              mode="full"
+              maxLength={10000}
             />
           </div>
           <div>
@@ -869,11 +885,12 @@ const ComponentEditor = memo(function ComponentEditor({
             <label className="text-sm font-medium text-foreground mb-1 block">
               Instrucciones para la aprobación
             </label>
-            <Textarea
+            <RichTextEditor
               value={data.instructions || ''}
-              onChange={(e) => updateField('instructions', e.target.value)}
+              onChange={(value) => updateField('instructions', value)}
               placeholder="Describe qué necesita ser aprobado..."
-              rows={3}
+              mode="full"
+              maxLength={10000}
             />
           </div>
         </div>

@@ -57,7 +57,6 @@ export function LoginForm() {
       const fd = new FormData();
       fd.append('email', values.email);
       fd.append('password', values.password);
-      fd.append('rememberMe', values.rememberMe ? 'true' : 'false');
       formAction(fd);
     } finally {
       // Reset después de un delay para permitir que la redirección suceda
@@ -99,20 +98,6 @@ export function LoginForm() {
             {(errors.password?.message || state?.error?.password) && (
               <p className="text-sm text-error">{errors.password?.message ?? state?.error?.password?.[0]}</p>
             )}
-          </div>
-        )}
-        {!isMagicLinkMode && (
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              checked={watch('rememberMe') || false}
-              onCheckedChange={(checked) => setValue('rememberMe', checked)}
-            />
-            <label
-              onClick={() => setValue('rememberMe', !watch('rememberMe'))}
-              className="text-sm font-normal cursor-pointer"
-            >
-              Recordar mi sesión por 30 días
-            </label>
           </div>
         )}
         {state?.error?.auth && <p className="text-sm text-error">{state.error.auth[0]}</p>}

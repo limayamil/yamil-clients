@@ -58,7 +58,7 @@ export function CommentsPanel({ comments, projectId }: CommentsPanelProps) {
           rows={3}
           required
           minLength={1}
-          maxLength={1000}
+          maxLength={10000}
         />
         {state?.error && (
           <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">

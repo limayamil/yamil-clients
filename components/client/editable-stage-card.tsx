@@ -36,6 +36,7 @@ import { toast } from 'sonner';
 import { EditableStageDate } from '@/components/ui/editable-stage-date';
 import { EditableStageComponents } from '@/components/client/editable-stage-components';
 import { ClientStageComponents } from '@/components/client/client-stage-components';
+import { ProviderStageComponents } from '@/components/provider/provider-stage-components';
 
 interface EditableStageCardProps {
   stage: Stage;
@@ -73,6 +74,12 @@ export function EditableStageCard({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Create current user object for comment permissions
+  const currentUser = currentUserId ? {
+    id: currentUserId,
+    role: viewMode === 'client' ? 'client' as const : 'provider' as const
+  } : null;
 
   const getStageTypeIcon = (type: string) => {
     switch (type) {
@@ -380,19 +387,16 @@ export function EditableStageCard({
                 projectId={projectId}
                 comments={comments}
                 onUpdateComponent={onUpdateComponent}
+                currentUser={currentUser}
               />
             ) : (
-              <EditableStageComponents
+              <ProviderStageComponents
                 components={stage.components || []}
-                stageId={stage.id}
                 projectId={projectId}
                 comments={comments}
                 onUpdateComponent={onUpdateComponent}
                 onDeleteComponent={onDeleteComponent}
-                onAddComponent={(stageId, component) => {
-                  // Esta función no se usa actualmente, los componentes se agregan a través del dropdown
-                }}
-                readonly={false}
+                currentUser={currentUser}
               />
             )}
 

@@ -37,6 +37,9 @@ interface ProjectDetailViewProps {
 export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewProps) {
   const [activeCommentStage, setActiveCommentStage] = useState<string | null>(null);
   const [activeFileStage, setActiveFileStage] = useState<string | null>(null);
+
+  // Create current user object for comment permissions
+  const currentUser = currentUserId ? { id: currentUserId, role: 'provider' as const } : null;
   const activeStage = project.stages?.find((stage) => stage.status !== 'done');
 
   const breadcrumbItems = [
@@ -261,13 +264,15 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
 
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-      <Breadcrumb items={breadcrumbItems} />
+      <div className="hidden sm:block">
+        <Breadcrumb items={breadcrumbItems} />
+      </div>
 
       {/* Header Mejorado */}
       <header className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/50 shadow-xl bg-gradient-to-br from-white via-brand-50/30 to-brand-100/40 backdrop-blur-sm">
         {/* Gradiente de fondo decorativo */}
         <div className="absolute inset-0 bg-gradient-to-r from-brand-500/5 via-transparent to-brand-600/5"></div>
-        <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 lg:w-96 lg:h-96 bg-gradient-radial from-brand-200/20 to-transparent blur-2xl lg:blur-3xl"></div>
+        <div className="absolute top-0 right-0 w-16 h-16 sm:w-32 sm:h-32 lg:w-96 lg:h-96 bg-gradient-radial from-brand-200/20 to-transparent blur-2xl lg:blur-3xl"></div>
 
         <div className="relative p-3 sm:p-4 md:p-6 lg:p-8">
           <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -292,7 +297,7 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
                 />
               </div>
 
-              <div className="pl-13">
+              <div className="pl-0 sm:pl-13">
                 <EditableText
                   value={project.description || ''}
                   onSave={handleUpdateDescription}
@@ -305,7 +310,7 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
               </div>
 
               {project.stages && project.stages.length > 0 && (
-                <div className="pl-13">
+                <div className="pl-0 sm:pl-13">
                   <div className="flex items-center gap-2 text-sm">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-100/50 border border-brand-200/50">
                       <Zap className="h-4 w-4 text-brand-600" />
@@ -517,7 +522,7 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
           isOpen={true}
           onClose={() => setActiveCommentStage(null)}
           projectId={project.id}
-          currentUserId={currentUserId}
+          currentUser={currentUser}
           stageComponents={project.stages?.find(s => s.id === activeCommentStage)?.components || []}
         />
       )}

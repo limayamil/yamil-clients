@@ -1,9 +1,26 @@
 import { z } from 'zod';
+import { validateRichTextContent, htmlToText } from '@/lib/utils/rich-text';
 
 // Helper to handle projectId that might come as string or array from FormData
 const projectIdSchema = z.union([z.string(), z.array(z.string())]).transform((val) =>
   Array.isArray(val) ? val[0] : val
 ).pipe(z.string().uuid());
+
+// Schema helper para validar contenido de texto enriquecido
+const richTextSchema = (maxLength: number = 5000) => z.string()
+  .max(maxLength * 2, `El contenido HTML es muy largo`) // HTML puede ser hasta 2x más largo que el texto
+  .refine((content) => {
+    if (!content) return true;
+    const validation = validateRichTextContent(content, maxLength);
+    return validation.isValid;
+  }, (content) => {
+    const validation = validateRichTextContent(content, 5000);
+    return { message: validation.error || 'Contenido inválido' };
+  });
+
+// Schema helper para texto plano simple
+const simpleTextSchema = (maxLength: number = 1000) => z.string()
+  .max(maxLength, `El texto no puede exceder ${maxLength} caracteres`);
 
 export const requestMaterialsSchema = z.object({
   projectId: projectIdSchema
@@ -99,4 +116,49 @@ export const deleteStageSchema = z.object({
 export const reorderStagesSchema = z.object({
   projectId: projectIdSchema,
   stageIds: z.array(z.string().uuid()).min(1, 'Debe proporcionar al menos un ID de etapa')
+});
+
+// Esquemas específicos para componentes con texto enriquecido
+export const updateTextBlockSchema = z.object({
+  componentId: z.string().uuid(),
+  projectId: projectIdSchema,
+  title: simpleTextSchema(200).optional(),
+  content: richTextSchema(5000).optional()
+});
+
+export const updateUploadRequestSchema = z.object({
+  componentId: z.string().uuid(),
+  projectId: projectIdSchema,
+  title: simpleTextSchema(200).optional(),
+  description: richTextSchema(3000).optional(),
+  instructions: simpleTextSchema(500).optional()
+});
+
+export const updateApprovalSchema = z.object({
+  componentId: z.string().uuid(),
+  projectId: projectIdSchema,
+  title: simpleTextSchema(200).optional(),
+  instructions: richTextSchema(3000).optional()
+});
+
+export const updateMilestoneSchema = z.object({
+  componentId: z.string().uuid(),
+  projectId: projectIdSchema,
+  title: simpleTextSchema(200).optional(),
+  description: richTextSchema(2000).optional()
+});
+
+export const updatePrototypeSchema = z.object({
+  componentId: z.string().uuid(),
+  projectId: projectIdSchema,
+  title: simpleTextSchema(200).optional(),
+  description: richTextSchema(2000).optional(),
+  url: z.string().url('URL inválida').optional()
+});
+
+export const updateChecklistSchema = z.object({
+  componentId: z.string().uuid(),
+  projectId: projectIdSchema,
+  title: simpleTextSchema(200).optional(),
+  items: z.array(richTextSchema(500)).optional()
 });

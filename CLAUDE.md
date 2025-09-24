@@ -148,6 +148,77 @@ The application follows a custom design system documented in `design.md`:
 - **Lint regularly**: `npm run lint` to maintain code quality
 - **Test build**: Ensure static generation warnings are acceptable (auth pages will use cookies)
 
+## Authentication System & Session Management
+
+### Login & Session Persistence
+The authentication system has been optimized for better UX and reliability:
+
+#### Key Improvements (Sept 2025)
+- **Persistent Sessions**: "Remember Me" checkbox enables 30-day session persistence
+- **Rate Limiting**: Intelligent backoff with 2-second base delay and reduced retry attempts
+- **Session Cache**: Extended from 5 to 60 seconds for better stability
+- **Middleware**: Enhanced auth handling with automatic redirects for protected routes
+- **Error Handling**: Improved UX with specific error messages and loading states
+
+#### FormData Validation Pattern
+**CRITICAL**: When handling FormData with boolean values, use proper schema validation:
+
+```typescript
+// ✅ Correct schema for FormData boolean fields
+export const formSchema = z.object({
+  rememberMe: z
+    .union([z.boolean(), z.string()])
+    .transform((value) => {
+      if (typeof value === 'boolean') return value;
+      return value === 'true' || value === 'on';
+    })
+    .optional()
+    .default(false)
+});
+
+// ❌ Wrong - fails with FormData strings
+export const formSchema = z.object({
+  rememberMe: z.boolean().optional().default(false)
+});
+```
+
+**Problem**: FormData sends boolean checkbox values as strings (`'true'`/`'false'`), not actual booleans. If the schema expects boolean but receives string, validation fails silently and server actions return errors instead of proceeding.
+
+#### Session Configuration
+```typescript
+// Persistent cookies for "Remember Me" functionality
+if (rememberMe && data.session) {
+  const maxAge = 30 * 24 * 60 * 60; // 30 days
+  cookieStore.set('sb-access-token', data.session.access_token, {
+    maxAge,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/'
+  });
+}
+```
+
+#### Rate Limiting Configuration
+```typescript
+// Optimized for better UX
+export async function handleAuthRateLimit<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 2,      // Reduced from 3
+  baseDelay: number = 2000     // Increased from 1000ms
+): Promise<T> {
+  // Exponential backoff: 1.5x instead of 2x for gentler progression
+  const delay = baseDelay * Math.pow(1.5, attempt) + Math.random() * 500;
+}
+```
+
+### Login Flow Debugging
+If login issues occur, check:
+1. **FormData validation**: Ensure schema handles string→boolean conversion
+2. **Session creation**: Verify Supabase auth response contains user and session
+3. **Role assignment**: User must have `user_metadata.role` set to 'provider' or 'client'
+4. **Middleware conflicts**: Check middleware isn't blocking protected routes unnecessarily
+
 ## Common Patterns & Solutions
 
 ### Editable Project Information

@@ -5,6 +5,7 @@ import { ComponentCommentThread } from '@/components/shared/component-comment-th
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RichTextViewer } from '@/components/ui/rich-text-viewer';
 import { Send, Link, CheckSquare, CheckCircle2, FileText, ExternalLink, CalendarCheck, ListTodo, PenTool, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 
@@ -13,13 +14,15 @@ interface ClientStageComponentsProps {
   projectId: string;
   comments: CommentEntry[];
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
+  currentUser?: { id: string; role: 'provider' | 'client' } | null;
 }
 
 export function ClientStageComponents({
   components,
   projectId,
   comments,
-  onUpdateComponent
+  onUpdateComponent,
+  currentUser
 }: ClientStageComponentsProps) {
   if (!components || components.length === 0) {
     return (
@@ -42,6 +45,7 @@ export function ClientStageComponents({
           projectId={projectId}
           comments={comments}
           onUpdateComponent={onUpdateComponent}
+          currentUser={currentUser}
         />
       ))}
     </div>
@@ -53,13 +57,15 @@ interface ClientComponentCardProps {
   projectId: string;
   comments: CommentEntry[];
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
+  currentUser?: { id: string; role: 'provider' | 'client' } | null;
 }
 
 function ClientComponentCard({
   component,
   projectId,
   comments,
-  onUpdateComponent
+  onUpdateComponent,
+  currentUser
 }: ClientComponentCardProps) {
   const getComponentIcon = (type: string) => {
     switch (type) {
@@ -165,6 +171,7 @@ function ClientComponentCard({
         projectId={projectId}
         comments={comments}
         isCompact={true}
+        currentUser={currentUser}
       />
     </div>
   );
@@ -181,18 +188,20 @@ function ComponentContent({
     case 'text_block':
       return (
         <div className="space-y-2">
-          <p className="text-sm text-foreground">
-            {(component.config?.content as string) || 'Sin contenido'}
-          </p>
+          <RichTextViewer
+            content={(component.config?.content as string) || 'Sin contenido'}
+            className="text-sm text-foreground"
+          />
         </div>
       );
 
     case 'upload_request':
       return (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            {(component.config?.description as string) || 'Solicitud de enlaces'}
-          </p>
+          <RichTextViewer
+            content={(component.config?.description as string) || 'Solicitud de enlaces'}
+            className="text-sm text-muted-foreground"
+          />
           {(component.config?.submitted_urls as string[])?.length > 0 ? (
             <div className="space-y-1">
               <p className="text-xs font-medium text-foreground">Enlaces enviados:</p>
@@ -223,9 +232,12 @@ function ComponentContent({
           {(component.config?.items as string[])?.length > 0 ? (
             <ul className="space-y-1 text-sm text-muted-foreground">
               {(component.config.items as string[]).map((item, index) => (
-                <li key={index} className="flex items-center gap-2">
-                  <span className="inline-flex h-2 w-2 rounded-full bg-brand-400" />
-                  {item}
+                <li key={index} className="flex items-start gap-2">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-brand-400 mt-1.5 flex-shrink-0" />
+                  <RichTextViewer
+                    content={item}
+                    className="text-sm text-muted-foreground"
+                  />
                 </li>
               ))}
             </ul>
@@ -238,9 +250,10 @@ function ComponentContent({
     case 'approval':
       return (
         <div className="space-y-2">
-          <p className="text-sm text-foreground">
-            {(component.config?.instructions as string) || 'Solicitud de aprobación'}
-          </p>
+          <RichTextViewer
+            content={(component.config?.instructions as string) || 'Solicitud de aprobación'}
+            className="text-sm text-foreground"
+          />
         </div>
       );
 
@@ -264,9 +277,10 @@ function ComponentContent({
     case 'prototype':
       return (
         <div className="space-y-2">
-          <p className="text-sm text-foreground">
-            {(component.config?.description as string) || 'Prototipo listo para revisión'}
-          </p>
+          <RichTextViewer
+            content={(component.config?.description as string) || 'Prototipo listo para revisión'}
+            className="text-sm text-foreground"
+          />
           {component.config?.url ? (
             <a
               href={String(component.config.url)}
@@ -286,9 +300,10 @@ function ComponentContent({
           <p className="text-sm font-medium text-foreground">
             {(component.config?.title as string) || 'Hito'}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {(component.config?.description as string) || 'Hito entregable'}
-          </p>
+          <RichTextViewer
+            content={(component.config?.description as string) || 'Hito entregable'}
+            className="text-xs text-muted-foreground"
+          />
         </div>
       );
 
@@ -299,9 +314,12 @@ function ComponentContent({
           {(component.config?.items as string[])?.length > 0 ? (
             <ul className="space-y-1 text-sm text-muted-foreground">
               {(component.config.items as string[]).map((item, index) => (
-                <li key={index} className="flex items-center gap-2">
-                  <span className="inline-flex h-2 w-2 rounded-full bg-brand-400" />
-                  {item}
+                <li key={index} className="flex items-start gap-2">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-brand-400 mt-1.5 flex-shrink-0" />
+                  <RichTextViewer
+                    content={item}
+                    className="text-sm text-muted-foreground"
+                  />
                 </li>
               ))}
             </ul>

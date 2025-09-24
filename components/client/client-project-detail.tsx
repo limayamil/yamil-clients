@@ -56,6 +56,9 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
   const router = useRouter();
   const [activeCommentStage, setActiveCommentStage] = useState<string | null>(null);
   const [activeFileStage, setActiveFileStage] = useState<string | null>(null);
+
+  // Create current user object for comment permissions
+  const currentUser = { id: currentUserId, role: 'client' as const };
   const pendingApproval = project.approvals?.find((approval) => approval.status === 'requested');
   const activeStage = project.stages?.find((stage) => stage.status !== 'done');
 
@@ -148,13 +151,15 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
 
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-      <Breadcrumb items={breadcrumbItems} />
+      <div className="hidden sm:block">
+        <Breadcrumb items={breadcrumbItems} />
+      </div>
 
       {/* Header Completamente Rediseñado - Mobile First */}
       <header className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/50 shadow-xl bg-gradient-to-br from-white via-brand-50/30 to-brand-100/40 backdrop-blur-sm">
         {/* Gradiente de fondo decorativo */}
         <div className="absolute inset-0 bg-gradient-to-r from-brand-500/5 via-transparent to-brand-600/5"></div>
-        <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 lg:w-72 lg:h-72 bg-gradient-radial from-brand-200/20 to-transparent blur-2xl"></div>
+        <div className="absolute top-0 right-0 w-16 h-16 sm:w-32 sm:h-32 lg:w-72 lg:h-72 bg-gradient-radial from-brand-200/20 to-transparent blur-2xl"></div>
 
         <div className="relative p-4 sm:p-6 lg:p-8">
           {/* Layout Mobile-First: Stack completo en móvil, grid en desktop */}
@@ -196,7 +201,7 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
 
               {/* Descripción */}
               {project.description && (
-                <div className="pl-13 lg:pl-15">
+                <div className="pl-0 sm:pl-13 lg:pl-15">
                   <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
                     {project.description}
                   </p>
@@ -205,7 +210,7 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
 
               {/* Etapa actual */}
               {activeStage && (
-                <div className="pl-13 lg:pl-15">
+                <div className="pl-0 sm:pl-13 lg:pl-15">
                   <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-100/50 border border-brand-200/50">
                     <Zap className="h-4 w-4 text-brand-600" />
                     <span className="font-medium text-brand-800 text-sm">Etapa actual:</span>
@@ -335,7 +340,7 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
 
       {/* Chat Global del Proyecto */}
       <Card className="relative overflow-hidden border-border/50 shadow-lg bg-gradient-to-br from-white to-gray-50/30">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-brand-100/20 to-transparent blur-2xl"></div>
+        <div className="absolute top-0 right-0 w-16 h-16 sm:w-32 sm:h-32 bg-gradient-radial from-brand-100/20 to-transparent blur-2xl"></div>
         <CardHeader className="relative">
           <CardTitle className="flex items-center gap-3 text-lg">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg">
@@ -377,7 +382,7 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
           isOpen={true}
           onClose={() => setActiveCommentStage(null)}
           projectId={project.id}
-          currentUserId={currentUserId}
+          currentUser={currentUser}
           stageComponents={project.stages?.find(s => s.id === activeCommentStage)?.components || []}
         />
       )}

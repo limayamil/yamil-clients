@@ -145,7 +145,7 @@ export function GanttTimeline({ stages, projectStartDate, projectEndDate, projec
       </div>
 
       {/* Tabla tipo Gantt */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-w-full">
         <div className="min-w-full">
           {/* Header de meses */}
           <div className="flex border-b border-border/30 bg-gray-50/50">

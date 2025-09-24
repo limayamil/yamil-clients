@@ -5,15 +5,17 @@ import type { Stage, CommentEntry } from '@/types/project';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ComponentCommentThread } from '@/components/shared/component-comment-thread';
+import { RichTextViewer } from '@/components/ui/rich-text-viewer';
 import { isFeatureEnabled } from '@/lib/config/feature-flags';
 
 interface StageComponentRendererProps {
   stage: Stage;
   projectId: string;
   comments: CommentEntry[];
+  currentUser?: { id: string; role: 'provider' | 'client' } | null;
 }
 
-export function StageComponentRenderer({ stage, projectId, comments }: StageComponentRendererProps) {
+export function StageComponentRenderer({ stage, projectId, comments, currentUser }: StageComponentRendererProps) {
   if (!stage.components || stage.components.length === 0) {
     return <p className="text-sm text-muted-foreground">No components configured.</p>;
   }
@@ -57,7 +59,10 @@ export function StageComponentRenderer({ stage, projectId, comments }: StageComp
                 <div className="flex items-center gap-2 text-sm font-medium text-brand-800">
                   <Link className="h-4 w-4" /> Link request
                 </div>
-                <p className="text-xs text-muted-foreground">{(component.config?.description as string) ?? 'Client needs to share links.'}</p>
+                <RichTextViewer
+                  content={(component.config?.description as string) ?? 'Client needs to share links.'}
+                  className="text-xs text-muted-foreground"
+                />
                 {(component.config?.submitted_urls as string[])?.length > 0 ? (
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-brand-700">Enlaces recibidos:</p>
@@ -84,6 +89,7 @@ export function StageComponentRenderer({ stage, projectId, comments }: StageComp
                   projectId={projectId}
                   comments={comments}
                   isCompact={true}
+                  currentUser={currentUser}
                 />
               </div>
             );
@@ -100,6 +106,7 @@ export function StageComponentRenderer({ stage, projectId, comments }: StageComp
                   projectId={projectId}
                   comments={comments}
                   isCompact={true}
+                  currentUser={currentUser}
                 />
               </div>
             );
@@ -112,7 +119,10 @@ export function StageComponentRenderer({ stage, projectId, comments }: StageComp
                   </span>
                   <Badge variant="secondary">{component.status}</Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">{(component.config?.description as string) ?? 'Prototype ready for review.'}</p>
+                <RichTextViewer
+                  content={(component.config?.description as string) ?? 'Prototype ready for review.'}
+                  className="text-xs text-muted-foreground"
+                />
                 <div className="flex items-center justify-between">
                   {component.config?.url ? (
                     <Button asChild variant="outline" size="sm">
@@ -137,7 +147,10 @@ export function StageComponentRenderer({ stage, projectId, comments }: StageComp
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                   <ShieldCheck className="h-4 w-4" /> Approval gate
                 </div>
-                <p className="text-xs text-muted-foreground">{(component.config?.instructions as string) ?? 'Awaiting approval to proceed.'}</p>
+                <RichTextViewer
+                  content={(component.config?.instructions as string) ?? 'Awaiting approval to proceed.'}
+                  className="text-xs text-muted-foreground"
+                />
                 <div className="flex items-center justify-between">
                   <Badge variant={component.status === 'approved' ? 'success' : 'warning'}>{component.status}</Badge>
                   <ComponentCommentThread
@@ -156,13 +169,17 @@ export function StageComponentRenderer({ stage, projectId, comments }: StageComp
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                   <FileText className="h-4 w-4" /> Brief
                 </div>
-                <p className="text-sm text-muted-foreground">{(component.config?.content as string) ?? 'No details provided yet.'}</p>
+                <RichTextViewer
+                  content={(component.config?.content as string) ?? 'No details provided yet.'}
+                  className="text-sm text-muted-foreground"
+                />
                 <ComponentCommentThread
                   componentId={component.id}
                   componentTitle={getComponentTitle(component)}
                   projectId={projectId}
                   comments={comments}
                   isCompact={true}
+                  currentUser={currentUser}
                 />
               </div>
             );
@@ -185,6 +202,7 @@ export function StageComponentRenderer({ stage, projectId, comments }: StageComp
                   projectId={projectId}
                   comments={comments}
                   isCompact={true}
+                  currentUser={currentUser}
                 />
               </div>
             );
@@ -194,7 +212,10 @@ export function StageComponentRenderer({ stage, projectId, comments }: StageComp
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-brand-900">{(component.config?.title as string) ?? 'Milestone'}</p>
-                    <p className="text-xs text-muted-foreground">{(component.config?.description as string) ?? 'Deliverable milestone'}</p>
+                    <RichTextViewer
+                      content={(component.config?.description as string) ?? 'Deliverable milestone'}
+                      className="text-xs text-muted-foreground"
+                    />
                   </div>
                   <CalendarCheck className="h-5 w-5 text-brand-600" />
                 </div>
@@ -204,6 +225,7 @@ export function StageComponentRenderer({ stage, projectId, comments }: StageComp
                   projectId={projectId}
                   comments={comments}
                   isCompact={true}
+                  currentUser={currentUser}
                 />
               </div>
             );
@@ -220,6 +242,7 @@ export function StageComponentRenderer({ stage, projectId, comments }: StageComp
                   projectId={projectId}
                   comments={comments}
                   isCompact={true}
+                  currentUser={currentUser}
                 />
               </div>
             );
@@ -240,6 +263,7 @@ export function StageComponentRenderer({ stage, projectId, comments }: StageComp
                   projectId={projectId}
                   comments={comments}
                   isCompact={true}
+                  currentUser={currentUser}
                 />
               </div>
             );

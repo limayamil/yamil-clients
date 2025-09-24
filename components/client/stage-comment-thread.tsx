@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, MessageSquare, X, AlertCircle, Trash2 } from 'lucide-react';
+import { Send, MessageSquare, X, AlertCircle, Trash2, Edit, Save } from 'lucide-react';
 import type { CommentEntry } from '@/types/project';
 import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { RichTextViewer } from '@/components/ui/rich-text-viewer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { createComment, deleteComment } from '@/actions/comments';
+import { createComment, deleteComment, updateComment } from '@/actions/comments';
 import { useFormStatus, useFormState } from 'react-dom';
 import { toast } from 'sonner';
 
@@ -19,7 +21,7 @@ interface StageCommentThreadProps {
   isOpen: boolean;
   onClose: () => void;
   projectId: string;
-  currentUserId?: string;
+  currentUser?: { id: string; role: 'provider' | 'client' } | null;
   stageComponents?: Array<{ id: string; component_type: string; config?: any }>;
 }
 
@@ -32,11 +34,16 @@ export function StageCommentThread({
   isOpen,
   onClose,
   projectId,
-  currentUserId,
+  currentUser,
   stageComponents = []
 }: StageCommentThreadProps) {
   const [state, formAction] = useFormState(createComment, initialState);
+  const [editState, editAction] = useFormState(updateComment, initialState);
+  const [deleteState, deleteAction] = useFormState(deleteComment, initialState);
   const formRef = useRef<HTMLFormElement>(null);
+  const [editingComment, setEditingComment] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [newCommentContent, setNewCommentContent] = useState('');
 
   // Get component IDs for this stage
   const componentIds = stageComponents.map(comp => comp.id);
@@ -47,21 +54,63 @@ export function StageCommentThread({
     (comment.component_id && componentIds.includes(comment.component_id))
   );
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este comentario?')) {
-      return;
-    }
+  // Helper functions for permissions
+  const canEditComment = (comment: CommentEntry) => {
+    return currentUser && comment.created_by === currentUser.id;
+  };
+
+  const canDeleteComment = (comment: CommentEntry) => {
+    if (!currentUser) return false;
+    // User can delete their own comments
+    if (comment.created_by === currentUser.id) return true;
+    // Providers can delete client comments
+    if (currentUser.role === 'provider' && comment.author_type === 'client') return true;
+    return false;
+  };
+
+  // Handlers
+  const handleEditComment = (comment: CommentEntry) => {
+    setEditingComment(comment.id);
+    setEditContent(comment.body);
+  };
+
+  const handleSaveEdit = (commentId: string) => {
+    if (!editContent.trim()) return;
 
     const formData = new FormData();
-    formData.append('commentId', commentId);
     formData.append('projectId', projectId);
+    formData.append('commentId', commentId);
+    formData.append('body', editContent);
 
-    const result = await deleteComment(null, formData);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
-      toast.success('Comentario eliminado correctamente');
-    }
+    editAction(formData);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingComment(null);
+    setEditContent('');
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este comentario?')) return;
+
+    const formData = new FormData();
+    formData.append('projectId', projectId);
+    formData.append('commentId', commentId);
+
+    deleteAction(formData);
+  };
+
+  const handleSubmitNewComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCommentContent.trim()) return;
+
+    const formData = new FormData();
+    formData.append('projectId', projectId);
+    formData.append('stageId', stageId);
+    formData.append('body', newCommentContent);
+
+    formAction(formData);
+    setNewCommentContent('');
   };
 
   useEffect(() => {
@@ -72,6 +121,24 @@ export function StageCommentThread({
       toast.error(state.error);
     }
   }, [state]);
+
+  useEffect(() => {
+    if (editState?.success) {
+      toast.success(editState.message || 'Comentario actualizado correctamente');
+      setEditingComment(null);
+      setEditContent('');
+    } else if (editState?.error) {
+      toast.error(editState.error);
+    }
+  }, [editState]);
+
+  useEffect(() => {
+    if (deleteState?.success) {
+      toast.success(deleteState.message || 'Comentario eliminado correctamente');
+    } else if (deleteState?.error) {
+      toast.error(deleteState.error);
+    }
+  }, [deleteState]);
 
   if (!isOpen) return null;
 
@@ -104,7 +171,7 @@ export function StageCommentThread({
             stageComments
               .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
               .map((comment) => (
-                <div key={comment.id} className="rounded-xl border border-border bg-gray-50 p-3">
+                <div key={comment.id} className="rounded-xl border border-border bg-gray-50 p-3 group">
                   <div className="flex items-center justify-between text-xs mb-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant={comment.author_type === 'provider' ? 'default' : 'secondary'} className="text-xs">
@@ -132,18 +199,72 @@ export function StageCommentThread({
                         {formatDate(comment.created_at)}
                       </time>
                     </div>
-                    {currentUserId && comment.created_by === currentUserId && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteComment(comment.id)}
-                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                    {/* Action buttons */}
+                    {(canEditComment(comment) || canDeleteComment(comment)) && (
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {canEditComment(comment) && editingComment !== comment.id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditComment(comment)}
+                            className="h-6 w-6 p-0 hover:bg-blue-100/50 hover:text-blue-700"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {canDeleteComment(comment) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="h-6 w-6 p-0 hover:bg-red-100/50 hover:text-red-700"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
-                  <p className="text-sm text-foreground">{comment.body}</p>
+
+                  {/* Comment content or edit form */}
+                  {editingComment === comment.id ? (
+                    <div className="space-y-2">
+                      <RichTextEditor
+                        value={editContent}
+                        onChange={setEditContent}
+                        placeholder="Edita tu comentario..."
+                        mode="full"
+                        maxLength={10000}
+                        className="min-h-[60px]"
+                      />
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleCancelEdit}
+                          className="h-7 text-xs"
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Cancelar
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveEdit(comment.id)}
+                          disabled={!editContent.trim()}
+                          className="h-7 text-xs"
+                        >
+                          <Save className="h-3 w-3 mr-1" />
+                          Guardar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <RichTextViewer
+                      content={comment.body}
+                      className="text-sm text-foreground leading-relaxed"
+                      fallback="Comentario vacío"
+                    />
+                  )}
                 </div>
               ))
           ) : (
@@ -161,18 +282,15 @@ export function StageCommentThread({
 
         {/* Formulario de nuevo comentario */}
         <div className="flex-shrink-0 border-t border-border pt-4">
-          <form ref={formRef} action={formAction} className="space-y-3">
-            <input type="hidden" name="projectId" value={projectId} />
-            <input type="hidden" name="stageId" value={stageId} />
+          <form ref={formRef} onSubmit={handleSubmitNewComment} className="space-y-3">
             <div className="space-y-2">
-              <Textarea
-                name="body"
+              <RichTextEditor
+                value={newCommentContent}
+                onChange={setNewCommentContent}
                 placeholder={`Comenta sobre "${stageTitle}"...`}
-                rows={3}
-                required
-                minLength={1}
-                maxLength={1000}
-                className="resize-none"
+                mode="full"
+                maxLength={10000}
+                className="min-h-[80px]"
               />
               {state?.error && (
                 <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
@@ -185,21 +303,19 @@ export function StageCommentThread({
               <span className="text-xs text-muted-foreground">
                 Comentario específico de esta etapa
               </span>
-              <SubmitButton />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!newCommentContent.trim()}
+                className="h-7 text-xs"
+              >
+                <Send className="h-3 w-3 mr-1" />
+                Enviar
+              </Button>
             </div>
           </form>
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-function SubmitButton() {
-  const status = useFormStatus();
-  return (
-    <Button type="submit" size="sm" disabled={status.pending} className="h-8">
-      <Send className="h-3 w-3 mr-1.5" />
-      {status.pending ? 'Enviando...' : 'Enviar'}
-    </Button>
   );
 }
