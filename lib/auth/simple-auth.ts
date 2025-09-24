@@ -28,13 +28,45 @@ interface JWTPayload {
   exp: number;
 }
 
-// Edge-compatible base64 functions
+// Edge Runtime compatible base64 functions using Web APIs
 function utf8ToBase64(str: string): string {
-  return btoa(unescape(encodeURIComponent(str)));
+  try {
+    // Use TextEncoder which is standard Web API and works in Edge Runtime
+    const bytes = new TextEncoder().encode(str);
+    const binString = String.fromCharCode(...bytes);
+    return btoa(binString);
+  } catch (error) {
+    console.error('utf8ToBase64 error:', error);
+    // Fallback for development/node environments
+    return typeof btoa !== 'undefined'
+      ? btoa(unescape(encodeURIComponent(str)))
+      : Buffer.from(str, 'utf-8').toString('base64');
+  }
 }
 
 function base64ToUtf8(str: string): string {
-  return decodeURIComponent(escape(atob(str)));
+  try {
+    // Use atob first, then TextDecoder for proper UTF-8 handling
+    const binString = atob(str);
+    const bytes = new Uint8Array(binString.length);
+    for (let i = 0; i < binString.length; i++) {
+      bytes[i] = binString.charCodeAt(i);
+    }
+    return new TextDecoder().decode(bytes);
+  } catch (error) {
+    console.error('base64ToUtf8 error with input:', str.substring(0, 20) + '...', error);
+
+    // Fallback for development/node environments
+    try {
+      return typeof atob !== 'undefined'
+        ? decodeURIComponent(escape(atob(str)))
+        : Buffer.from(str, 'base64').toString('utf-8');
+    } catch (fallbackError) {
+      console.error('base64ToUtf8 fallback also failed:', fallbackError);
+      const errorMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+      throw new Error(`Failed to decode base64 string: ${errorMessage}`);
+    }
+  }
 }
 
 // Simple JWT functions using Edge-compatible encoding
@@ -61,7 +93,10 @@ function verifySimpleToken(token: string): JWTPayload | null {
     console.log('🔍 Token parts:', {
       hasHeader: !!encodedHeader,
       hasPayload: !!encodedPayload,
-      hasSignature: !!signature
+      hasSignature: !!signature,
+      headerLength: encodedHeader?.length,
+      payloadLength: encodedPayload?.length,
+      signatureLength: signature?.length
     });
 
     if (!encodedHeader || !encodedPayload || !signature) {
@@ -82,15 +117,28 @@ function verifySimpleToken(token: string): JWTPayload | null {
       return null;
     }
 
+    console.log('🔓 Attempting to decode payload...');
     const decodedPayload = base64ToUtf8(encodedPayload);
-    console.log('🔍 Raw payload string:', decodedPayload);
+    console.log('🔍 Raw payload string length:', decodedPayload.length);
+    console.log('🔍 Raw payload preview:', decodedPayload.substring(0, 100) + (decodedPayload.length > 100 ? '...' : ''));
 
     // Clean up the payload string - remove any trailing characters after the last }
-    const cleanPayload = decodedPayload.substring(0, decodedPayload.lastIndexOf('}') + 1);
-    console.log('🧹 Cleaned payload string:', cleanPayload);
+    const lastBraceIndex = decodedPayload.lastIndexOf('}');
+    if (lastBraceIndex === -1) {
+      console.log('❌ No closing brace found in payload');
+      return null;
+    }
+
+    const cleanPayload = decodedPayload.substring(0, lastBraceIndex + 1);
+    console.log('🧹 Cleaned payload:', cleanPayload);
 
     const payload: JWTPayload = JSON.parse(cleanPayload);
-    console.log('📦 Decoded payload:', payload);
+    console.log('📦 Decoded payload successfully:', {
+      userId: payload.userId,
+      email: payload.email,
+      role: payload.role,
+      exp: payload.exp
+    });
 
     // Check expiration
     const now = Math.floor(Date.now() / 1000);
@@ -103,6 +151,11 @@ function verifySimpleToken(token: string): JWTPayload | null {
     return payload;
   } catch (error) {
     console.log('❌ verifySimpleToken error:', error);
+    console.log('❌ Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack?.split('\n')[0] : undefined
+    });
     return null;
   }
 }
