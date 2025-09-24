@@ -4,7 +4,7 @@
  */
 
 import { cookies } from 'next/headers';
-import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
+import { createSupabaseServerClient } from '@/lib/supabase/server-client';
 import type { Database } from '@/types/database';
 
 // JWT Secret - in production this should be in environment variable
@@ -124,9 +124,9 @@ export async function getCurrentUser(): Promise<SimpleUser | null> {
     if (!decoded) return null;
 
     // Get fresh user data from database
-    const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+    const supabase = createSupabaseServerClient();
 
-    const { data: user, error } = await supabase
+    const { data: user, error } = await (supabase as any)
       .from('simple_users')
       .select('*')
       .eq('id', decoded.userId)
@@ -161,11 +161,11 @@ export async function signInByEmail(email: string): Promise<{ success: boolean; 
   try {
     console.log('🔍 signInByEmail: Starting for email:', email);
     const cookieStore = cookies();
-    const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+    const supabase = createSupabaseServerClient();
 
     // Find user by email
     console.log('🔎 Querying simple_users table for email:', email.toLowerCase().trim());
-    const { data: user, error } = await supabase
+    const { data: user, error } = await (supabase as any)
       .from('simple_users')
       .select('*')
       .eq('email', email.toLowerCase().trim())

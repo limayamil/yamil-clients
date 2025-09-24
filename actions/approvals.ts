@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
+import { createSupabaseServerClient } from '@/lib/supabase/server-client';
 import type { Database } from '@/types/database';
 import { respondApprovalSchema } from '@/lib/validators/approvals';
 import { audit } from '@/lib/observability/audit';
@@ -9,7 +9,7 @@ import { revalidatePath } from 'next/cache';
 
 export async function respondApproval(_: unknown, formData: FormData) {
   const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  const supabase = createSupabaseServerClient();
   const payload = Object.fromEntries(formData.entries());
   const parsed = respondApprovalSchema.safeParse({
     approvalId: payload.approvalId,
@@ -18,7 +18,7 @@ export async function respondApproval(_: unknown, formData: FormData) {
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('approvals')
     .update({ status: parsed.data.status, approved_at: parsed.data.status === 'approved' ? new Date().toISOString() : null })
     .eq('id', parsed.data.approvalId)

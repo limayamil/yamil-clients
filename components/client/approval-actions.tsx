@@ -11,10 +11,10 @@ interface ApprovalActionsProps {
   approval?: ApprovalEntry;
 }
 
-const initialState: { error?: { status?: string[]; approvalId?: string[]; feedback?: string[] } | { db: string[] }; success?: boolean } = {};
+const initialState: any = { success: false };
 
 export function ApprovalActions({ approval }: ApprovalActionsProps) {
-  const [state, formAction] = useFormState(respondApproval, initialState);
+  const [state, formAction] = useFormState(respondApproval as any, initialState);
   if (!approval) {
     return <p className="text-sm text-muted-foreground">No hay aprobaciones pendientes.</p>;
   }

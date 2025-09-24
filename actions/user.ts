@@ -2,27 +2,20 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/types/database';
 import { audit } from '@/lib/observability/audit';
-import { getUser, clearAllAuthCache } from '@/lib/auth/session';
+import { getCurrentUser, clearUserSession } from '@/lib/auth/simple-auth';
 
 export async function logout() {
-  const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  // Get current user before clearing session
+  const user = await getCurrentUser();
 
-  // Usar nuestra función optimizada para obtener el usuario
-  const user = await getUser();
-
-  await supabase.auth.signOut();
-
-  // Limpiar el cache después del logout
-  clearAllAuthCache();
+  // Clear the JWT session cookie
+  clearUserSession();
 
   await audit({
-    action: 'auth.sign_out',
+    action: 'auth.simple_logout',
     actorType: user ? 'provider' : 'system',
-    details: { user_id: user?.id }
+    details: { user_id: user?.id, system: 'simple_auth' }
   });
 
   redirect('/login');
