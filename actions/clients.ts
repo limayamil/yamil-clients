@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server-client';
 import { createClientSchema, updateClientSchema } from '@/lib/validators/clients';
 import { requireRole } from '@/lib/auth/guards';
 import { audit } from '@/lib/observability/audit';
+import type { Database } from '@/types/database';
 
 export async function createClient(_: unknown, formData: FormData) {
   try {
@@ -20,7 +21,7 @@ export async function createClient(_: unknown, formData: FormData) {
       };
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('clients')
       .insert([parsed.data])
       .select()
@@ -71,7 +72,7 @@ export async function updateClient(_: unknown, formData: FormData) {
     }
 
     const { id, ...updateData } = parsed.data;
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('clients')
       .update(updateData)
       .eq('id', id)
@@ -112,7 +113,7 @@ export async function toggleClientStatus(clientId: string) {
     await requireRole(['provider']);
     const supabase = createSupabaseServerClient();
 
-    const { data: currentClient, error: fetchError } = await supabase
+    const { data: currentClient, error: fetchError } = await (supabase as any)
       .from('clients')
       .select('id, active, name')
       .eq('id', clientId)
@@ -125,7 +126,7 @@ export async function toggleClientStatus(clientId: string) {
       };
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('clients')
       .update({ active: !currentClient.active })
       .eq('id', clientId)

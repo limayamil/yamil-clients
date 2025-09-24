@@ -46,7 +46,7 @@ export async function addProjectLink(formData: FormData) {
     const supabase = createSupabaseServerClient();
 
     // Verificar que el usuario tiene acceso al proyecto
-    const { data: project, error: projectError } = await supabase
+    const { data: project, error: projectError } = await (supabase as any)
       .from('projects')
       .select('id, organization_id')
       .eq('id', projectId)
@@ -57,7 +57,7 @@ export async function addProjectLink(formData: FormData) {
     }
 
     // Insertar el nuevo link
-    const { error: insertError } = await supabase
+    const { error: insertError } = await (supabase as any)
       .from('project_links')
       .insert({
         project_id: projectId,
@@ -112,7 +112,7 @@ export async function updateProjectLink(formData: FormData) {
     const supabase = createSupabaseServerClient();
 
     // Actualizar el link
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('project_links')
       .update({ title, url })
       .eq('id', linkId)
@@ -162,7 +162,7 @@ export async function deleteProjectLink(formData: FormData) {
     const supabase = createSupabaseServerClient();
 
     // Eliminar el link
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('project_links')
       .delete()
       .eq('id', linkId)

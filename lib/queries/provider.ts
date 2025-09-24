@@ -5,7 +5,7 @@ import type { Database } from '@/types/database';
 
 export async function getProviderDashboardProjects(userId: string) {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase.rpc('provider_dashboard_projects', { provider_id: userId });
+  const { data, error } = await (supabase as any).rpc('provider_dashboard_projects', { provider_id: userId });
   if (error) {
     console.error('provider_dashboard_projects', error);
     return [] satisfies ProjectSummary[];
@@ -25,7 +25,7 @@ export async function getProviderProject(projectId: string) {
   const supabase = createSupabaseServerClient();
 
   // Intentar usar la RPC function que incluye el nombre del cliente
-  const { data, error } = await supabase.rpc('provider_project_detail', { project_id_input: projectId });
+  const { data, error } = await (supabase as any).rpc('provider_project_detail', { project_id_input: projectId });
   if (!error && data) {
     const parsed = data as Record<string, any>;
 
@@ -50,7 +50,7 @@ export async function getProviderProject(projectId: string) {
       links: linksResult.data ?? [],
       minutes: minutesResult.data ?? [],
       project_members: projectMembersResult.data ?? []
-    } as ProjectSummary;
+    } as any;
   }
 
   // FALLBACK: Usar consultas directas si la RPC falla
@@ -114,7 +114,7 @@ export async function getProviderProject(projectId: string) {
       client_name: (projectData.clients as any)?.name || 'Cliente',
       overdue: false, // Placeholder
       waiting_on_client: false // Placeholder
-    } as ProjectSummary;
+    } as any;
 
   } catch (error) {
     console.error('Error in getProviderProject:', error);
@@ -124,7 +124,7 @@ export async function getProviderProject(projectId: string) {
 
 export async function getActiveClients() {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase.from('clients').select('id, name, email').eq('active', true).order('name');
+  const { data, error } = await (supabase as any).from('clients').select('id, name, email').eq('active', true).order('name');
   if (error) {
     console.error('clients list', error);
     return [];
@@ -134,19 +134,19 @@ export async function getActiveClients() {
 
 export async function getProjectTemplates() {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase.from('settings').select('key, value');
+  const { data, error } = await (supabase as any).from('settings').select('key, value');
   if (error) {
     console.error('templates list', error);
     return [];
   }
   return (data ?? [])
-    .filter((item) => item.key.startsWith('template.'))
-    .map((item) => ({ key: item.key, value: (item.value as Record<string, unknown>) }));
+    .filter((item: any) => item.key.startsWith('template.'))
+    .map((item: any) => ({ key: item.key, value: (item.value as Record<string, unknown>) }));
 }
 
 export async function getAllClients() {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('clients')
     .select('id, name, email, company, phone, active, created_at')
     .order('created_at', { ascending: false });
@@ -160,7 +160,7 @@ export async function getAllClients() {
 
 export async function getClientById(clientId: string) {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('clients')
     .select('id, name, email, company, phone, active, created_at')
     .eq('id', clientId)
@@ -175,7 +175,7 @@ export async function getClientById(clientId: string) {
 
 export async function getClientProjects(clientId: string) {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('projects')
     .select('id, title, status, created_at, deadline')
     .eq('client_id', clientId)

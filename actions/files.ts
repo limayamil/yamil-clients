@@ -2,9 +2,7 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/types/database';
+import { createSupabaseServerClient } from '@/lib/supabase/server-client';
 import { rateLimitCurrentUser } from '@/lib/security/rate-limit';
 import { audit } from '@/lib/observability/audit';
 import { getUser } from '@/lib/auth/session';
@@ -94,8 +92,7 @@ export async function uploadFileRecord(_: unknown, formData: FormData) {
     // Rate limiting
     rateLimitCurrentUser(5); // Lower limit for file uploads
 
-    const cookieStore = cookies();
-    const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+    const supabase = createSupabaseServerClient();
 
     // Get form data
     const payload = Object.fromEntries(formData.entries());
@@ -146,11 +143,11 @@ export async function uploadFileRecord(_: unknown, formData: FormData) {
 
     // For clients, verify they have access to this project using project_members
     if (userRole === 'client') {
-      const { data: memberCheck, error: memberError } = await supabase
+      const { data: memberCheck, error: memberError } = await (supabase as any)
         .from('project_members')
         .select('role')
         .eq('project_id', parsed.data.projectId)
-        .eq('email', user.email?.toLowerCase())
+        .eq('email', user.email?.toLowerCase() || '')
         .single();
 
       if (memberError || !memberCheck) {
@@ -171,7 +168,7 @@ export async function uploadFileRecord(_: unknown, formData: FormData) {
     }
 
     // Create file record in database
-    const { data: fileRecord, error: dbError } = await supabase
+    const { data: fileRecord, error: dbError } = await (supabase as any)
       .from('files')
       .insert({
         project_id: parsed.data.projectId,
@@ -235,8 +232,7 @@ export async function deleteFile(_: unknown, formData: FormData) {
     // Rate limiting
     rateLimitCurrentUser(10);
 
-    const cookieStore = cookies();
-    const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+    const supabase = createSupabaseServerClient();
 
     // Get form data
     const payload = Object.fromEntries(formData.entries());
@@ -273,7 +269,7 @@ export async function deleteFile(_: unknown, formData: FormData) {
     }
 
     // Get file information
-    const { data: file, error: fileError } = await supabase
+    const { data: file, error: fileError } = await (supabase as any)
       .from('files')
       .select('*')
       .eq('id', parsed.data.fileId)
@@ -297,11 +293,11 @@ export async function deleteFile(_: unknown, formData: FormData) {
 
     // Authorization check using project_members
     if (userRole === 'client') {
-      const { data: memberCheck, error: memberError } = await supabase
+      const { data: memberCheck, error: memberError } = await (supabase as any)
         .from('project_members')
         .select('role')
         .eq('project_id', parsed.data.projectId)
-        .eq('email', user.email?.toLowerCase())
+        .eq('email', user.email?.toLowerCase() || '')
         .single();
 
       if (memberError || !memberCheck) {
@@ -323,7 +319,7 @@ export async function deleteFile(_: unknown, formData: FormData) {
 
     // Delete from storage only if it's a real file, not a URL link
     if (file.mime !== 'text/uri-list') {
-      const { error: storageError } = await supabase.storage
+      const { error: storageError } = await (supabase as any).storage
         .from('project-files')
         .remove([file.storage_path]);
 
@@ -334,7 +330,7 @@ export async function deleteFile(_: unknown, formData: FormData) {
     }
 
     // Delete from database
-    const { error: dbError } = await supabase
+    const { error: dbError } = await (supabase as any)
       .from('files')
       .delete()
       .eq('id', parsed.data.fileId);
@@ -388,8 +384,7 @@ export async function addStageLink(_: unknown, formData: FormData) {
     // Rate limiting
     rateLimitCurrentUser(10);
 
-    const cookieStore = cookies();
-    const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+    const supabase = createSupabaseServerClient();
 
     // Get form data
     const payload = Object.fromEntries(formData.entries());
@@ -427,11 +422,11 @@ export async function addStageLink(_: unknown, formData: FormData) {
 
     // For clients, verify they have access to this project using project_members
     if (userRole === 'client') {
-      const { data: memberCheck, error: memberError } = await supabase
+      const { data: memberCheck, error: memberError } = await (supabase as any)
         .from('project_members')
         .select('role')
         .eq('project_id', parsed.data.projectId)
-        .eq('email', user.email?.toLowerCase())
+        .eq('email', user.email?.toLowerCase() || '')
         .single();
 
       if (memberError || !memberCheck) {
@@ -452,7 +447,7 @@ export async function addStageLink(_: unknown, formData: FormData) {
     }
 
     // Create link record in database using the files table
-    const { data: linkRecord, error: dbError } = await supabase
+    const { data: linkRecord, error: dbError } = await (supabase as any)
       .from('files')
       .insert({
         project_id: parsed.data.projectId,

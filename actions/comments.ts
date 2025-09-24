@@ -1,9 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/types/database';
+import { createSupabaseServerClient } from '@/lib/supabase/server-client';
 import { createCommentSchema, updateCommentSchema } from '@/lib/validators/comments';
 import { z } from 'zod';
 import { audit } from '@/lib/observability/audit';
@@ -28,8 +26,7 @@ export async function createComment(_: unknown, formData: FormData): Promise<Com
       };
     }
 
-    const cookieStore = cookies();
-    const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+    const supabase = createSupabaseServerClient();
 
     // Parse form data
     const payload = Object.fromEntries(formData.entries());
@@ -68,7 +65,7 @@ export async function createComment(_: unknown, formData: FormData): Promise<Com
 
     // For clients, verify they have access to this project using project_members
     if (userRole === 'client') {
-      const { data: memberCheck, error: memberError } = await supabase
+      const { data: memberCheck, error: memberError } = await (supabase as any)
         .from('project_members')
         .select('role')
         .eq('project_id', parsed.data.projectId)
@@ -93,7 +90,7 @@ export async function createComment(_: unknown, formData: FormData): Promise<Com
     }
 
     // Create comment
-    const { data, error } = await supabase.from('comments').insert({
+    const { data, error } = await (supabase as any).from('comments').insert({
       project_id: parsed.data.projectId,
       stage_id: parsed.data.stageId,
       component_id: parsed.data.componentId,
@@ -160,8 +157,7 @@ export async function deleteComment(_: unknown, formData: FormData): Promise<Com
       };
     }
 
-    const cookieStore = cookies();
-    const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+    const supabase = createSupabaseServerClient();
 
     // Parse form data
     const payload = Object.fromEntries(formData.entries());
@@ -196,7 +192,7 @@ export async function deleteComment(_: unknown, formData: FormData): Promise<Com
     }
 
     // Get comment to verify ownership
-    const { data: comment, error: commentError } = await supabase
+    const { data: comment, error: commentError } = await (supabase as any)
       .from('comments')
       .select('*')
       .eq('id', parsed.data.commentId)
@@ -231,7 +227,7 @@ export async function deleteComment(_: unknown, formData: FormData): Promise<Com
 
     // For clients, verify they have access to this project
     if (userRole === 'client') {
-      const { data: memberCheck, error: memberError } = await supabase
+      const { data: memberCheck, error: memberError } = await (supabase as any)
         .from('project_members')
         .select('role')
         .eq('project_id', parsed.data.projectId)
@@ -247,7 +243,7 @@ export async function deleteComment(_: unknown, formData: FormData): Promise<Com
     }
 
     // Delete comment
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('comments')
       .delete()
       .eq('id', parsed.data.commentId);
@@ -304,8 +300,7 @@ export async function updateComment(_: unknown, formData: FormData): Promise<Com
       };
     }
 
-    const cookieStore = cookies();
-    const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+    const supabase = createSupabaseServerClient();
 
     // Parse form data
     const payload = Object.fromEntries(formData.entries());
@@ -341,7 +336,7 @@ export async function updateComment(_: unknown, formData: FormData): Promise<Com
     }
 
     // Get comment to verify ownership
-    const { data: comment, error: commentError } = await supabase
+    const { data: comment, error: commentError } = await (supabase as any)
       .from('comments')
       .select('*')
       .eq('id', parsed.data.commentId)
@@ -365,7 +360,7 @@ export async function updateComment(_: unknown, formData: FormData): Promise<Com
 
     // For clients, verify they have access to this project
     if (userRole === 'client') {
-      const { data: memberCheck, error: memberError } = await supabase
+      const { data: memberCheck, error: memberError } = await (supabase as any)
         .from('project_members')
         .select('role')
         .eq('project_id', parsed.data.projectId)
@@ -381,7 +376,7 @@ export async function updateComment(_: unknown, formData: FormData): Promise<Com
     }
 
     // Update comment
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('comments')
       .update({
         body: parsed.data.body,

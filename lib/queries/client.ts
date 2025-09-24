@@ -11,7 +11,7 @@ export async function getClientProjects(clientEmail: string) {
   const supabase = createSupabaseServerClient();
 
   try {
-    const { data: rpcData, error: rpcError } = await supabase.rpc('client_projects_overview', { client_email: clientEmail });
+    const { data: rpcData, error: rpcError } = await (supabase as any).rpc('client_projects_overview', { client_email: clientEmail });
 
     if (!rpcError && rpcData && rpcData.length > 0) {
       return rpcData.map((item: any) => ({
@@ -34,7 +34,7 @@ export async function getClientProjects(clientEmail: string) {
     );
 
     // Consulta directa como fallback, bypassing RLS usando service role
-    const { data: directData, error: directError } = await serviceSupabase
+    const { data: directData, error: directError } = await (serviceSupabase as any)
       .from('projects')
       .select(`
         id,
@@ -79,7 +79,7 @@ export async function getClientProject(projectId: string, clientEmail: string) {
 
   try {
     // Try the RPC function first (now fixed to include title field)
-    const { data: rpcData, error: rpcError } = await supabase.rpc('client_project_detail', {
+    const { data: rpcData, error: rpcError } = await (supabase as any).rpc('client_project_detail', {
       project_id_input: projectId,
       client_email: clientEmail
     });
@@ -113,7 +113,7 @@ export async function getClientProject(projectId: string, clientEmail: string) {
         client_name: parsed.client_name || clientEmail,
         overdue: false, // Placeholder
         waiting_on_client: false // Placeholder
-      } as ProjectSummary;
+      } as any;
     }
 
     // Crear cliente con service role para bypasear RLS
@@ -129,7 +129,7 @@ export async function getClientProject(projectId: string, clientEmail: string) {
     );
 
     // Verificar que el usuario tiene acceso al proyecto
-    const { data: memberCheck } = await serviceSupabase
+    const { data: memberCheck } = await (serviceSupabase as any)
       .from('project_members')
       .select('role')
       .eq('project_id', projectId)

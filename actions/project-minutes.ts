@@ -52,7 +52,7 @@ export async function addProjectMinute(formData: FormData) {
     const supabase = createSupabaseServerClient();
 
     // Verificar que el usuario tiene acceso al proyecto
-    const { data: project, error: projectError } = await supabase
+    const { data: project, error: projectError } = await (supabase as any)
       .from('projects')
       .select('id, organization_id')
       .eq('id', projectId)
@@ -63,7 +63,7 @@ export async function addProjectMinute(formData: FormData) {
     }
 
     // Verificar si ya existe una minuta para esa fecha
-    const { data: existingMinute } = await supabase
+    const { data: existingMinute } = await (supabase as any)
       .from('project_minutes')
       .select('id')
       .eq('project_id', projectId)
@@ -75,7 +75,7 @@ export async function addProjectMinute(formData: FormData) {
     }
 
     // Insertar la nueva minuta
-    const { data: insertedMinute, error: insertError } = await supabase
+    const { data: insertedMinute, error: insertError } = await (supabase as any)
       .from('project_minutes')
       .insert({
         project_id: projectId,
@@ -137,7 +137,7 @@ export async function updateProjectMinute(formData: FormData) {
     const supabase = createSupabaseServerClient();
 
     // Verificar si existe otra minuta con la misma fecha (excepto esta)
-    const { data: existingMinute } = await supabase
+    const { data: existingMinute } = await (supabase as any)
       .from('project_minutes')
       .select('id')
       .eq('project_id', projectId)
@@ -150,7 +150,7 @@ export async function updateProjectMinute(formData: FormData) {
     }
 
     // Actualizar la minuta
-    const { data: updatedMinute, error: updateError } = await supabase
+    const { data: updatedMinute, error: updateError } = await (supabase as any)
       .from('project_minutes')
       .update({
         title: finalTitle,
@@ -206,14 +206,14 @@ export async function deleteProjectMinute(formData: FormData) {
     const supabase = createSupabaseServerClient();
 
     // Obtener la fecha de la minuta antes de eliminarla (para auditoría)
-    const { data: minute } = await supabase
+    const { data: minute } = await (supabase as any)
       .from('project_minutes')
       .select('meeting_date')
       .eq('id', minuteId)
       .single();
 
     // Eliminar la minuta
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('project_minutes')
       .delete()
       .eq('id', minuteId)
@@ -251,7 +251,7 @@ export async function getProjectMinute(projectId: string, meetingDate: string) {
 
     const supabase = createSupabaseServerClient();
 
-    const { data: minute, error } = await supabase
+    const { data: minute, error } = await (supabase as any)
       .from('project_minutes')
       .select('*')
       .eq('project_id', projectId)

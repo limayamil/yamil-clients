@@ -43,7 +43,7 @@ export async function addProjectMember(formData: FormData) {
   }
 
   // Verificar que el proyecto existe y el usuario tiene permisos
-  const { data: project, error: projectError } = await supabase
+  const { data: project, error: projectError } = await (supabase as any)
     .from('projects')
     .select('id, title')
     .eq('id', parsed.data.projectId)
@@ -54,7 +54,7 @@ export async function addProjectMember(formData: FormData) {
   }
 
   // Verificar que el email no esté ya agregado al proyecto
-  const { data: existingMember, error: memberCheckError } = await supabase
+  const { data: existingMember, error: memberCheckError } = await (supabase as any)
     .from('project_members')
     .select('id')
     .eq('project_id', parsed.data.projectId)
@@ -70,7 +70,7 @@ export async function addProjectMember(formData: FormData) {
   }
 
   // Agregar el miembro al proyecto
-  const { error: insertError } = await supabase
+  const { error: insertError } = await (supabase as any)
     .from('project_members')
     .insert({
       project_id: parsed.data.projectId,
@@ -114,7 +114,7 @@ export async function removeProjectMember(formData: FormData) {
   }
 
   // Eliminar el miembro del proyecto
-  const { error: deleteError } = await supabase
+  const { error: deleteError } = await (supabase as any)
     .from('project_members')
     .delete()
     .eq('project_id', parsed.data.projectId)
@@ -152,7 +152,7 @@ export async function updateProjectMemberRole(formData: FormData) {
   }
 
   // Actualizar el rol del miembro
-  const { error: updateError } = await supabase
+  const { error: updateError } = await (supabase as any)
     .from('project_members')
     .update({ role: parsed.data.role })
     .eq('project_id', parsed.data.projectId)
@@ -186,7 +186,7 @@ export async function getProjectMembers(projectId: string) {
     return [];
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('project_members')
     .select('*')
     .eq('project_id', projectId)

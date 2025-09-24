@@ -20,8 +20,8 @@ export default async function DashboardPage() {
     projectsCount: projects.length,
     clientsCount: clients.length,
     templatesCount: templates.length,
-    projects: projects.map(p => ({ id: p.id, title: p.title })),
-    clients: clients.map(c => ({ id: c.id, name: c.name }))
+    projects: projects.map((p: any) => ({ id: p.id, title: p.title })),
+    clients: clients.map((c: any) => ({ id: c.id, name: c.name }))
   });
 
   return (

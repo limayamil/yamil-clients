@@ -1,8 +1,7 @@
 'use server';
 
-import { cookies } from 'next/headers';
-import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/types/database';
+import { createSupabaseServerClient } from '@/lib/supabase/server-client';
+import { getUser } from '@/lib/auth/session';
 import {
   requestMaterialsSchema,
   requestApprovalSchema,
@@ -45,14 +44,13 @@ function processFormData(formData: FormData): Record<string, any> {
 }
 
 export async function requestMaterials(_: unknown, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  const supabase = createSupabaseServerClient();
   rateLimitCurrentUser();
   const payload = processFormData(formData);
   const parsed = requestMaterialsSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { error } = await supabase.rpc('request_materials_for_project', { project_id_input: parsed.data.projectId });
+  const { error } = await (supabase as any).rpc('request_materials_for_project', { project_id_input: parsed.data.projectId });
   if (error) return { error: { rpc: [error.message] } };
 
   await audit({
@@ -66,14 +64,13 @@ export async function requestMaterials(_: unknown, formData: FormData) {
 }
 
 export async function requestApproval(_: unknown, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  const supabase = createSupabaseServerClient();
   rateLimitCurrentUser();
   const payload = processFormData(formData);
   const parsed = requestApprovalSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { error } = await supabase.rpc('request_stage_approval', {
+  const { error } = await (supabase as any).rpc('request_stage_approval', {
     project_id_input: parsed.data.projectId,
     stage_id_input: parsed.data.stageId
   });
@@ -91,14 +88,13 @@ export async function requestApproval(_: unknown, formData: FormData) {
 }
 
 export async function completeStage(_: unknown, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  const supabase = createSupabaseServerClient();
   rateLimitCurrentUser();
   const payload = processFormData(formData);
   const parsed = completeStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { error } = await supabase.rpc('complete_stage_and_move_next', { stage_id_input: parsed.data.stageId });
+  const { error } = await (supabase as any).rpc('complete_stage_and_move_next', { stage_id_input: parsed.data.stageId });
   if (error) return { error: { rpc: [error.message] } };
 
   await audit({
@@ -114,19 +110,18 @@ export async function completeStage(_: unknown, formData: FormData) {
 }
 
 export async function addStageComponent(_: unknown, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  const supabase = createSupabaseServerClient();
   rateLimitCurrentUser();
 
   const payload = processFormData(formData);
   const parsed = addStageComponentSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return { error: { auth: ['Sin sesión activa'] } };
+  const user = await getUser();
+  if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que el usuario tiene acceso al proyecto
-  const { data: project, error: projectError } = await supabase
+  const { data: project, error: projectError } = await (supabase as any)
     .from('projects')
     .select('id, organization_id')
     .eq('id', parsed.data.projectId)
@@ -137,7 +132,7 @@ export async function addStageComponent(_: unknown, formData: FormData) {
   }
 
   // Insertar el componente
-  const { data: component, error } = await supabase
+  const { data: component, error } = await (supabase as any)
     .from('stage_components')
     .insert({
       stage_id: parsed.data.stageId,
@@ -167,19 +162,18 @@ export async function addStageComponent(_: unknown, formData: FormData) {
 }
 
 export async function updateStageComponent(_: unknown, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  const supabase = createSupabaseServerClient();
   rateLimitCurrentUser();
 
   const payload = processFormData(formData);
   const parsed = updateStageComponentSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return { error: { auth: ['Sin sesión activa'] } };
+  const user = await getUser();
+  if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que el componente existe y el usuario tiene acceso
-  const { data: component, error: fetchError } = await supabase
+  const { data: component, error: fetchError } = await (supabase as any)
     .from('stage_components')
     .select(`
       id,
@@ -203,7 +197,7 @@ export async function updateStageComponent(_: unknown, formData: FormData) {
   if (parsed.data.config !== undefined) updateData.config = parsed.data.config;
   if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('stage_components')
     .update(updateData)
     .eq('id', parsed.data.componentId);
@@ -228,19 +222,18 @@ export async function updateStageComponent(_: unknown, formData: FormData) {
 }
 
 export async function deleteStageComponent(_: unknown, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  const supabase = createSupabaseServerClient();
   rateLimitCurrentUser();
 
   const payload = processFormData(formData);
   const parsed = deleteStageComponentSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return { error: { auth: ['Sin sesión activa'] } };
+  const user = await getUser();
+  if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que el componente existe y el usuario tiene acceso
-  const { data: component, error: fetchError } = await supabase
+  const { data: component, error: fetchError } = await (supabase as any)
     .from('stage_components')
     .select(`
       id,
@@ -259,7 +252,7 @@ export async function deleteStageComponent(_: unknown, formData: FormData) {
     return { error: { component: ['Componente no encontrado'] } };
   }
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('stage_components')
     .delete()
     .eq('id', parsed.data.componentId);
@@ -282,19 +275,18 @@ export async function deleteStageComponent(_: unknown, formData: FormData) {
 }
 
 export async function updateStage(_: unknown, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  const supabase = createSupabaseServerClient();
   rateLimitCurrentUser();
 
   const payload = processFormData(formData);
   const parsed = updateStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return { error: { auth: ['Sin sesión activa'] } };
+  const user = await getUser();
+  if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que la etapa existe y el usuario tiene acceso
-  const { data: stage, error: fetchError } = await supabase
+  const { data: stage, error: fetchError } = await (supabase as any)
     .from('stages')
     .select(`
       id,
@@ -319,7 +311,7 @@ export async function updateStage(_: unknown, formData: FormData) {
   if (parsed.data.planned_end !== undefined) updateData.planned_end = parsed.data.planned_end;
   if (parsed.data.deadline !== undefined) updateData.deadline = parsed.data.deadline;
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('stages')
     .update(updateData)
     .eq('id', parsed.data.stageId);
@@ -341,19 +333,18 @@ export async function updateStage(_: unknown, formData: FormData) {
 }
 
 export async function createStage(_: unknown, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  const supabase = createSupabaseServerClient();
   rateLimitCurrentUser();
 
   const payload = processFormData(formData);
   const parsed = createStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return { error: { auth: ['Sin sesión activa'] } };
+  const user = await getUser();
+  if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar acceso al proyecto
-  const { data: project, error: projectError } = await supabase
+  const { data: project, error: projectError } = await (supabase as any)
     .from('projects')
     .select('id')
     .eq('id', parsed.data.projectId)
@@ -366,7 +357,7 @@ export async function createStage(_: unknown, formData: FormData) {
   // Obtener el siguiente order basado en la posición de inserción
   let nextOrder = 1;
   if (parsed.data.insertAfterStageId) {
-    const { data: insertAfterStage } = await supabase
+    const { data: insertAfterStage } = await (supabase as any)
       .from('stages')
       .select('"order"')
       .eq('id', parsed.data.insertAfterStageId)
@@ -375,7 +366,7 @@ export async function createStage(_: unknown, formData: FormData) {
     if (insertAfterStage) {
       nextOrder = insertAfterStage.order + 1;
       // Actualizar el orden de las etapas siguientes
-      const { data: stagesToUpdate } = await supabase
+      const { data: stagesToUpdate } = await (supabase as any)
         .from('stages')
         .select('id, order')
         .eq('project_id', parsed.data.projectId)
@@ -383,7 +374,7 @@ export async function createStage(_: unknown, formData: FormData) {
 
       if (stagesToUpdate && stagesToUpdate.length > 0) {
         for (const stage of stagesToUpdate) {
-          await supabase
+          await (supabase as any)
             .from('stages')
             .update({ order: stage.order + 1 })
             .eq('id', stage.id);
@@ -392,7 +383,7 @@ export async function createStage(_: unknown, formData: FormData) {
     }
   } else {
     // Si no se especifica posición, agregar al final
-    const { data: lastStage } = await supabase
+    const { data: lastStage } = await (supabase as any)
       .from('stages')
       .select('"order"')
       .eq('project_id', parsed.data.projectId)
@@ -406,7 +397,7 @@ export async function createStage(_: unknown, formData: FormData) {
   }
 
   // Crear la nueva etapa
-  const { data: newStage, error } = await supabase
+  const { data: newStage, error } = await (supabase as any)
     .from('stages')
     .insert({
       project_id: parsed.data.projectId,
@@ -441,19 +432,18 @@ export async function createStage(_: unknown, formData: FormData) {
 }
 
 export async function deleteStage(_: unknown, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  const supabase = createSupabaseServerClient();
   rateLimitCurrentUser();
 
   const payload = processFormData(formData);
   const parsed = deleteStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return { error: { auth: ['Sin sesión activa'] } };
+  const user = await getUser();
+  if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que la etapa existe y obtener información
-  const { data: stage, error: stageError } = await supabase
+  const { data: stage, error: stageError } = await (supabase as any)
     .from('stages')
     .select(`
       id,
@@ -475,7 +465,7 @@ export async function deleteStage(_: unknown, formData: FormData) {
   }
 
   // Eliminar la etapa
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('stages')
     .delete()
     .eq('id', parsed.data.stageId);
@@ -483,7 +473,7 @@ export async function deleteStage(_: unknown, formData: FormData) {
   if (error) return { error: { db: [error.message] } };
 
   // Actualizar el orden de las etapas siguientes
-  const { data: stagesToUpdate } = await supabase
+  const { data: stagesToUpdate } = await (supabase as any)
     .from('stages')
     .select('id, order')
     .eq('project_id', stage.project_id)
@@ -491,7 +481,7 @@ export async function deleteStage(_: unknown, formData: FormData) {
 
   if (stagesToUpdate && stagesToUpdate.length > 0) {
     for (const stageToUpdate of stagesToUpdate) {
-      await supabase
+      await (supabase as any)
         .from('stages')
         .update({ order: stageToUpdate.order - 1 })
         .eq('id', stageToUpdate.id);
@@ -513,19 +503,18 @@ export async function deleteStage(_: unknown, formData: FormData) {
 }
 
 export async function reorderStages(_: unknown, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createServerActionClient<Database>({ cookies: () => cookieStore });
+  const supabase = createSupabaseServerClient();
   rateLimitCurrentUser();
 
   const payload = processFormData(formData);
   const parsed = reorderStagesSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return { error: { auth: ['Sin sesión activa'] } };
+  const user = await getUser();
+  if (!user) return { error: { auth: ['Sin sesión activa'] } };
 
   // Verificar que todas las etapas pertenecen al proyecto
-  const { data: stages, error: stagesError } = await supabase
+  const { data: stages, error: stagesError } = await (supabase as any)
     .from('stages')
     .select('id, title')
     .eq('project_id', parsed.data.projectId)
@@ -542,7 +531,7 @@ export async function reorderStages(_: unknown, formData: FormData) {
   }));
 
   for (const update of updates) {
-    await supabase
+    await (supabase as any)
       .from('stages')
       .update({ order: update.order })
       .eq('id', update.id);
