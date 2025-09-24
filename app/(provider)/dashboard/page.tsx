@@ -7,11 +7,22 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const user = await requireRole(['provider']);
+
+  console.log('🔍 Dashboard: Loading data for user:', { id: user.id, email: user.email, role: user.role });
+
   const [projects, clients, templates] = await Promise.all([
     getProviderDashboardProjects(user.id),
     getActiveClients(),
     getProjectTemplates()
   ]);
+
+  console.log('📊 Dashboard: Data loaded:', {
+    projectsCount: projects.length,
+    clientsCount: clients.length,
+    templatesCount: templates.length,
+    projects: projects.map(p => ({ id: p.id, title: p.title })),
+    clients: clients.map(c => ({ id: c.id, name: c.name }))
+  });
 
   return (
     <div className="space-y-8">

@@ -1,24 +1,17 @@
 import { redirect } from 'next/navigation';
-import { getUser } from './session';
-import type { User } from '@supabase/supabase-js';
-import { getUsernameFromEmail } from '@/lib/utils';
+import { getCurrentUser, getUsernameFromEmail, type SimpleUser } from './simple-auth';
 
-export async function requireUser(): Promise<User> {
-  const user = await getUser();
+export async function requireUser(): Promise<SimpleUser> {
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
   return user;
 }
 
-export async function requireRole(roles: Array<'provider' | 'client'>): Promise<User> {
+export async function requireRole(roles: Array<'provider' | 'client'>): Promise<SimpleUser> {
   const user = await requireUser();
-  const role = user.user_metadata?.role as 'provider' | 'client' | undefined;
 
-  if (!role) {
-    redirect('/login');
-  }
-
-  if (!roles.includes(role)) {
-    if (role === 'client' && user.email) {
+  if (!roles.includes(user.role)) {
+    if (user.role === 'client') {
       const username = getUsernameFromEmail(user.email);
       redirect(`/c/${username}/projects`);
     } else {
@@ -32,5 +25,10 @@ export async function requireRole(roles: Array<'provider' | 'client'>): Promise<
 export async function requireSession() {
   const user = await requireUser();
   // Return a session-like object for backward compatibility
-  return { user };
+  return {
+    user: {
+      ...user,
+      user_metadata: { role: user.role }
+    }
+  };
 }
