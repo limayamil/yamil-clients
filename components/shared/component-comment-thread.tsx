@@ -20,6 +20,7 @@ interface ComponentCommentThreadProps {
   comments: CommentEntry[];
   isCompact?: boolean;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
+  clientName?: string;
 }
 
 const initialState: { error?: string; success?: boolean; message?: string } = {};
@@ -30,7 +31,8 @@ export function ComponentCommentThread({
   projectId,
   comments,
   isCompact = true,
-  currentUser
+  currentUser,
+  clientName
 }: ComponentCommentThreadProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [state, formAction] = useFormState(createComment, initialState);
@@ -42,6 +44,12 @@ export function ComponentCommentThread({
 
   const componentComments = comments.filter(comment => comment.component_id === componentId);
   const unreadCount = componentComments.length; // TODO: Implement actual unread logic
+
+  // Helper function to get the first name from full client name
+  const getClientFirstName = (fullName?: string): string => {
+    if (!fullName) return 'Cliente';
+    return fullName.split(' ')[0] || 'Cliente';
+  };
 
   useEffect(() => {
     if (state?.success) {
@@ -188,7 +196,7 @@ export function ComponentCommentThread({
                       variant={comment.author_type === 'provider' ? 'default' : 'secondary'}
                       className="text-xs h-5"
                     >
-                      {comment.author_type === 'provider' ? 'Proveedor' : 'Cliente'}
+                      {comment.author_type === 'provider' ? 'Proveedor' : getClientFirstName(clientName)}
                     </Badge>
                     <time className="text-muted-foreground">
                       {formatDate(comment.created_at)}

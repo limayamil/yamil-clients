@@ -15,6 +15,7 @@ interface ClientStageComponentsProps {
   comments: CommentEntry[];
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
+  clientName?: string;
 }
 
 export function ClientStageComponents({
@@ -22,7 +23,8 @@ export function ClientStageComponents({
   projectId,
   comments,
   onUpdateComponent,
-  currentUser
+  currentUser,
+  clientName
 }: ClientStageComponentsProps) {
   if (!components || components.length === 0) {
     return (
@@ -46,6 +48,7 @@ export function ClientStageComponents({
           comments={comments}
           onUpdateComponent={onUpdateComponent}
           currentUser={currentUser}
+          clientName={clientName}
         />
       ))}
     </div>
@@ -58,6 +61,7 @@ interface ClientComponentCardProps {
   comments: CommentEntry[];
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
+  clientName?: string;
 }
 
 function ClientComponentCard({
@@ -65,7 +69,8 @@ function ClientComponentCard({
   projectId,
   comments,
   onUpdateComponent,
-  currentUser
+  currentUser,
+  clientName
 }: ClientComponentCardProps) {
   const getComponentIcon = (type: string) => {
     switch (type) {
@@ -172,6 +177,7 @@ function ClientComponentCard({
         comments={comments}
         isCompact={true}
         currentUser={currentUser}
+        clientName={clientName}
       />
     </div>
   );

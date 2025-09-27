@@ -457,6 +457,7 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
                     defaultExpanded={isActiveStage}
                     viewMode="provider"
                     currentUserId={currentUserId}
+                    clientName={project.client_name}
                     className={`transition-all duration-300 ${
                       isActiveStage
                         ? 'ring-2 ring-brand-500/20 shadow-lg shadow-brand-500/10 bg-gradient-to-br from-white to-brand-50/30'
@@ -524,6 +525,7 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
           projectId={project.id}
           currentUser={currentUser}
           stageComponents={project.stages?.find(s => s.id === activeCommentStage)?.components || []}
+          clientName={project.client_name}
         />
       )}
 

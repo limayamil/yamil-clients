@@ -34,6 +34,7 @@ interface ProviderStageComponentsProps {
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   onDeleteComponent?: (componentId: string) => void;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
+  clientName?: string;
 }
 
 export function ProviderStageComponents({
@@ -42,7 +43,8 @@ export function ProviderStageComponents({
   comments,
   onUpdateComponent,
   onDeleteComponent,
-  currentUser
+  currentUser,
+  clientName
 }: ProviderStageComponentsProps) {
   const [editingComponent, setEditingComponent] = useState<string | null>(null);
 
@@ -72,6 +74,7 @@ export function ProviderStageComponents({
           onUpdateComponent={onUpdateComponent}
           onDeleteComponent={onDeleteComponent}
           currentUser={currentUser}
+          clientName={clientName}
         />
       ))}
     </div>
@@ -88,6 +91,7 @@ interface ProviderComponentCardProps {
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   onDeleteComponent?: (componentId: string) => void;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
+  clientName?: string;
 }
 
 function ProviderComponentCard({
@@ -99,7 +103,8 @@ function ProviderComponentCard({
   onCancelEdit,
   onUpdateComponent,
   onDeleteComponent,
-  currentUser
+  currentUser,
+  clientName
 }: ProviderComponentCardProps) {
   const [editData, setEditData] = useState({
     title: component.title || '',
@@ -242,6 +247,7 @@ function ProviderComponentCard({
           comments={comments}
           isCompact={true}
           currentUser={currentUser}
+          clientName={clientName}
         />
       </div>
     </div>

@@ -46,6 +46,7 @@ interface EditableStageComponentsProps {
   onAddComponent?: (stageId: string, component: Omit<StageComponent, 'id' | 'stage_id'>) => void;
   readonly?: boolean;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
+  clientName?: string;
 }
 
 export function EditableStageComponents({
@@ -57,7 +58,8 @@ export function EditableStageComponents({
   onDeleteComponent,
   onAddComponent,
   readonly = false,
-  currentUser
+  currentUser,
+  clientName
 }: EditableStageComponentsProps) {
   const [editingComponent, setEditingComponent] = useState<string | null>(null);
   const [loadingStates, setLoadingStates] = useState<{
@@ -192,6 +194,7 @@ export function EditableStageComponents({
                   onUpdateComponent={onUpdateComponent}
                   isLoading={loadingStates.updating.has(component.id) || loadingStates.deleting.has(component.id)}
                   currentUser={currentUser}
+                  clientName={clientName}
                 />
               </ActionLoading>
             </motion.div>
@@ -262,6 +265,7 @@ interface EditableComponentCardProps {
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   isLoading?: boolean;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
+  clientName?: string;
 }
 
 function EditableComponentCard({
@@ -276,8 +280,10 @@ function EditableComponentCard({
   onDelete,
   onUpdateComponent,
   isLoading = false,
-  currentUser
+  currentUser,
+  clientName
 }: EditableComponentCardProps) {
+  // console.log('clientName:', clientName); // Debug: Verify clientName is available
   const [editData, setEditData] = useState<any>({
     ...component.config,
     title: component.title
@@ -330,6 +336,7 @@ function EditableComponentCard({
       onUpdateComponent={onUpdateComponent}
       isLoading={isLoading}
       currentUser={currentUser}
+      clientName={clientName}
     />
   );
 }
@@ -343,7 +350,8 @@ function ViewMode({
   onDelete,
   onUpdateComponent,
   isLoading = false,
-  currentUser
+  currentUser,
+  clientName
 }: {
   component: StageComponent;
   readonly: boolean;
@@ -354,6 +362,7 @@ function ViewMode({
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   isLoading?: boolean;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
+  clientName?: string;
 }) {
   const getComponentIcon = (type: string) => {
     switch (type) {
@@ -545,6 +554,7 @@ function ViewMode({
         comments={comments}
         isCompact={true}
         currentUser={currentUser}
+        clientName={clientName || undefined}
       />
     </motion.div>
   );

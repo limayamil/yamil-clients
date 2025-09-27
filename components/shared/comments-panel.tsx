@@ -13,11 +13,12 @@ import { toast } from 'sonner';
 interface CommentsPanelProps {
   comments: CommentEntry[];
   projectId: string;
+  clientName?: string;
 }
 
 const initialState: { error?: string; success?: boolean; message?: string } = {};
 
-export function CommentsPanel({ comments, projectId }: CommentsPanelProps) {
+export function CommentsPanel({ comments, projectId, clientName }: CommentsPanelProps) {
   const sorted = useMemo(
     () => [...comments].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     [comments]
@@ -36,13 +37,19 @@ export function CommentsPanel({ comments, projectId }: CommentsPanelProps) {
     }
   }, [state]);
 
+  // Helper function to get the first name from full client name
+  const getClientFirstName = (fullName?: string): string => {
+    if (!fullName) return 'Cliente';
+    return fullName.split(' ')[0] || 'Cliente';
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
         {sorted.map((comment) => (
           <article key={comment.id} className="rounded-2xl border border-border bg-white p-4">
             <header className="flex items-center justify-between text-sm">
-              <span className="font-medium text-foreground">{comment.author_type === 'provider' ? 'Proveedor' : 'Cliente'}</span>
+              <span className="font-medium text-foreground">{comment.author_type === 'provider' ? 'Proveedor' : getClientFirstName(clientName)}</span>
               <time className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</time>
             </header>
             <p className="mt-2 text-sm text-muted-foreground">{comment.body}</p>

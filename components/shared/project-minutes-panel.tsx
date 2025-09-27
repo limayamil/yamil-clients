@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { addProjectMinute, updateProjectMinute, deleteProjectMinute, getProjectMinute } from '@/actions/project-minutes';
 import type { ProjectMinuteEntry } from '@/types/project';
-import { Calendar, Plus, Edit, Trash2, FileText, Clock } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -197,10 +197,6 @@ export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: Pro
                             <Badge variant="outline" className="text-xs text-purple-600 border-purple-200">
                               <Calendar className="h-3 w-3 mr-1" />
                               {formatDate(minute.meeting_date)}
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {formatDate(minute.updated_at)}
                             </Badge>
                           </div>
                         </div>

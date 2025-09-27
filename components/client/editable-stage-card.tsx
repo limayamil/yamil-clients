@@ -53,6 +53,7 @@ interface EditableStageCardProps {
   className?: string;
   viewMode?: 'client' | 'provider';
   currentUserId?: string;
+  clientName?: string;
 }
 
 export function EditableStageCard({
@@ -69,7 +70,8 @@ export function EditableStageCard({
   defaultExpanded = true,
   className,
   viewMode = 'provider',
-  currentUserId
+  currentUserId,
+  clientName
 }: EditableStageCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -388,6 +390,7 @@ export function EditableStageCard({
                 comments={comments}
                 onUpdateComponent={onUpdateComponent}
                 currentUser={currentUser}
+                clientName={clientName}
               />
             ) : (
               <ProviderStageComponents
@@ -397,6 +400,7 @@ export function EditableStageCard({
                 onUpdateComponent={onUpdateComponent}
                 onDeleteComponent={onDeleteComponent}
                 currentUser={currentUser}
+                clientName={clientName}
               />
             )}
 

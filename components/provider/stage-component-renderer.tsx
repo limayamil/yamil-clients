@@ -15,9 +15,10 @@ interface StageComponentRendererProps {
   projectId: string;
   comments: CommentEntry[];
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
+  clientName?: string;
 }
 
-export function StageComponentRenderer({ stage, projectId, comments, currentUser }: StageComponentRendererProps) {
+export function StageComponentRenderer({ stage, projectId, comments, currentUser, clientName }: StageComponentRendererProps) {
   console.log('🎭 [Provider] StageComponentRenderer for stage', stage.id, ':', {
     stageTitle: stage.title,
     hasComponents: !!stage.components,
@@ -100,6 +101,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   comments={comments}
                   isCompact={true}
                   currentUser={currentUser}
+                  clientName={clientName}
                 />
               </div>
             );
@@ -121,6 +123,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   comments={comments}
                   isCompact={true}
                   currentUser={currentUser}
+                  clientName={clientName}
                 />
               </div>
             );
@@ -151,6 +154,8 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                     projectId={projectId}
                     comments={comments}
                     isCompact={true}
+                    currentUser={currentUser}
+                    clientName={clientName}
                   />
                 </div>
               </div>
@@ -173,6 +178,8 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                     projectId={projectId}
                     comments={comments}
                     isCompact={true}
+                    currentUser={currentUser}
+                    clientName={clientName}
                   />
                 </div>
               </div>
@@ -194,6 +201,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   comments={comments}
                   isCompact={true}
                   currentUser={currentUser}
+                  clientName={clientName}
                 />
               </div>
             );
@@ -217,6 +225,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   comments={comments}
                   isCompact={true}
                   currentUser={currentUser}
+                  clientName={clientName}
                 />
               </div>
             );
@@ -240,6 +249,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   comments={comments}
                   isCompact={true}
                   currentUser={currentUser}
+                  clientName={clientName}
                 />
               </div>
             );
@@ -261,6 +271,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   comments={comments}
                   isCompact={true}
                   currentUser={currentUser}
+                  clientName={clientName}
                 />
               </div>
             );
@@ -282,6 +293,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   comments={comments}
                   isCompact={true}
                   currentUser={currentUser}
+                  clientName={clientName}
                 />
               </div>
             );

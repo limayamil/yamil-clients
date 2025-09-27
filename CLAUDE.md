@@ -432,6 +432,64 @@ const handleUpload = async (files: File[]) => {
 - **UI**: Compact collapsed state with full expansion for detailed discussions
 - **Access Control**: Same RLS policies apply to component-level comments
 
+### Client Name Display in Comments (September 2024)
+**IMPORTANT**: Both component-level and stage-level comments now display the client's first name instead of generic "(Cliente)" label.
+
+#### Implementation Details
+- **Data Source**: Uses `project.client_name` field from project data (e.g., "Celeste Panelli")
+- **First Name Extraction**: `clientName?.split(' ')[0] || 'Cliente'` extracts "Celeste"
+- **Fallback**: Gracefully falls back to "Cliente" if no client name is provided
+- **Scope**: Applied to both `ComponentCommentThread` and `StageCommentThread`
+
+#### Technical Implementation
+```typescript
+// Helper function (used in both comment components)
+const getClientFirstName = (fullName?: string): string => {
+  if (!fullName) return 'Cliente';
+  return fullName.split(' ')[0] || 'Cliente';
+};
+
+// Badge rendering (consistent across both components)
+<Badge variant={comment.author_type === 'provider' ? 'default' : 'secondary'}>
+  {comment.author_type === 'provider' ? 'Proveedor' : getClientFirstName(clientName)}
+</Badge>
+```
+
+#### Updated Components
+**Component-Level Comments**:
+- `ComponentCommentThread` - Accepts `clientName?: string` prop
+- All stage component renderers updated to pass `clientName={project.client_name}`
+- Applied to: `StageComponentRenderer`, `EditableStageComponents`, `ClientStageComponents`, `ProviderStageComponents`
+
+**Stage-Level Comments**:
+- `StageCommentThread` - Accepts `clientName?: string` prop
+- Updated in both provider and client project detail views
+- Applied to: `project-detail-view.tsx`, `client-project-detail.tsx`
+
+#### Prop Flow Chain
+```typescript
+// 1. Project data provides client_name
+project.client_name →
+
+// 2. Main detail views pass to stage cards
+<EditableStageCard clientName={project.client_name} /> →
+
+// 3. Stage cards pass to component renderers
+<ClientStageComponents clientName={clientName} /> →
+
+// 4. Component renderers pass to comment threads
+<ComponentCommentThread clientName={clientName} />
+
+// For stage comments: Direct pass from detail views
+<StageCommentThread clientName={project.client_name} />
+```
+
+#### Expected Results
+- Component comments: **(Celeste)** instead of **(Cliente)**
+- Stage comments: **(Celeste)** instead of **(Cliente)**
+- Provider comments: **(Proveedor)** (unchanged)
+- Works in both provider (`/projects/[id]`) and client (`/c/[clientId]/projects/[id]`) views
+
 ## Critical Debugging & Development Patterns
 
 ### Dual-View Architecture Debugging

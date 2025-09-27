@@ -33,6 +33,7 @@ export function StageKanban({ project }: StageKanbanProps) {
                 stage={stage}
                 projectId={project.id}
                 comments={project.comments || []}
+                clientName={project.client_name}
               />
             </CardContent>
           </Card>
