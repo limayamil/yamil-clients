@@ -510,6 +510,7 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
         <ProjectMinutesPanel
           minutes={project.minutes ?? []}
           projectId={project.id}
+          stages={project.stages ?? []}
           canEdit={true}
         />
       </section>

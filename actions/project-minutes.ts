@@ -8,6 +8,7 @@ import { z } from 'zod';
 
 const addMinuteSchema = z.object({
   projectId: z.string().uuid(),
+  stageId: z.string().uuid().optional(),
   title: z.string().max(200, 'El título es demasiado largo').optional(),
   meetingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida'),
   contentMarkdown: z.string().min(0).max(50000, 'El contenido es demasiado largo'),
@@ -16,6 +17,7 @@ const addMinuteSchema = z.object({
 const updateMinuteSchema = z.object({
   minuteId: z.string().uuid(),
   projectId: z.string().uuid(),
+  stageId: z.string().uuid().optional(),
   title: z.string().max(200, 'El título es demasiado largo').optional(),
   meetingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida'),
   contentMarkdown: z.string().min(0).max(50000, 'El contenido es demasiado largo'),
@@ -35,6 +37,7 @@ export async function addProjectMinute(formData: FormData) {
 
     const parsed = addMinuteSchema.safeParse({
       projectId: formData.get('projectId'),
+      stageId: formData.get('stageId') || undefined,
       title: formData.get('title') || undefined,
       meetingDate: formData.get('meetingDate'),
       contentMarkdown: formData.get('contentMarkdown') || '',
@@ -44,7 +47,7 @@ export async function addProjectMinute(formData: FormData) {
       return { error: parsed.error.flatten().fieldErrors };
     }
 
-    const { projectId, title, meetingDate, contentMarkdown } = parsed.data;
+    const { projectId, stageId, title, meetingDate, contentMarkdown } = parsed.data;
 
     // Generar título automático si no se proporciona
     const finalTitle = title || `Reunión ${new Date(meetingDate).toLocaleDateString('es-ES')}}`;
@@ -79,6 +82,7 @@ export async function addProjectMinute(formData: FormData) {
       .from('project_minutes')
       .insert({
         project_id: projectId,
+        stage_id: stageId || null,
         title: finalTitle,
         meeting_date: meetingDate,
         content_markdown: contentMarkdown,
@@ -120,6 +124,7 @@ export async function updateProjectMinute(formData: FormData) {
     const parsed = updateMinuteSchema.safeParse({
       minuteId: formData.get('minuteId'),
       projectId: formData.get('projectId'),
+      stageId: formData.get('stageId') || undefined,
       title: formData.get('title') || undefined,
       meetingDate: formData.get('meetingDate'),
       contentMarkdown: formData.get('contentMarkdown') || '',
@@ -129,7 +134,7 @@ export async function updateProjectMinute(formData: FormData) {
       return { error: parsed.error.flatten().fieldErrors };
     }
 
-    const { minuteId, projectId, title, meetingDate, contentMarkdown } = parsed.data;
+    const { minuteId, projectId, stageId, title, meetingDate, contentMarkdown } = parsed.data;
 
     // Generar título automático si no se proporciona
     const finalTitle = title || `Reunión ${new Date(meetingDate).toLocaleDateString('es-ES')}`;
@@ -153,6 +158,7 @@ export async function updateProjectMinute(formData: FormData) {
     const { data: updatedMinute, error: updateError } = await (supabase as any)
       .from('project_minutes')
       .update({
+        stage_id: stageId || null,
         title: finalTitle,
         meeting_date: meetingDate,
         content_markdown: contentMarkdown,

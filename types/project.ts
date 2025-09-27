@@ -104,6 +104,7 @@ export interface ProjectLinkEntry {
 export interface ProjectMinuteEntry {
   id: string;
   project_id: string;
+  stage_id?: string | null;
   title?: string | null;
   meeting_date: string;
   content_markdown: string;

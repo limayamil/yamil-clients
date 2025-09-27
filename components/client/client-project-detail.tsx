@@ -370,6 +370,7 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
         <ProjectMinutesPanel
           minutes={project.minutes ?? []}
           projectId={project.id}
+          stages={project.stages ?? []}
           canEdit={false}
         />
       </section>

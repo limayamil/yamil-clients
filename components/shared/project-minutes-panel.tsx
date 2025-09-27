@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { addProjectMinute, updateProjectMinute, deleteProjectMinute, getProjectMinute } from '@/actions/project-minutes';
-import type { ProjectMinuteEntry } from '@/types/project';
+import type { ProjectMinuteEntry, Stage } from '@/types/project';
 import { Calendar, Plus, Edit, Trash2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
@@ -16,6 +16,7 @@ import { RichTextViewer } from '@/components/ui/rich-text-viewer';
 interface ProjectMinutesPanelProps {
   minutes: ProjectMinuteEntry[];
   projectId: string;
+  stages?: Stage[];
   canEdit?: boolean;
 }
 
@@ -25,15 +26,17 @@ interface MinuteDialogState {
   minuteId?: string;
   title: string;
   selectedDate: string;
+  selectedStageId: string;
   content: string;
 }
 
-export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: ProjectMinutesPanelProps) {
+export function ProjectMinutesPanel({ minutes, projectId, stages = [], canEdit = false }: ProjectMinutesPanelProps) {
   const [dialogState, setDialogState] = useState<MinuteDialogState>({
     isOpen: false,
     mode: 'view',
     title: '',
     selectedDate: '',
+    selectedStageId: '',
     content: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,6 +47,12 @@ export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: Pro
     new Date(b.meeting_date).getTime() - new Date(a.meeting_date).getTime()
   );
 
+  // Helper para encontrar etapa por ID
+  const getStageById = (stageId?: string | null) => {
+    if (!stageId) return null;
+    return stages.find(stage => stage.id === stageId) || null;
+  };
+
   const openCreateDialog = () => {
     const today = new Date().toISOString().split('T')[0];
     setDialogState({
@@ -51,6 +60,7 @@ export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: Pro
       mode: 'create',
       title: '',
       selectedDate: today,
+      selectedStageId: '',
       content: '',
     });
   };
@@ -63,6 +73,7 @@ export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: Pro
       minuteId: minute.id,
       title: minute.title || '',
       selectedDate: minute.meeting_date,
+      selectedStageId: minute.stage_id || '',
       content: minute.content_markdown,
     });
     setIsLoadingMinute(false);
@@ -74,6 +85,7 @@ export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: Pro
       mode: 'view',
       title: '',
       selectedDate: '',
+      selectedStageId: '',
       content: '',
     });
   };
@@ -90,6 +102,9 @@ export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: Pro
     formData.append('projectId', projectId);
     if (dialogState.title.trim()) {
       formData.append('title', dialogState.title.trim());
+    }
+    if (dialogState.selectedStageId) {
+      formData.append('stageId', dialogState.selectedStageId);
     }
     formData.append('meetingDate', dialogState.selectedDate);
     formData.append('contentMarkdown', dialogState.content);
@@ -193,11 +208,16 @@ export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: Pro
                           <h4 className="text-sm font-medium text-gray-900 mb-1">
                             {minute.title || `Reunión ${formatDate(minute.meeting_date)}`}
                           </h4>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant="outline" className="text-xs text-purple-600 border-purple-200">
                               <Calendar className="h-3 w-3 mr-1" />
                               {formatDate(minute.meeting_date)}
                             </Badge>
+                            {minute.stage_id && getStageById(minute.stage_id) && (
+                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                                {getStageById(minute.stage_id)?.title}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <div className="text-xs text-gray-600 line-clamp-3">
@@ -309,6 +329,27 @@ export function ProjectMinutesPanel({ minutes, projectId, canEdit = false }: Pro
                 disabled={dialogState.mode === 'view' || isLoadingMinute}
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-50"
               />
+            </div>
+
+            {/* Campo de etapa */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Etapa relacionada (opcional)</label>
+              <select
+                value={dialogState.selectedStageId}
+                onChange={(e) => setDialogState(prev => ({ ...prev, selectedStageId: e.target.value }))}
+                disabled={dialogState.mode === 'view' || isLoadingMinute}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-50"
+              >
+                <option value="">Sin etapa específica</option>
+                {stages.map((stage) => (
+                  <option key={stage.id} value={stage.id}>
+                    {stage.title}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Selecciona la etapa del proyecto relacionada con esta reunión
+              </p>
             </div>
 
             {/* Editor de contenido */}
