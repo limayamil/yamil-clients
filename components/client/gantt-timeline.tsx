@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import type { Stage } from '@/types/project';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, getStageStatusColors } from '@/lib/utils';
+import { formatDate, getStageStatusColors, parseStageDate } from '@/lib/utils';
 
 interface GanttTimelineProps {
   stages: Stage[];
@@ -47,14 +47,14 @@ export function GanttTimeline({ stages, projectStartDate, projectEndDate, projec
 
     // Usar fechas del proyecto como base, o calcular desde etapas
     const minDate = projectStartDate
-      ? new Date(projectStartDate)
-      : new Date(Math.min(...dates.map(d => new Date(d).getTime())));
+      ? parseStageDate(projectStartDate) || new Date()
+      : new Date(Math.min(...dates.map(d => parseStageDate(d)?.getTime() || Date.now())));
 
     const maxDate = projectDeadline
-      ? new Date(projectDeadline)
+      ? parseStageDate(projectDeadline) || new Date()
       : projectEndDate
-      ? new Date(projectEndDate)
-      : new Date(Math.max(...dates.map(d => new Date(d).getTime())));
+      ? parseStageDate(projectEndDate) || new Date()
+      : new Date(Math.max(...dates.map(d => parseStageDate(d)?.getTime() || Date.now())));
 
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Normalizar a medianoche
@@ -92,9 +92,9 @@ export function GanttTimeline({ stages, projectStartDate, projectEndDate, projec
       todayPosition,
       months: uniqueMonths,
       stages: stages.map(stage => {
-        const stageStart = stage.planned_start ? new Date(stage.planned_start) : minDate;
+        const stageStart = stage.planned_start ? parseStageDate(stage.planned_start) || minDate : minDate;
         const stageEnd = stage.planned_end || stage.deadline ?
-          new Date(stage.planned_end || stage.deadline!) : maxDate;
+          parseStageDate(stage.planned_end || stage.deadline!) || maxDate : maxDate;
 
         const leftPosition = ((stageStart.getTime() - minDate.getTime()) / (maxDate.getTime() - minDate.getTime())) * 100;
         const width = ((stageEnd.getTime() - stageStart.getTime()) / (maxDate.getTime() - minDate.getTime())) * 100;

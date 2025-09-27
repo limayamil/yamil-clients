@@ -22,6 +22,7 @@ import {
   Send
 } from 'lucide-react';
 import type { StageComponent, CommentEntry } from '@/types/project';
+import type { ChecklistItem } from '@/components/client/dynamic-checklist';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -695,7 +696,7 @@ function ComponentContent({ component }: { component: StageComponent }) {
     case 'checklist':
       return (
         <DynamicChecklist
-          initialItems={(component.config?.items as string[]) || []}
+          initialItems={(component.config?.items as string[] | ChecklistItem[]) || []}
           readonly={true}
           className="text-sm"
         />
@@ -864,9 +865,9 @@ const ComponentEditor = memo(function ComponentEditor({
               Items de la lista
             </label>
             <DynamicChecklist
-              initialItems={(data.items as string[]) || []}
+              initialItems={(data.items as string[] | ChecklistItem[]) || []}
               readonly={false}
-              onUpdate={(items) => updateField('items', items.map(item => item.text))}
+              onUpdate={(items) => updateField('items', items)}
               className="text-sm"
             />
           </div>

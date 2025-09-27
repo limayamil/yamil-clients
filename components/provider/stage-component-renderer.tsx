@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ComponentCommentThread } from '@/components/shared/component-comment-thread';
 import { RichTextViewer } from '@/components/ui/rich-text-viewer';
+import { DynamicChecklist } from '@/components/client/dynamic-checklist';
+import type { ChecklistItem } from '@/components/client/dynamic-checklist';
 import { isFeatureEnabled } from '@/lib/config/feature-flags';
 
 interface StageComponentRendererProps {
@@ -107,7 +109,11 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                   <CheckSquare className="h-4 w-4" /> Checklist
                 </div>
-                <Checklist items={(component.config?.items as string[]) ?? []} />
+                <DynamicChecklist
+                  initialItems={(component.config?.items as string[] | ChecklistItem[]) ?? []}
+                  readonly={true}
+                  className="text-sm"
+                />
                 <ComponentCommentThread
                   componentId={component.id}
                   componentTitle={getComponentTitle(component)}
@@ -243,7 +249,11 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                   <ListTodo className="h-4 w-4" /> Task list
                 </div>
-                <Checklist items={(component.config?.items as string[]) ?? []} />
+                <DynamicChecklist
+                  initialItems={(component.config?.items as string[] | ChecklistItem[]) ?? []}
+                  readonly={true}
+                  className="text-sm"
+                />
                 <ComponentCommentThread
                   componentId={component.id}
                   componentTitle={getComponentTitle(component)}
@@ -281,18 +291,3 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
   );
 }
 
-function Checklist({ items }: { items: string[] }) {
-  if (items.length === 0) {
-    return <p className="text-xs text-muted-foreground">No items defined.</p>;
-  }
-  return (
-    <ul className="space-y-2 text-sm text-muted-foreground">
-      {items.map((item) => (
-        <li key={item} className="flex items-center gap-2">
-          <span className="inline-flex h-2.5 w-2.5 rounded-full bg-brand-400" aria-hidden />
-          {item}
-        </li>
-      ))}
-    </ul>
-  );
-}

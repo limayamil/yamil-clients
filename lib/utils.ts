@@ -290,6 +290,30 @@ export function getNavItemColors(href: string) {
 }
 
 /**
+ * Parsea una fecha de string en formato YYYY-MM-DD y la convierte a objeto Date
+ * manteniendo la zona horaria de Argentina (GMT-3) para evitar desfasajes
+ */
+export function parseStageDate(dateString: string | null | undefined): Date | null {
+  if (!dateString) return null;
+
+  try {
+    // Si es solo YYYY-MM-DD, crear fecha en zona horaria Argentina a las 12:00 PM
+    // para evitar problemas de cambio de día por timezone
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split('-').map(Number);
+      // Crear fecha local a las 12:00 PM para evitar problemas de timezone
+      return new Date(year, month - 1, day, 12, 0, 0);
+    }
+
+    // Para fechas con timestamp completo, parsear directamente
+    return new Date(dateString);
+  } catch (error) {
+    console.error('Error parsing stage date:', error);
+    return null;
+  }
+}
+
+/**
  * Extrae el username de un email (la parte antes del @)
  * para usar como clientId en las URLs
  */

@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 
-interface ChecklistItem {
+export interface ChecklistItem {
   id: string;
   text: string;
   completed: boolean;
 }
 
 interface DynamicChecklistProps {
-  initialItems?: string[];
+  initialItems?: string[] | ChecklistItem[];
   onUpdate?: (items: ChecklistItem[]) => void;
   readonly?: boolean;
   className?: string;
@@ -25,13 +25,21 @@ export function DynamicChecklist({
   readonly = false,
   className
 }: DynamicChecklistProps) {
-  const [items, setItems] = useState<ChecklistItem[]>(
-    initialItems.map((text, index) => ({
+  const [items, setItems] = useState<ChecklistItem[]>(() => {
+    if (!initialItems || initialItems.length === 0) return [];
+
+    // Si es un array de ChecklistItem, usarlo directamente
+    if (typeof initialItems[0] === 'object' && 'id' in initialItems[0]) {
+      return initialItems as ChecklistItem[];
+    }
+
+    // Si es un array de strings, convertir manteniendo el formato antiguo
+    return (initialItems as string[]).map((text, index) => ({
       id: `item-${index}`,
       text,
       completed: false
-    }))
-  );
+    }));
+  });
   const [newItemText, setNewItemText] = useState('');
   const [isAddingItem, setIsAddingItem] = useState(false);
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { StageComponent, CommentEntry } from '@/types/project';
+import type { ChecklistItem } from '@/components/client/dynamic-checklist';
 import { ComponentCommentThread } from '@/components/shared/component-comment-thread';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -321,46 +322,20 @@ function ProviderComponentContent({ component }: { component: StageComponent }) 
 
     case 'checklist':
       return (
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">Lista de verificación:</p>
-          {(component.config?.items as string[])?.length > 0 ? (
-            <ul className="space-y-1 text-sm text-muted-foreground">
-              {(component.config.items as string[]).map((item, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <span className="inline-flex h-2 w-2 rounded-full bg-brand-400 mt-1.5 flex-shrink-0" />
-                  <RichTextViewer
-                    content={item}
-                    className="text-sm text-muted-foreground"
-                  />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-muted-foreground">Sin elementos definidos</p>
-          )}
-        </div>
+        <DynamicChecklist
+          initialItems={(component.config?.items as string[] | ChecklistItem[]) || []}
+          readonly={true}
+          className="text-sm"
+        />
       );
 
     case 'tasklist':
       return (
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">Lista de tareas:</p>
-          {(component.config?.items as string[])?.length > 0 ? (
-            <ul className="space-y-1 text-sm text-muted-foreground">
-              {(component.config.items as string[]).map((item, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <span className="inline-flex h-2 w-2 rounded-full bg-brand-400 mt-1.5 flex-shrink-0" />
-                  <RichTextViewer
-                    content={item}
-                    className="text-sm text-muted-foreground"
-                  />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-muted-foreground">Sin tareas definidas</p>
-          )}
-        </div>
+        <DynamicChecklist
+          initialItems={(component.config?.items as string[] | ChecklistItem[]) || []}
+          readonly={true}
+          className="text-sm"
+        />
       );
 
     case 'milestone':
@@ -515,9 +490,9 @@ function ProviderComponentEditor({
             Elementos de la lista
           </label>
           <DynamicChecklist
-            initialItems={(editData.items as string[]) || []}
+            initialItems={(editData.items as string[] | ChecklistItem[]) || []}
             readonly={false}
-            onUpdate={(items) => updateField('items', items.map(item => item.text))}
+            onUpdate={(items) => updateField('items', items)}
             className="text-sm"
           />
         </div>
@@ -529,9 +504,9 @@ function ProviderComponentEditor({
             Tareas de la lista
           </label>
           <DynamicChecklist
-            initialItems={(editData.items as string[]) || []}
+            initialItems={(editData.items as string[] | ChecklistItem[]) || []}
             readonly={false}
-            onUpdate={(items) => updateField('items', items.map(item => item.text))}
+            onUpdate={(items) => updateField('items', items)}
             className="text-sm"
           />
         </div>
