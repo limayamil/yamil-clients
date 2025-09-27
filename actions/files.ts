@@ -376,6 +376,7 @@ const stageLinkSchema = z.object({
   projectId: z.string().uuid(),
   stageId: z.string().uuid(),
   title: z.string().min(1, 'El título es requerido').max(200),
+  description: z.string().optional(),
   url: z.string().url('URL inválida'),
 });
 
@@ -392,6 +393,7 @@ export async function addStageLink(_: unknown, formData: FormData) {
       projectId: payload.projectId,
       stageId: payload.stageId,
       title: payload.title,
+      description: payload.description,
       url: payload.url,
     });
 
@@ -446,6 +448,11 @@ export async function addStageLink(_: unknown, formData: FormData) {
       }
     }
 
+    // Create formatted file_name with title and description (if provided)
+    const fileNameWithDescription = parsed.data.description
+      ? `${parsed.data.title}|${parsed.data.description}`
+      : parsed.data.title;
+
     // Create link record in database using the files table
     const { data: linkRecord, error: dbError } = await (supabase as any)
       .from('files')
@@ -454,7 +461,7 @@ export async function addStageLink(_: unknown, formData: FormData) {
         stage_id: parsed.data.stageId,
         uploader_type: userRole,
         storage_path: parsed.data.url, // Store the URL in storage_path
-        file_name: parsed.data.title, // Store the title in file_name
+        file_name: fileNameWithDescription, // Store title|description in file_name
         mime: 'text/uri-list', // Special MIME type for URLs
         size: parsed.data.url.length, // URL length as "size"
         created_by: user.id,
@@ -496,6 +503,165 @@ export async function addStageLink(_: unknown, formData: FormData) {
     console.error('Stage link addition error:', error);
     return {
       error: 'Error inesperado al agregar el enlace',
+      success: false,
+    };
+  }
+}
+
+// Schema for updating stage links
+const updateStageLinkSchema = z.object({
+  linkId: z.string().uuid(),
+  projectId: z.string().uuid(),
+  title: z.string().min(1, 'El título es requerido').max(200),
+  description: z.string().optional(),
+  url: z.string().url('URL inválida'),
+});
+
+export async function updateStageLink(_: unknown, formData: FormData) {
+  try {
+    // Rate limiting
+    rateLimitCurrentUser(10);
+
+    const supabase = createSupabaseServerClient();
+
+    // Get form data
+    const payload = Object.fromEntries(formData.entries());
+    const parsed = updateStageLinkSchema.safeParse({
+      linkId: payload.linkId,
+      projectId: payload.projectId,
+      title: payload.title,
+      description: payload.description,
+      url: payload.url,
+    });
+
+    if (!parsed.success) {
+      const firstError = Object.values(parsed.error.flatten().fieldErrors)[0]?.[0];
+      return {
+        error: firstError || 'Datos del formulario inválidos',
+        success: false,
+      };
+    }
+
+    // Authentication check
+    const user = await getCurrentUser();
+    if (!user) {
+      return {
+        error: 'Debes estar autenticado para editar enlaces',
+        success: false,
+      };
+    }
+
+    const userRole = user.role as 'provider' | 'client';
+    if (!userRole) {
+      return {
+        error: 'Rol de usuario no válido',
+        success: false,
+      };
+    }
+
+    // Get the existing link to verify permissions
+    const { data: existingLink, error: fetchError } = await (supabase as any)
+      .from('files')
+      .select('*')
+      .eq('id', parsed.data.linkId)
+      .eq('project_id', parsed.data.projectId)
+      .eq('mime', 'text/uri-list')
+      .single();
+
+    if (fetchError || !existingLink) {
+      return {
+        error: 'Enlace no encontrado',
+        success: false,
+      };
+    }
+
+    // Check permissions: provider can edit any link, client can only edit their own
+    const canEdit = userRole === 'provider' || existingLink.created_by === user.id;
+
+    if (!canEdit) {
+      return {
+        error: 'No tienes permisos para editar este enlace',
+        success: false,
+      };
+    }
+
+    // For clients, verify they have access to this project using project_members
+    if (userRole === 'client') {
+      const { data: memberCheck, error: memberError } = await (supabase as any)
+        .from('project_members')
+        .select('role')
+        .eq('project_id', parsed.data.projectId)
+        .eq('email', user.email?.toLowerCase() || '')
+        .single();
+
+      if (memberError || !memberCheck) {
+        console.error('Client access check error in update stage link:', memberError);
+        return {
+          error: 'No tienes permisos para editar enlaces en este proyecto',
+          success: false,
+        };
+      }
+
+      // Verify the user has at least viewer access
+      if (!['client_viewer', 'client_editor'].includes(memberCheck.role)) {
+        return {
+          error: 'No tienes permisos para editar enlaces en este proyecto',
+          success: false,
+        };
+      }
+    }
+
+    // Create formatted file_name with title and description (if provided)
+    const fileNameWithDescription = parsed.data.description
+      ? `${parsed.data.title}|${parsed.data.description}`
+      : parsed.data.title;
+
+    // Update link record in database
+    const { data: updatedLink, error: dbError } = await (supabase as any)
+      .from('files')
+      .update({
+        storage_path: parsed.data.url, // Store the URL in storage_path
+        file_name: fileNameWithDescription, // Store title|description in file_name
+        size: parsed.data.url.length, // URL length as "size"
+      })
+      .eq('id', parsed.data.linkId)
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      return {
+        error: 'Error al actualizar el enlace',
+        success: false,
+      };
+    }
+
+    // Log the link update activity
+    await audit({
+      projectId: parsed.data.projectId,
+      actorType: userRole,
+      action: 'stage.link.updated',
+      details: {
+        stage_id: existingLink.stage_id,
+        link_id: parsed.data.linkId,
+        title: parsed.data.title,
+        url: parsed.data.url,
+      },
+    });
+
+    // Revalidate the project page to show updated link
+    revalidatePath(`/c/${user.email}/projects/${parsed.data.projectId}`);
+    revalidatePath(`/projects/${parsed.data.projectId}`);
+
+    return {
+      success: true,
+      linkId: updatedLink.id,
+      message: 'Enlace actualizado correctamente',
+    };
+  } catch (error) {
+    console.error('Stage link update error:', error);
+    return {
+      error: 'Error inesperado al actualizar el enlace',
       success: false,
     };
   }

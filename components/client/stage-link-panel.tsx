@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Link, X, Trash2, Send, ExternalLink } from 'lucide-react';
+import { Link, X, Trash2, Send, ExternalLink, Edit2, Check, X as Cancel } from 'lucide-react';
 import type { FileEntry } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
-import { addStageLink, deleteFile } from '@/actions/files';
+import { addStageLink, updateStageLink, deleteFile } from '@/actions/files';
 
 interface StageLinkPanelProps {
   stageId: string;
@@ -41,7 +41,10 @@ export function StageLinkPanel({
 }: StageLinkPanelProps) {
   const [newUrl, setNewUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
+  const [linkDescription, setLinkDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingLink, setEditingLink] = useState<string | null>(null);
+  const [editingData, setEditingData] = useState<{title: string; description: string; url: string}>({title: '', description: '', url: ''});
 
   // Filter links for this stage (only get URLs, not regular files)
   const stageLinks = links.filter(link =>
@@ -75,6 +78,18 @@ export function StageLinkPanel({
     }
   };
 
+  // Parse title and description from file_name field (format: "title|description")
+  const parseLinkData = (fileName: string): { title: string; description?: string } => {
+    const parts = fileName.split('|');
+    if (parts.length > 1) {
+      return {
+        title: parts[0],
+        description: parts.slice(1).join('|'), // In case description contains pipes
+      };
+    }
+    return { title: fileName };
+  };
+
   const handleSubmitLink = async () => {
     if (!newUrl.trim()) {
       toast.error('Por favor ingresa una URL');
@@ -95,6 +110,7 @@ export function StageLinkPanel({
       formData.append('projectId', projectId);
       formData.append('stageId', stageId);
       formData.append('title', finalTitle);
+      formData.append('description', linkDescription.trim());
       formData.append('url', newUrl.trim());
 
       const result = await addStageLink(null, formData);
@@ -107,6 +123,7 @@ export function StageLinkPanel({
       toast.success('Enlace compartido correctamente');
       setNewUrl('');
       setLinkTitle('');
+      setLinkDescription('');
 
       // Cerrar el panel después de un breve delay para mostrar el éxito
       setTimeout(() => {
@@ -141,6 +158,56 @@ export function StageLinkPanel({
     } else {
       toast.success('Enlace eliminado correctamente');
     }
+  };
+
+  const handleEditLink = (link: FileEntry) => {
+    const linkData = parseLinkData(link.file_name);
+    setEditingLink(link.id);
+    setEditingData({
+      title: linkData.title,
+      description: linkData.description || '',
+      url: link.storage_path,
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingLink) return;
+
+    if (!editingData.url.trim()) {
+      toast.error('Por favor ingresa una URL');
+      return;
+    }
+
+    if (!validateUrl(editingData.url.trim())) {
+      toast.error('Por favor ingresa una URL válida');
+      return;
+    }
+
+    if (!editingData.title.trim()) {
+      toast.error('Por favor ingresa un título');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('linkId', editingLink);
+    formData.append('projectId', projectId);
+    formData.append('title', editingData.title.trim());
+    formData.append('description', editingData.description.trim());
+    formData.append('url', editingData.url.trim());
+
+    const result = await updateStageLink(null, formData);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success('Enlace actualizado correctamente');
+      setEditingLink(null);
+      setEditingData({ title: '', description: '', url: '' });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingLink(null);
+    setEditingData({ title: '', description: '', url: '' });
   };
 
   if (!isOpen) return null;
@@ -202,6 +269,20 @@ export function StageLinkPanel({
                 />
               </div>
 
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  Descripción (opcional)
+                </label>
+                <Input
+                  value={linkDescription}
+                  onChange={(e) => setLinkDescription(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Descripción adicional del enlace..."
+                  className="text-sm"
+                  disabled={isSubmitting}
+                />
+              </div>
+
               <Button
                 onClick={handleSubmitLink}
                 disabled={!newUrl.trim() || isSubmitting}
@@ -223,54 +304,145 @@ export function StageLinkPanel({
           {stageLinks.length > 0 ? (
             <div className="space-y-2">
               {stageLinks.map((link) => (
-                <div key={link.id} className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-gray-50">
-                  <Link className="h-4 w-4 text-brand-600 flex-shrink-0 mt-0.5" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {link.file_name}
-                        </p>
-                        <a
-                          href={link.storage_path} // Assuming storage_path contains the URL
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-brand-600 hover:text-brand-700 underline truncate block"
-                        >
-                          {link.storage_path}
-                        </a>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Compartido el {formatDate(link.uploaded_at)}
-                        </p>
+                <div key={link.id} className="p-3 rounded-lg border border-border hover:bg-gray-50">
+                  {editingLink === link.id ? (
+                    // Edit mode
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Link className="h-4 w-4 text-brand-600 flex-shrink-0" />
+                        <span className="text-sm font-medium">Editando enlace</span>
                       </div>
-                      <div className="flex items-center gap-1">
+
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                          Título *
+                        </label>
+                        <Input
+                          value={editingData.title}
+                          onChange={(e) => setEditingData(prev => ({ ...prev, title: e.target.value }))}
+                          placeholder="Nombre del enlace"
+                          className="text-sm"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                          Descripción (opcional)
+                        </label>
+                        <Input
+                          value={editingData.description}
+                          onChange={(e) => setEditingData(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="Descripción del enlace"
+                          className="text-sm"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                          URL *
+                        </label>
+                        <Input
+                          value={editingData.url}
+                          onChange={(e) => setEditingData(prev => ({ ...prev, url: e.target.value }))}
+                          placeholder="https://..."
+                          className="text-sm"
+                          type="url"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2">
                         <Button
-                          variant="ghost"
+                          onClick={handleSaveEdit}
                           size="sm"
-                          className="h-6 w-6 p-0"
-                          asChild
+                          disabled={!editingData.title.trim() || !editingData.url.trim()}
                         >
-                          <a
-                            href={link.storage_path}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
+                          <Check className="h-3 w-3 mr-1" />
+                          Guardar
                         </Button>
-                        {currentUserId && link.created_by === currentUserId && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteLink(link.id)}
-                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
+                        <Button
+                          onClick={handleCancelEdit}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Cancel className="h-3 w-3 mr-1" />
+                          Cancelar
+                        </Button>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    // View mode
+                    <div className="flex items-start gap-3">
+                      <Link className="h-4 w-4 text-brand-600 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            {(() => {
+                              const linkData = parseLinkData(link.file_name);
+                              return (
+                                <>
+                                  <p className="text-sm font-medium text-foreground truncate">
+                                    {linkData.title}
+                                  </p>
+                                  {linkData.description && (
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {linkData.description}
+                                    </p>
+                                  )}
+                                  <a
+                                    href={link.storage_path}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-brand-600 hover:text-brand-700 underline truncate block"
+                                  >
+                                    {link.storage_path}
+                                  </a>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Compartido el {formatDate(link.uploaded_at)}
+                                  </p>
+                                </>
+                              );
+                            })()}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              asChild
+                            >
+                              <a
+                                href={link.storage_path}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditLink(link)}
+                              className="h-6 w-6 p-0 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                              title="Editar enlace"
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                            {currentUserId && link.created_by === currentUserId && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteLink(link.id)}
+                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                title="Eliminar enlace"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
