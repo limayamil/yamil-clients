@@ -12,7 +12,8 @@ import {
   updateStageSchema,
   createStageSchema,
   deleteStageSchema,
-  reorderStagesSchema
+  reorderStagesSchema,
+  reorderStageComponentsSchema
 } from '@/lib/validators/stages';
 import { audit } from '@/lib/observability/audit';
 import { trackEvent } from '@/lib/observability/events';
@@ -547,5 +548,77 @@ export async function reorderStages(_: unknown, formData: FormData) {
   });
 
   revalidatePath(`/projects/${parsed.data.projectId}`);
+  return { success: true };
+}
+
+export async function reorderStageComponents(_: unknown, formData: FormData) {
+  const supabase = createSupabaseServerClient();
+  rateLimitCurrentUser();
+
+  const payload = processFormData(formData);
+  const parsed = reorderStageComponentsSchema.safeParse(payload);
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  const user = await getCurrentUser();
+  if (!user) return { error: { auth: ['Sin sesión activa'] } };
+
+  // Only providers can reorder components
+  if (user.role !== 'provider') {
+    return { error: { auth: ['Solo los proveedores pueden reordenar componentes'] } };
+  }
+
+  // Verify that all components belong to the specified stage
+  const { data: components, error: componentsError } = await (supabase as any)
+    .from('stage_components')
+    .select('id')
+    .eq('stage_id', parsed.data.stageId)
+    .in('id', parsed.data.componentIds);
+
+  if (componentsError) {
+    console.error('Error fetching components:', componentsError);
+    return { error: { db: ['Error al verificar componentes'] } };
+  }
+
+  if (components.length !== parsed.data.componentIds.length) {
+    return { error: { validation: ['Algunos componentes no pertenecen a esta etapa'] } };
+  }
+
+  // Verify the stage belongs to a project the provider has access to
+  const { data: stage, error: stageError } = await (supabase as any)
+    .from('stages')
+    .select('project_id')
+    .eq('id', parsed.data.stageId)
+    .single();
+
+  if (stageError) {
+    console.error('Error fetching stage:', stageError);
+    return { error: { db: ['Error al verificar etapa'] } };
+  }
+
+  // Update sort_order for each component
+  const updates = parsed.data.componentIds.map((componentId: string, index: number) => ({
+    id: componentId,
+    sort_order: index + 1
+  }));
+
+  for (const update of updates) {
+    await (supabase as any)
+      .from('stage_components')
+      .update({ sort_order: update.sort_order })
+      .eq('id', update.id);
+  }
+
+  await audit({
+    projectId: parsed.data.projectId,
+    actorType: 'provider',
+    action: 'stage_components.reordered',
+    details: {
+      stageId: parsed.data.stageId,
+      componentIds: parsed.data.componentIds
+    }
+  });
+
+  revalidatePath(`/projects/${parsed.data.projectId}`);
+  revalidatePath(`/c/${user.email}/projects/${parsed.data.projectId}`);
   return { success: true };
 }

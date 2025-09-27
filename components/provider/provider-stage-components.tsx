@@ -1,6 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import {
+  CSS,
+} from '@dnd-kit/utilities';
 import type { StageComponent, CommentEntry } from '@/types/project';
 import type { ChecklistItem } from '@/components/client/dynamic-checklist';
 import { ComponentCommentThread } from '@/components/shared/component-comment-thread';
@@ -24,15 +43,18 @@ import {
   Edit,
   Save,
   X,
-  Trash2
+  Trash2,
+  GripVertical
 } from 'lucide-react';
 
 interface ProviderStageComponentsProps {
   components: StageComponent[];
   projectId: string;
+  stageId: string;
   comments: CommentEntry[];
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   onDeleteComponent?: (componentId: string) => void;
+  onReorderComponents?: (componentIds: string[]) => void;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
   clientName?: string;
 }
@@ -40,13 +62,45 @@ interface ProviderStageComponentsProps {
 export function ProviderStageComponents({
   components,
   projectId,
+  stageId,
   comments,
   onUpdateComponent,
   onDeleteComponent,
+  onReorderComponents,
   currentUser,
   clientName
 }: ProviderStageComponentsProps) {
   const [editingComponent, setEditingComponent] = useState<string | null>(null);
+  const [orderedComponents, setOrderedComponents] = useState(components);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = orderedComponents.findIndex((component) => component.id === active.id);
+      const newIndex = orderedComponents.findIndex((component) => component.id === over?.id);
+
+      const newOrderedComponents = arrayMove(orderedComponents, oldIndex, newIndex);
+      setOrderedComponents(newOrderedComponents);
+
+      // Call the reorder callback with the new order
+      if (onReorderComponents) {
+        onReorderComponents(newOrderedComponents.map(c => c.id));
+      }
+    }
+  };
+
+  // Update ordered components when props change
+  React.useEffect(() => {
+    setOrderedComponents(components);
+  }, [components]);
 
   if (!components || components.length === 0) {
     return (
@@ -61,23 +115,31 @@ export function ProviderStageComponents({
   }
 
   return (
-    <div className="space-y-4">
-      {components.map((component) => (
-        <ProviderComponentCard
-          key={component.id}
-          component={component}
-          projectId={projectId}
-          comments={comments}
-          isEditing={editingComponent === component.id}
-          onEdit={() => setEditingComponent(component.id)}
-          onCancelEdit={() => setEditingComponent(null)}
-          onUpdateComponent={onUpdateComponent}
-          onDeleteComponent={onDeleteComponent}
-          currentUser={currentUser}
-          clientName={clientName}
-        />
-      ))}
-    </div>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext items={orderedComponents.map(c => c.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-4">
+          {orderedComponents.map((component) => (
+            <SortableProviderComponentCard
+              key={component.id}
+              component={component}
+              projectId={projectId}
+              comments={comments}
+              isEditing={editingComponent === component.id}
+              onEdit={() => setEditingComponent(component.id)}
+              onCancelEdit={() => setEditingComponent(null)}
+              onUpdateComponent={onUpdateComponent}
+              onDeleteComponent={onDeleteComponent}
+              currentUser={currentUser}
+              clientName={clientName}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
   );
 }
 
@@ -570,6 +632,38 @@ function ProviderComponentEditor({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Sortable wrapper for ProviderComponentCard
+function SortableProviderComponentCard(props: ProviderComponentCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.component.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      <ProviderComponentCard {...props} />
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute left-2 top-2 cursor-grab touch-none p-1 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+        title="Arrastrar para reordenar"
+      >
+        <GripVertical className="h-4 w-4" />
+      </div>
     </div>
   );
 }

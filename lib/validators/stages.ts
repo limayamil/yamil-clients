@@ -118,6 +118,12 @@ export const reorderStagesSchema = z.object({
   stageIds: z.array(z.string().uuid()).min(1, 'Debe proporcionar al menos un ID de etapa')
 });
 
+export const reorderStageComponentsSchema = z.object({
+  projectId: projectIdSchema,
+  stageId: z.string().uuid(),
+  componentIds: z.array(z.string().uuid()).min(1, 'Debe proporcionar al menos un ID de componente')
+});
+
 // Esquemas específicos para componentes con texto enriquecido
 export const updateTextBlockSchema = z.object({
   componentId: z.string().uuid(),

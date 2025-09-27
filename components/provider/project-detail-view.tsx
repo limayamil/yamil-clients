@@ -23,7 +23,7 @@ import { StageLinkPanel } from '@/components/client/stage-link-panel';
 import type { ProjectSummary, ProjectStatus, StageComponent, Stage } from '@/types/project';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { updateProjectBasicInfo, updateProjectDates, updateProjectStatus, updateProjectCurrentStage } from '@/actions/projects';
-import { addStageComponent, updateStageComponent, deleteStageComponent, updateStage } from '@/actions/stages';
+import { addStageComponent, updateStageComponent, deleteStageComponent, updateStage, reorderStageComponents } from '@/actions/stages';
 import { Home, FolderKanban, Clock, Calendar, Target, Users, CheckCircle2, AlertCircle, Zap, Settings, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProjectMembersManager } from './project-members-manager';
@@ -229,6 +229,31 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
     } catch (error) {
       toast.error('Error al eliminar componente', { id: `delete-${componentId}` });
       console.error('Error deleting component:', error);
+    }
+  };
+
+  const handleReorderComponents = async (stageId: string, componentIds: string[]) => {
+    try {
+      const formData = new FormData();
+      formData.append('projectId', project.id);
+      formData.append('stageId', stageId);
+
+      // Add each component ID to the form data
+      componentIds.forEach(id => {
+        formData.append('componentIds', id);
+      });
+
+      const result = await reorderStageComponents(null, formData);
+
+      if (result.error) {
+        toast.error('Error al reordenar componentes');
+        console.error('Error reordering components:', result.error);
+      } else {
+        toast.success('Componentes reordenados correctamente');
+      }
+    } catch (error) {
+      toast.error('Error al reordenar componentes');
+      console.error('Error reordering components:', error);
     }
   };
 
@@ -451,6 +476,7 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
                     onAddComponent={handleAddComponent}
                     onUpdateComponent={handleUpdateComponent}
                     onDeleteComponent={handleDeleteComponent}
+                    onReorderComponents={handleReorderComponents}
                     onUpdateStage={handleUpdateStage}
                     onToggleComments={handleToggleComments}
                     onUploadFiles={handleShareLinks}

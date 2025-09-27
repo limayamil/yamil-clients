@@ -46,6 +46,7 @@ interface EditableStageCardProps {
   onAddComponent?: (stageId: string, componentType: string) => void;
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   onDeleteComponent?: (componentId: string) => void;
+  onReorderComponents?: (stageId: string, componentIds: string[]) => void;
   onUpdateStage?: (stageId: string, updates: Partial<Stage>) => void;
   onToggleComments?: (stageId: string) => void;
   onUploadFiles?: (stageId: string) => void;
@@ -64,6 +65,7 @@ export function EditableStageCard({
   onAddComponent,
   onUpdateComponent,
   onDeleteComponent,
+  onReorderComponents,
   onUpdateStage,
   onToggleComments,
   onUploadFiles,
@@ -396,9 +398,11 @@ export function EditableStageCard({
               <ProviderStageComponents
                 components={stage.components || []}
                 projectId={projectId}
+                stageId={stage.id}
                 comments={comments}
                 onUpdateComponent={onUpdateComponent}
                 onDeleteComponent={onDeleteComponent}
+                onReorderComponents={(componentIds) => onReorderComponents?.(stage.id, componentIds)}
                 currentUser={currentUser}
                 clientName={clientName}
               />

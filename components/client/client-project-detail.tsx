@@ -149,6 +149,7 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
     }
   };
 
+
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       <div className="hidden sm:block">

@@ -40,7 +40,7 @@ export function isHtmlContent(content: string): boolean {
  * Convierte texto plano a HTML básico (para migración)
  */
 export function textToHtml(text: string): string {
-  if (!text) return '';
+  if (!text || typeof text !== 'string') return '';
 
   // Escapar caracteres HTML especiales
   const escaped = text
