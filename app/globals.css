@@ -99,3 +99,58 @@
   }
 }
 
+/* Rich Text Content - Estilos para listas */
+.rich-text-content ul {
+  list-style-type: disc !important;
+  margin-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.rich-text-content ol {
+  list-style-type: decimal !important;
+  margin-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.rich-text-content li {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+  padding-left: 0.25rem !important;
+  display: list-item !important;
+}
+
+/* Ensure nested paragraphs in list items don't add extra margin */
+.rich-text-content li p {
+  margin: 0 !important;
+  display: inline !important;
+}
+
+/* TipTap Editor Styles */
+.ProseMirror ul {
+  list-style-type: disc !important;
+  margin-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal !important;
+  margin-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.ProseMirror li {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+  padding-left: 0.25rem !important;
+  display: list-item !important;
+}
+
+.ProseMirror li p {
+  margin: 0 !important;
+  display: inline !important;
+}
+

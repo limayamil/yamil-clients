@@ -72,7 +72,12 @@ export function ComponentCommentThread({
 
   // Helper functions for permissions
   const canEditComment = (comment: CommentEntry) => {
-    return currentUser && comment.created_by === currentUser.id;
+    if (!currentUser) return false;
+    // User can edit their own comments
+    if (comment.created_by === currentUser.id) return true;
+    // Providers can edit client comments
+    if (currentUser.role === 'provider' && comment.author_type === 'client') return true;
+    return false;
   };
 
   const canDeleteComment = (comment: CommentEntry) => {
@@ -226,6 +231,7 @@ export function ComponentCommentThread({
                       mode="full"
                       maxLength={10000}
                       className="min-h-[60px]"
+                      showHtmlEditor={true}
                     />
                     <div className="flex items-center justify-end gap-2">
                       <Button
@@ -318,6 +324,7 @@ function CommentForm({ projectId, componentId, componentTitle, formRef, formActi
           mode="full"
           maxLength={10000}
           className="min-h-[80px]"
+          showHtmlEditor={true}
         />
         {state?.error && (
           <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">

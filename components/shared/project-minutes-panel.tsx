@@ -345,6 +345,7 @@ Puedes usar el formateo enriquecido:
                   maxLength={50000}
                   mode="full"
                   className="min-h-[300px]"
+                  showHtmlEditor={true}
                 />
               )}
             </div>

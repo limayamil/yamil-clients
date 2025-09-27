@@ -40,14 +40,7 @@ export function RichTextViewer({ content, className, fallback = '' }: RichTextVi
   return (
     <div
       className={cn(
-        'prose prose-sm max-w-none',
-        'prose-p:text-foreground prose-p:leading-relaxed prose-p:m-0 prose-p:mb-2 last:prose-p:mb-0',
-        'prose-strong:text-foreground prose-strong:font-semibold',
-        'prose-em:text-foreground prose-em:italic',
-        'prose-ul:text-foreground prose-ul:my-2 prose-ul:pl-4',
-        'prose-ol:text-foreground prose-ol:my-2 prose-ol:pl-4',
-        'prose-li:text-foreground prose-li:my-0.5',
-        'prose-a:text-brand-600 hover:prose-a:text-brand-700 prose-a:underline prose-a:decoration-1 prose-a:underline-offset-2',
+        'prose prose-sm max-w-none text-foreground rich-text-content',
         className
       )}
       dangerouslySetInnerHTML={{ __html: sanitizedContent }}

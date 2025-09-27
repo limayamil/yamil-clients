@@ -350,8 +350,19 @@ export async function updateComment(_: unknown, formData: FormData): Promise<Com
       };
     }
 
-    // Verify the user is the author of the comment (only authors can edit)
-    if (comment.created_by !== user.id) {
+    // Permission check for editing:
+    // - Users can edit their own comments
+    // - Providers can edit client comments (but not vice versa)
+    const isAuthor = comment.created_by === user.id;
+    const canProviderEdit = userRole === 'provider' && comment.author_type === 'client';
+
+    if (!isAuthor && !canProviderEdit) {
+      if (userRole === 'client' && comment.author_type === 'provider') {
+        return {
+          error: 'No puedes editar comentarios del proveedor',
+          success: false,
+        };
+      }
       return {
         error: 'Solo puedes editar tus propios comentarios',
         success: false,
