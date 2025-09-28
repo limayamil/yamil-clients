@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ComponentCommentThread } from '@/components/shared/component-comment-thread';
 import { RichTextViewer } from '@/components/ui/rich-text-viewer';
+import { ExpandableText } from '@/components/ui/expandable-text';
 import { DynamicChecklist } from '@/components/client/dynamic-checklist';
 import type { ChecklistItem } from '@/components/client/dynamic-checklist';
 import { isFeatureEnabled } from '@/lib/config/feature-flags';
@@ -218,6 +219,13 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                     </a>
                   </Button>
                 </div>
+                {component.config?.description && (
+                  <ExpandableText
+                    content={(component.config.description as string)}
+                    maxLength={100}
+                    className="text-xs text-muted-foreground"
+                  />
+                )}
                 <ComponentCommentThread
                   componentId={component.id}
                   componentTitle={getComponentTitle(component)}

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Link, X, Trash2, Send, ExternalLink, Edit2, Check, X as Cancel } from 'lucide-react';
+import { Link, X, Trash2, Send, ExternalLink, Edit2, Check, X as Cancel, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import type { FileEntry } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ExpandableText } from '@/components/ui/expandable-text';
 import { formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 import { addStageLink, updateStageLink, deleteFile } from '@/actions/files';
@@ -45,6 +46,7 @@ export function StageLinkPanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingLink, setEditingLink] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<{title: string; description: string; url: string}>({title: '', description: '', url: ''});
+  const [isAddFormExpanded, setIsAddFormExpanded] = useState(false);
 
   // Filter links for this stage (only get URLs, not regular files)
   const stageLinks = links.filter(link =>
@@ -125,10 +127,10 @@ export function StageLinkPanel({
       setLinkTitle('');
       setLinkDescription('');
 
-      // Cerrar el panel después de un breve delay para mostrar el éxito
+      // Colapsar el formulario después del éxito
       setTimeout(() => {
-        onClose();
-      }, 1000);
+        setIsAddFormExpanded(false);
+      }, 500);
     } catch (error) {
       toast.error('Error al compartir el enlace');
     } finally {
@@ -235,64 +237,81 @@ export function StageLinkPanel({
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col min-h-0 pt-0">
-        {/* Formulario para agregar enlaces */}
+        {/* Formulario para agregar enlaces - Colapsable */}
         <div className="flex-shrink-0 mb-4">
-          <div className="border border-border rounded-xl p-4 bg-brand-50/30">
-            <h4 className="text-sm font-medium text-foreground mb-3">Compartir nuevo enlace</h4>
-
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  URL del enlace *
-                </label>
-                <Input
-                  value={newUrl}
-                  onChange={(e) => setNewUrl(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="https://drive.google.com/... o https://dropbox.com/..."
-                  className="text-sm"
-                  disabled={isSubmitting}
-                />
+          <div className="border border-border rounded-xl bg-brand-50/30">
+            {/* Header del formulario - siempre visible */}
+            <button
+              onClick={() => setIsAddFormExpanded(!isAddFormExpanded)}
+              className="w-full flex items-center justify-between p-4 text-left hover:bg-brand-50/50 transition-colors rounded-xl"
+            >
+              <div className="flex items-center gap-2">
+                <Plus className="h-4 w-4 text-brand-600" />
+                <h4 className="text-sm font-medium text-foreground">Compartir nuevo enlace</h4>
               </div>
+              {isAddFormExpanded ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
 
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  Título (opcional)
-                </label>
-                <Input
-                  value={linkTitle}
-                  onChange={(e) => setLinkTitle(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Nombre descriptivo del enlace..."
-                  className="text-sm"
-                  disabled={isSubmitting}
-                />
+            {/* Formulario expandible */}
+            {isAddFormExpanded && (
+              <div className="px-4 pb-4 space-y-3 border-t border-border/50">
+                <div className="pt-3">
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    URL del enlace *
+                  </label>
+                  <Input
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="https://drive.google.com/... o https://dropbox.com/..."
+                    className="text-sm"
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Título (opcional)
+                  </label>
+                  <Input
+                    value={linkTitle}
+                    onChange={(e) => setLinkTitle(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Nombre descriptivo del enlace..."
+                    className="text-sm"
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Descripción (opcional)
+                  </label>
+                  <Input
+                    value={linkDescription}
+                    onChange={(e) => setLinkDescription(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Descripción adicional del enlace..."
+                    className="text-sm"
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <Button
+                  onClick={handleSubmitLink}
+                  disabled={!newUrl.trim() || isSubmitting}
+                  size="sm"
+                  className="w-full"
+                >
+                  <Send className="h-3 w-3 mr-2" />
+                  {isSubmitting ? 'Enviando...' : 'Compartir enlace'}
+                </Button>
               </div>
-
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  Descripción (opcional)
-                </label>
-                <Input
-                  value={linkDescription}
-                  onChange={(e) => setLinkDescription(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Descripción adicional del enlace..."
-                  className="text-sm"
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <Button
-                onClick={handleSubmitLink}
-                disabled={!newUrl.trim() || isSubmitting}
-                size="sm"
-                className="w-full"
-              >
-                <Send className="h-3 w-3 mr-2" />
-                {isSubmitting ? 'Enviando...' : 'Compartir enlace'}
-              </Button>
-            </div>
+            )}
           </div>
         </div>
 
@@ -384,9 +403,11 @@ export function StageLinkPanel({
                                     {linkData.title}
                                   </p>
                                   {linkData.description && (
-                                    <p className="text-xs text-muted-foreground truncate">
-                                      {linkData.description}
-                                    </p>
+                                    <ExpandableText
+                                      content={linkData.description}
+                                      maxLength={80}
+                                      className="text-xs text-muted-foreground"
+                                    />
                                   )}
                                   <a
                                     href={link.storage_path}

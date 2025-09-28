@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RichTextViewer } from '@/components/ui/rich-text-viewer';
+import { ExpandableText } from '@/components/ui/expandable-text';
 import { DynamicChecklist } from '@/components/client/dynamic-checklist';
 import { Send, Link, CheckSquare, CheckCircle2, FileText, ExternalLink, CalendarCheck, ListTodo, PenTool, ShieldCheck } from 'lucide-react';
 
@@ -262,6 +263,13 @@ function ComponentContent({
           <p className="text-sm text-foreground">
             {(component.config?.label as string) || 'Enlace externo'}
           </p>
+          {component.config?.description && (
+            <ExpandableText
+              content={(component.config.description as string)}
+              maxLength={100}
+              className="text-xs text-muted-foreground"
+            />
+          )}
           <a
             href={component.config?.url as string}
             target="_blank"

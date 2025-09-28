@@ -343,35 +343,78 @@ export function EditableStageCard({
           </div>
         </div>
 
-        {/* Fechas editables de la etapa */}
-        <div className="relative pt-3 mt-3 border-t border-border/30">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <EditableStageDate
-              value={stage.planned_start}
-              onSave={(newDate) => handleUpdateStageDate('planned_start', newDate)}
-              placeholder="Fecha de inicio"
-              label="Inicio"
-              dateType="start"
-              className="text-xs"
-            />
-            <EditableStageDate
-              value={stage.planned_end}
-              onSave={(newDate) => handleUpdateStageDate('planned_end', newDate)}
-              placeholder="Fecha de fin"
-              label="Fin"
-              dateType="end"
-              className="text-xs"
-            />
-            <EditableStageDate
-              value={stage.deadline}
-              onSave={(newDate) => handleUpdateStageDate('deadline', newDate)}
-              placeholder="Fecha límite"
-              label="Límite"
-              dateType="deadline"
-              className="text-xs"
-            />
+        {/* Fechas editables de la etapa - Solo para providers */}
+        {viewMode === 'provider' && (
+          <div className="relative pt-3 mt-3 border-t border-border/30">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <EditableStageDate
+                value={stage.planned_start}
+                onSave={(newDate) => handleUpdateStageDate('planned_start', newDate)}
+                placeholder="Fecha de inicio"
+                label="Inicio"
+                dateType="start"
+                className="text-xs"
+              />
+              <EditableStageDate
+                value={stage.planned_end}
+                onSave={(newDate) => handleUpdateStageDate('planned_end', newDate)}
+                placeholder="Fecha de fin"
+                label="Fin"
+                dateType="end"
+                className="text-xs"
+              />
+              <EditableStageDate
+                value={stage.deadline}
+                onSave={(newDate) => handleUpdateStageDate('deadline', newDate)}
+                placeholder="Fecha límite"
+                label="Límite"
+                dateType="deadline"
+                className="text-xs"
+              />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Vista de solo lectura de fechas para clientes */}
+        {viewMode === 'client' && (stage.planned_start || stage.planned_end || stage.deadline) && (
+          <div className="relative pt-3 mt-3 border-t border-border/30">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {stage.planned_start && (
+                <div className="text-xs">
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Inicio
+                  </label>
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-green-50 text-green-700">
+                    <Calendar className="h-4 w-4" />
+                    <span>{formatDate(stage.planned_start)}</span>
+                  </div>
+                </div>
+              )}
+              {stage.planned_end && (
+                <div className="text-xs">
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Fin
+                  </label>
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-blue-50 text-blue-700">
+                    <Calendar className="h-4 w-4" />
+                    <span>{formatDate(stage.planned_end)}</span>
+                  </div>
+                </div>
+              )}
+              {stage.deadline && (
+                <div className="text-xs">
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Límite
+                  </label>
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-red-50 text-red-700">
+                    <Clock className="h-4 w-4" />
+                    <span>{formatDate(stage.deadline)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </CardHeader>
 
       <AnimatePresence>

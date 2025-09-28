@@ -34,6 +34,7 @@ import { CreatingComponentSkeleton, DeletingComponentSkeleton } from '@/componen
 import { ActionLoading } from '@/components/ui/loading-overlay';
 import { LoadingButton } from '@/components/ui/loading-spinner';
 import { RichTextViewer } from '@/components/ui/rich-text-viewer';
+import { ExpandableText } from '@/components/ui/expandable-text';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface EditableStageComponentsProps {
@@ -731,6 +732,13 @@ function ComponentContent({ component }: { component: StageComponent }) {
           <p className="text-sm text-foreground">
             {(component.config?.label as string) || 'Enlace externo'}
           </p>
+          {component.config?.description && (
+            <ExpandableText
+              content={(component.config.description as string)}
+              maxLength={100}
+              className="text-xs text-muted-foreground"
+            />
+          )}
           <a
             href={component.config?.url as string}
             target="_blank"
