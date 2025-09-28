@@ -142,11 +142,11 @@ function ClientComponentCard({
   const ComponentIcon = getComponentIcon(component.component_type);
 
   return (
-    <div className="group rounded-xl border border-border/50 bg-gradient-to-br from-white to-gray-50/30 p-4 hover:shadow-lg transition-all duration-300">
+    <div className="group rounded-xl border border-border/50 bg-gradient-to-br from-white to-gray-50/30 p-4 hover:shadow-lg transition-all duration-300 mobile-safe-container">
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1 mobile-flex-safe">
           {/* Icono del componente */}
-          <div className={`flex h-6 w-6 items-center justify-center rounded-lg shadow-sm ${
+          <div className={`flex h-6 w-6 items-center justify-center rounded-lg shadow-sm flex-shrink-0 ${
             component.status === 'done'
               ? 'bg-gradient-to-r from-green-500 to-green-600'
               : component.status === 'waiting_client'
@@ -158,12 +158,13 @@ function ClientComponentCard({
             <ComponentIcon className="h-3 w-3 text-white" />
           </div>
 
-          <div className="flex items-center gap-2">
-            <h4 className="text-sm font-medium text-foreground">
+          <div className="flex items-center gap-2 min-w-0 flex-1 mobile-flex-safe">
+            <h4 className="text-sm font-medium text-foreground mobile-text-safe flex-1">
               {getComponentTitle(component)}
             </h4>
-            <Badge variant={getStatusColor(component.status)} className="text-xs shadow-sm">
-              {getStatusText(component.status)}
+            <Badge variant={getStatusColor(component.status)} className="text-xs shadow-sm flex-shrink-0">
+              <span className="hidden sm:inline">{getStatusText(component.status)}</span>
+              <span className="sm:hidden">{getStatusText(component.status).slice(0, 4)}</span>
             </Badge>
           </div>
         </div>
@@ -203,38 +204,38 @@ function ComponentContent({
   switch (component.component_type) {
     case 'text_block':
       return (
-        <div className="space-y-2">
+        <div className="space-y-2 stage-component-content">
           <RichTextViewer
             content={(component.config?.content as string) || 'Sin contenido'}
-            className="text-sm text-foreground"
+            className="text-sm text-foreground mobile-text-safe"
           />
         </div>
       );
 
     case 'upload_request':
       return (
-        <div className="space-y-2">
+        <div className="space-y-2 stage-component-content">
           <RichTextViewer
             content={(component.config?.description as string) || 'Solicitud de enlaces'}
-            className="text-sm text-muted-foreground"
+            className="text-sm text-muted-foreground mobile-text-safe"
           />
           {(component.config?.submitted_urls as string[])?.length > 0 ? (
             <div className="space-y-1">
-              <p className="text-xs font-medium text-foreground">Enlaces enviados:</p>
+              <p className="text-xs font-medium text-foreground mobile-text-safe">Enlaces enviados:</p>
               {(component.config?.submitted_urls as string[]).map((url, index) => (
                 <a
                   key={index}
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-xs text-brand-600 hover:text-brand-700 underline truncate"
+                  className="block text-xs text-brand-600 hover:text-brand-700 underline mobile-text-safe"
                 >
                   {url}
                 </a>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mobile-text-safe">
               Sin enlaces enviados aún
             </p>
           )}
@@ -243,30 +244,30 @@ function ComponentContent({
 
     case 'checklist':
       return (
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">Lista de verificación:</p>
+        <div className="space-y-2 stage-component-content">
+          <p className="text-sm font-medium text-foreground mobile-text-safe">Lista de verificación:</p>
           <DynamicChecklist
             initialItems={(component.config?.items as string[] | ChecklistItem[]) || []}
             readonly={true}
-            className="text-sm"
+            className="text-sm mobile-text-safe"
           />
         </div>
       );
 
     case 'approval':
       return (
-        <div className="space-y-2">
+        <div className="space-y-2 stage-component-content">
           <RichTextViewer
             content={(component.config?.instructions as string) || 'Solicitud de aprobación'}
-            className="text-sm text-foreground"
+            className="text-sm text-foreground mobile-text-safe"
           />
         </div>
       );
 
     case 'link':
       return (
-        <div className="space-y-2">
-          <p className="text-sm text-foreground">
+        <div className="space-y-2 stage-component-content">
+          <p className="text-sm text-foreground mobile-text-safe">
             {(component.config?.label as string) || 'Enlace externo'}
           </p>
           {(() => {
@@ -276,7 +277,7 @@ function ComponentContent({
                 <ExpandableText
                   content={description}
                   maxLength={100}
-                  className="text-xs text-muted-foreground"
+                  className="text-xs text-muted-foreground mobile-text-safe"
                 />
               );
             }

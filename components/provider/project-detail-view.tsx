@@ -294,23 +294,23 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
       </div>
 
       {/* Header Mejorado */}
-      <header className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/50 shadow-xl bg-gradient-to-br from-white via-brand-50/30 to-brand-100/40 backdrop-blur-sm">
+      <header className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/50 shadow-xl bg-gradient-to-br from-white via-brand-50/30 to-brand-100/40 backdrop-blur-sm mobile-safe-container">
         {/* Gradiente de fondo decorativo */}
         <div className="absolute inset-0 bg-gradient-to-r from-brand-500/5 via-transparent to-brand-600/5"></div>
         <div className="absolute top-0 right-0 w-16 h-16 sm:w-32 sm:h-32 lg:w-96 lg:h-96 bg-gradient-radial from-brand-200/20 to-transparent blur-2xl lg:blur-3xl"></div>
 
         <div className="relative p-3 sm:p-4 md:p-6 lg:p-8">
           <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-3 min-w-0 flex-1">
+            <div className="space-y-3 min-w-0 flex-1 mobile-flex-safe">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 shadow-lg">
+                <div className="flex items-center gap-3 min-w-0 flex-1 mobile-flex-safe">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 shadow-lg flex-shrink-0">
                     <Settings className="h-5 w-5 text-white" />
                   </div>
                   <EditableText
                     value={project.title}
                     onSave={handleUpdateTitle}
-                    className="text-2xl md:text-3xl font-semibold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text truncate"
+                    className="text-2xl md:text-3xl font-semibold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text mobile-text-safe flex-1"
                     editClassName="text-2xl md:text-3xl font-semibold"
                     maxLength={200}
                     placeholder="Título del proyecto"
@@ -322,11 +322,11 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
                 />
               </div>
 
-              <div className="pl-0 sm:pl-13">
+              <div className="pl-0 sm:pl-13 mobile-flex-safe">
                 <EditableText
                   value={project.description || ''}
                   onSave={handleUpdateDescription}
-                  className="text-sm md:text-base text-muted-foreground line-clamp-2"
+                  className="text-sm md:text-base text-muted-foreground line-clamp-2 mobile-text-safe"
                   editClassName="text-sm md:text-base"
                   placeholder="Hacer clic para agregar descripción..."
                   multiline={true}
@@ -376,22 +376,22 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
             </div>
           </div>
 
-          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4 sm:mt-6">
-            <div className="rounded-xl sm:rounded-2xl border border-border/50 bg-gradient-to-br from-white to-blue-50/30 p-3 sm:p-4 shadow-sm space-y-2">
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4 sm:mt-6 grid-mobile-safe">
+            <div className="rounded-xl sm:rounded-2xl border border-border/50 bg-gradient-to-br from-white to-blue-50/30 p-3 sm:p-4 shadow-sm space-y-2 mobile-safe-container">
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-blue-600" />
+                <Users className="h-4 w-4 text-blue-600 flex-shrink-0" />
                 <p className="text-xs uppercase text-muted-foreground">Cliente</p>
               </div>
-              <p className="text-base sm:text-lg font-semibold text-foreground">{project.client_name}</p>
+              <p className="text-base sm:text-lg font-semibold text-foreground mobile-text-safe">{project.client_name}</p>
             </div>
             <EditableDateTile
               label="Fecha límite"
               value={project.deadline}
               onSave={handleUpdateDeadline}
             />
-            <div className="rounded-xl sm:rounded-2xl border border-border/50 bg-gradient-to-br from-white to-green-50/30 p-3 sm:p-4 shadow-sm space-y-2 sm:col-span-2 lg:col-span-1">
+            <div className="rounded-xl sm:rounded-2xl border border-border/50 bg-gradient-to-br from-white to-green-50/30 p-3 sm:p-4 shadow-sm space-y-2 sm:col-span-2 lg:col-span-1 mobile-safe-container">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-green-600" />
+                <Calendar className="h-4 w-4 text-green-600 flex-shrink-0" />
                 <p className="text-xs uppercase text-muted-foreground">Fechas del proyecto</p>
               </div>
               <div className="space-y-1">
@@ -400,14 +400,14 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
                   onSave={handleUpdateStartDate}
                   placeholder="Sin fecha de inicio"
                   label="Inicio"
-                  className="text-sm"
+                  className="text-sm mobile-text-safe"
                 />
                 <EditableDate
                   value={project.end_date}
                   onSave={handleUpdateEndDate}
                   placeholder="Sin fecha de fin"
                   label="Fin"
-                  className="text-sm"
+                  className="text-sm mobile-text-safe"
                 />
               </div>
             </div>
@@ -436,26 +436,28 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
         />
       </div>
       {/* Grid de Etapas Editables */}
-      <section className="space-y-4 md:space-y-6">
+      <section className="space-y-4 md:space-y-6 stage-container-mobile">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 shadow-lg">
+            <div className="flex items-center gap-3 mobile-flex-safe">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 shadow-lg flex-shrink-0">
                 <CheckCircle2 className="h-4 w-4 text-white" />
               </div>
-              <h2 className="text-lg md:text-xl font-semibold text-foreground">Etapas del Proyecto</h2>
+              <h2 className="text-lg md:text-xl font-semibold text-foreground mobile-text-safe">Etapas del Proyecto</h2>
             </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className="text-xs shadow-sm">
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <Badge variant="outline" className="text-xs shadow-sm stage-badge-mobile">
                 <Calendar className="h-3 w-3 mr-1" />
-                {project.stages?.length || 0} etapas
+                <span className="hidden xs:inline">{project.stages?.length || 0} etapas</span>
+                <span className="xs:hidden">{project.stages?.length || 0}</span>
               </Badge>
-              <Badge variant="secondary" className="text-xs shadow-sm bg-green-100 text-green-700 border-green-300">
+              <Badge variant="secondary" className="text-xs shadow-sm bg-green-100 text-green-700 border-green-300 stage-badge-mobile">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
-                {project.stages?.filter(s => s.status === 'done').length || 0} completadas
+                <span className="hidden xs:inline">{project.stages?.filter(s => s.status === 'done').length || 0} completadas</span>
+                <span className="xs:hidden">{project.stages?.filter(s => s.status === 'done').length || 0}</span>
               </Badge>
             </div>
           </div>
-          <div className="grid gap-3 md:gap-4">
+          <div className="grid gap-3 md:gap-4 stage-container-mobile">
             {(project.stages ?? []).map((stage, index) => {
               const isActiveStage = activeStage?.id === stage.id;
               const isCompleted = stage.status === 'done';
@@ -502,13 +504,13 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
           </div>
       </section>
 
-      {/* Gestión de Miembros del Proyecto */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg">
+      {/* Gestión de Miembros del Proyecto - Oculto en mobile */}
+      <section className="space-y-4 panel-mobile-safe hidden sm:block">
+        <div className="flex items-center gap-3 mobile-flex-safe">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg flex-shrink-0">
             <UserCheck className="h-4 w-4 text-white" />
           </div>
-          <h2 className="text-lg md:text-xl font-semibold text-foreground">Acceso del Cliente</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-foreground mobile-text-safe">Acceso del Cliente</h2>
         </div>
         <ProjectMembersManager
           projectId={project.id}
@@ -516,18 +518,20 @@ export function ProjectDetailView({ project, currentUserId }: ProjectDetailViewP
         />
       </section>
 
-      {/* Gestión de Etapas */}
-      <StageManagementPanel
-        stages={project.stages ?? []}
-        projectId={project.id}
-        onStagesUpdated={() => {
-          // This would trigger a refetch in the actual implementation
-          window.location.reload();
-        }}
-      />
+      {/* Gestión de Etapas - Oculto en mobile */}
+      <div className="hidden sm:block">
+        <StageManagementPanel
+          stages={project.stages ?? []}
+          projectId={project.id}
+          onStagesUpdated={() => {
+            // This would trigger a refetch in the actual implementation
+            window.location.reload();
+          }}
+        />
+      </div>
 
       {/* Sección de Links y Minutas */}
-      <section className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+      <section className="grid gap-4 sm:gap-6 lg:grid-cols-2 panel-mobile-safe grid-mobile-safe">
         <ProjectLinksPanel
           links={project.links ?? []}
           projectId={project.id}

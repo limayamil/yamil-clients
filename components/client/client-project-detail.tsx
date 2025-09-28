@@ -158,24 +158,24 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId, provi
       </div>
 
       {/* Header Completamente Rediseñado - Mobile First */}
-      <header className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/50 shadow-xl bg-gradient-to-br from-white via-brand-50/30 to-brand-100/40 backdrop-blur-sm">
+      <header className="relative overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-border/50 shadow-xl bg-gradient-to-br from-white via-brand-50/30 to-brand-100/40 backdrop-blur-sm mobile-safe-container">
         {/* Gradiente de fondo decorativo */}
         <div className="absolute inset-0 bg-gradient-to-r from-brand-500/5 via-transparent to-brand-600/5"></div>
         <div className="absolute top-0 right-0 w-16 h-16 sm:w-32 sm:h-32 lg:w-72 lg:h-72 bg-gradient-radial from-brand-200/20 to-transparent blur-2xl"></div>
 
         <div className="relative p-4 sm:p-6 lg:p-8">
           {/* Layout Mobile-First: Stack completo en móvil, grid en desktop */}
-          <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start">
+          <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start grid-mobile-safe">
 
             {/* Columna 1: Información del proyecto */}
-            <div className="lg:col-span-2 space-y-3">
+            <div className="lg:col-span-2 space-y-3 mobile-flex-safe">
               {/* Título con ícono */}
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3 mobile-flex-safe">
                 <div className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-xl lg:rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 shadow-lg flex-shrink-0">
                   <FolderKanban className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-semibold text-foreground bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text leading-tight break-words">
+                <div className="min-w-0 flex-1 mobile-flex-safe">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-semibold text-foreground bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text leading-tight mobile-text-safe">
                     {project.title}
                   </h1>
 
@@ -203,8 +203,8 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId, provi
 
               {/* Descripción */}
               {project.description && (
-                <div className="pl-0 sm:pl-13 lg:pl-15">
-                  <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
+                <div className="pl-0 sm:pl-13 lg:pl-15 mobile-flex-safe">
+                  <p className="text-sm lg:text-base text-muted-foreground leading-relaxed mobile-text-safe">
                     {project.description}
                   </p>
                 </div>
@@ -226,15 +226,15 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId, provi
 
             {/* Columna 2: Progreso - En móvil va después del contenido principal */}
             <div className="lg:col-span-1">
-              <div className="bg-white/50 backdrop-blur-sm rounded-xl border border-border/30 p-4 lg:p-6">
+              <div className="bg-white/50 backdrop-blur-sm rounded-xl border border-border/30 p-4 lg:p-6 mobile-safe-container">
                 <div className="text-center lg:text-right space-y-3">
                   <div className="flex items-center justify-center lg:justify-end gap-2">
-                    <Target className="h-5 w-5 text-brand-600" />
-                    <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-brand-600 to-brand-700 bg-clip-text text-transparent">
+                    <Target className="h-5 w-5 text-brand-600 flex-shrink-0" />
+                    <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-brand-600 to-brand-700 bg-clip-text text-transparent mobile-text-safe">
                       {Math.round(project.progress)}%
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mobile-text-safe">
                     Progreso del proyecto
                   </p>
 
@@ -275,28 +275,28 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId, provi
       </div>
 
       {/* Grid de Etapas Editables */}
-      <section className="space-y-3 sm:space-y-4 md:space-y-6">
+      <section className="space-y-3 sm:space-y-4 md:space-y-6 stage-container-mobile">
           <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 shadow-lg">
+            <div className="flex items-center gap-2 sm:gap-3 mobile-flex-safe">
+              <div className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 shadow-lg flex-shrink-0">
                 <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
               </div>
-              <h2 className="text-base sm:text-lg md:text-xl font-semibold text-foreground">Etapas del Proyecto</h2>
+              <h2 className="text-base sm:text-lg md:text-xl font-semibold text-foreground mobile-text-safe">Etapas del Proyecto</h2>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 ml-8 sm:ml-11 lg:ml-0">
-              <Badge variant="outline" className="text-xs shadow-sm">
+            <div className="flex items-center gap-2 sm:gap-3 ml-8 sm:ml-11 lg:ml-0 flex-shrink-0">
+              <Badge variant="outline" className="text-xs shadow-sm stage-badge-mobile">
                 <Calendar className="h-3 w-3 mr-1" />
                 <span className="hidden xs:inline">{project.stages?.length || 0} etapas</span>
                 <span className="xs:hidden">{project.stages?.length || 0}</span>
               </Badge>
-              <Badge variant="secondary" className="text-xs shadow-sm bg-green-100 text-green-700 border-green-300">
+              <Badge variant="secondary" className="text-xs shadow-sm bg-green-100 text-green-700 border-green-300 stage-badge-mobile">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 <span className="hidden xs:inline">{project.stages?.filter(s => s.status === 'done').length || 0} completadas</span>
                 <span className="xs:hidden">{project.stages?.filter(s => s.status === 'done').length || 0}</span>
               </Badge>
             </div>
           </div>
-          <div className="grid gap-2 sm:gap-3 md:gap-4">
+          <div className="grid gap-2 sm:gap-3 md:gap-4 stage-container-mobile">
             {(project.stages ?? []).map((stage, index) => {
               const isActiveStage = activeStage?.id === stage.id;
               const isCompleted = stage.status === 'done';

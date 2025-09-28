@@ -137,31 +137,33 @@ export function ProjectLinksPanel({ links, projectId, canEdit = false }: Project
   };
 
   return (
-    <Card className="relative overflow-hidden border-border/50 shadow-lg bg-gradient-to-br from-white to-blue-50/30">
+    <Card className="relative overflow-hidden border-border/50 shadow-lg bg-gradient-to-br from-white to-blue-50/30 panel-mobile-safe">
       <div className="absolute top-0 right-0 w-16 h-16 sm:w-32 sm:h-32 bg-gradient-radial from-blue-100/20 to-transparent blur-2xl"></div>
 
       <CardHeader className="relative">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-3 text-lg">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg">
+        <div className="flex items-center justify-between mobile-flex-safe">
+          <CardTitle className="flex items-center gap-3 text-lg mobile-flex-safe">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg flex-shrink-0">
               <LinkIcon className="h-4 w-4 text-white" />
             </div>
-            Links de Interés
+            <span className="mobile-text-safe">Links de Interés</span>
           </CardTitle>
           {canEdit && (
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs shadow-sm">
-                {links.length} links
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Badge variant="outline" className="text-xs shadow-sm stage-badge-mobile">
+                <span className="hidden xs:inline">{links.length} links</span>
+                <span className="xs:hidden">{links.length}</span>
               </Badge>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => setIsAddingLink(true)}
-                className="h-8 px-3"
+                className="h-8 px-3 panel-button-mobile"
                 disabled={isAddingLink}
               >
                 <Plus className="h-3 w-3 mr-1" />
-                Agregar
+                <span className="hidden sm:inline">Agregar</span>
+                <span className="sm:hidden">+</span>
               </Button>
             </div>
           )}
@@ -171,14 +173,14 @@ export function ProjectLinksPanel({ links, projectId, canEdit = false }: Project
       <CardContent className="relative space-y-3">
         {/* Agregar nuevo link */}
         {isAddingLink && canEdit && (
-          <div className="rounded-xl border border-blue-200/50 bg-gradient-to-r from-blue-50/50 to-white p-4 shadow-sm space-y-3">
-            <div className="space-y-2">
+          <div className="rounded-xl border border-blue-200/50 bg-gradient-to-r from-blue-50/50 to-white p-4 shadow-sm space-y-3 panel-mobile-safe">
+            <div className="space-y-2 panel-form-mobile">
               <input
                 type="text"
                 placeholder="Título del link"
                 value={newLinkTitle}
                 onChange={(e) => setNewLinkTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent mobile-text-safe"
                 maxLength={200}
               />
               <input
@@ -186,17 +188,18 @@ export function ProjectLinksPanel({ links, projectId, canEdit = false }: Project
                 placeholder="https://ejemplo.com"
                 value={newLinkUrl}
                 onChange={(e) => setNewLinkUrl(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent mobile-text-safe"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 panel-form-mobile">
               <Button
                 size="sm"
                 onClick={handleAddLink}
                 disabled={isSubmitting || !newLinkTitle.trim() || !newLinkUrl.trim()}
-                className="h-8"
+                className="h-8 panel-button-mobile"
               >
-                {isSubmitting ? 'Guardando...' : 'Guardar'}
+                <span className="hidden sm:inline">{isSubmitting ? 'Guardando...' : 'Guardar'}</span>
+                <span className="sm:hidden">{isSubmitting ? '⏳' : '✓'}</span>
               </Button>
               <Button
                 size="sm"
@@ -206,10 +209,11 @@ export function ProjectLinksPanel({ links, projectId, canEdit = false }: Project
                   setNewLinkTitle('');
                   setNewLinkUrl('');
                 }}
-                className="h-8"
+                className="h-8 panel-button-mobile"
                 disabled={isSubmitting}
               >
-                Cancelar
+                <span className="hidden sm:inline">Cancelar</span>
+                <span className="sm:hidden">✕</span>
               </Button>
             </div>
           </div>
@@ -221,10 +225,10 @@ export function ProjectLinksPanel({ links, projectId, canEdit = false }: Project
             {links.map((link) => (
               <div
                 key={link.id}
-                className="group rounded-xl border border-gray-200/50 bg-gradient-to-r from-white to-gray-50/30 p-3 shadow-sm hover:shadow-md transition-all duration-200"
+                className="group rounded-xl border border-gray-200/50 bg-gradient-to-r from-white to-gray-50/30 p-3 shadow-sm hover:shadow-md transition-all duration-200 panel-mobile-safe"
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="flex items-center gap-3 mobile-flex-safe">
+                  <div className="flex items-center gap-2 flex-1 min-w-0 mobile-flex-safe">
                     <div className="flex-shrink-0 text-gray-600">
                       {getLinkIcon(link.url)}
                     </div>
@@ -234,25 +238,25 @@ export function ProjectLinksPanel({ links, projectId, canEdit = false }: Project
                           <EditableText
                             value={link.title}
                             onSave={(newTitle) => handleUpdateLinkTitle(link.id, newTitle)}
-                            className="text-sm font-medium text-gray-900 line-clamp-1"
-                            editClassName="text-sm font-medium"
+                            className="text-sm font-medium text-gray-900 line-clamp-1 mobile-text-safe"
+                            editClassName="text-sm font-medium mobile-text-safe"
                             maxLength={200}
                             placeholder="Título del link"
                           />
                           <EditableText
                             value={link.url}
                             onSave={(newUrl) => handleUpdateLinkUrl(link.id, newUrl)}
-                            className="text-xs text-gray-600 line-clamp-1"
-                            editClassName="text-xs"
+                            className="text-xs text-gray-600 line-clamp-1 url-mobile-safe"
+                            editClassName="text-xs mobile-text-safe"
                             placeholder="URL del link"
                           />
                         </>
                       ) : (
                         <>
-                          <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                          <p className="text-sm font-medium text-gray-900 line-clamp-1 mobile-text-safe">
                             {link.title}
                           </p>
-                          <p className="text-xs text-gray-600 line-clamp-1 break-all">
+                          <p className="text-xs text-gray-600 line-clamp-1 url-mobile-safe">
                             {link.url}
                           </p>
                         </>

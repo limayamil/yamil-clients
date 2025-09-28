@@ -245,19 +245,27 @@ export function EditableStageCard({
               </div>
             </div>
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-lg font-semibold text-foreground truncate">{stage.title}</h3>
+            <div className="min-w-0 flex-1 mobile-flex-safe">
+              <div className="flex items-center gap-2 mb-1 mobile-flex-safe">
+                <h3 className="text-lg font-semibold text-foreground mobile-text-safe flex-1">{stage.title}</h3>
                 <Badge
                   variant={getStatusColor(stage.status)}
-                  className="text-xs shadow-sm animate-in fade-in-0 duration-200"
+                  className="text-xs shadow-sm animate-in fade-in-0 duration-200 flex-shrink-0 stage-badge-mobile"
                 >
                   <StatusIcon className="h-3 w-3 mr-1" />
-                  {getStatusText(stage.status)}
+                  <span className="hidden sm:inline">{getStatusText(stage.status)}</span>
+                  <span className="hidden xs:inline sm:hidden">{getStatusText(stage.status).slice(0, 4)}</span>
+                  <span className="xs:hidden">
+                    {stage.status === 'done' ? '✓' :
+                     stage.status === 'waiting_client' ? '⏳' :
+                     stage.status === 'in_review' ? '👁' :
+                     stage.status === 'approved' ? '✅' :
+                     stage.status === 'blocked' ? '🚫' : '○'}
+                  </span>
                 </Badge>
               </div>
               {stage.description && (
-                <p className="text-sm text-muted-foreground truncate">{stage.description}</p>
+                <p className="text-sm text-muted-foreground mobile-text-safe">{stage.description}</p>
               )}
             </div>
             </Button>
@@ -348,14 +356,14 @@ export function EditableStageCard({
         {/* Fechas editables de la etapa - Solo para providers */}
         {viewMode === 'provider' && (
           <div className="relative pt-3 mt-3 border-t border-border/30">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 stage-dates-grid">
               <EditableStageDate
                 value={stage.planned_start}
                 onSave={(newDate) => handleUpdateStageDate('planned_start', newDate)}
                 placeholder="Fecha de inicio"
                 label="Inicio"
                 dateType="start"
-                className="text-xs"
+                className="text-xs mobile-text-safe"
               />
               <EditableStageDate
                 value={stage.planned_end}
@@ -363,7 +371,7 @@ export function EditableStageCard({
                 placeholder="Fecha de fin"
                 label="Fin"
                 dateType="end"
-                className="text-xs"
+                className="text-xs mobile-text-safe"
               />
               <EditableStageDate
                 value={stage.deadline}
@@ -371,7 +379,7 @@ export function EditableStageCard({
                 placeholder="Fecha límite"
                 label="Límite"
                 dateType="deadline"
-                className="text-xs"
+                className="text-xs mobile-text-safe"
               />
             </div>
           </div>
@@ -380,15 +388,15 @@ export function EditableStageCard({
         {/* Vista de solo lectura de fechas para clientes */}
         {viewMode === 'client' && (stage.planned_start || stage.planned_end || stage.deadline) && (
           <div className="relative pt-3 mt-3 border-t border-border/30">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 stage-dates-grid">
               {stage.planned_start && (
                 <div className="text-xs">
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">
                     Inicio
                   </label>
-                  <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-green-50 text-green-700">
-                    <Calendar className="h-4 w-4" />
-                    <span>{formatDate(stage.planned_start)}</span>
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-green-50 text-green-700 mobile-text-safe">
+                    <Calendar className="h-4 w-4 flex-shrink-0" />
+                    <span className="mobile-text-safe">{formatDate(stage.planned_start)}</span>
                   </div>
                 </div>
               )}
@@ -397,9 +405,9 @@ export function EditableStageCard({
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">
                     Fin
                   </label>
-                  <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-blue-50 text-blue-700">
-                    <Calendar className="h-4 w-4" />
-                    <span>{formatDate(stage.planned_end)}</span>
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-blue-50 text-blue-700 mobile-text-safe">
+                    <Calendar className="h-4 w-4 flex-shrink-0" />
+                    <span className="mobile-text-safe">{formatDate(stage.planned_end)}</span>
                   </div>
                 </div>
               )}
@@ -408,9 +416,9 @@ export function EditableStageCard({
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">
                     Límite
                   </label>
-                  <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-red-50 text-red-700">
-                    <Clock className="h-4 w-4" />
-                    <span>{formatDate(stage.deadline)}</span>
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-red-50 text-red-700 mobile-text-safe">
+                    <Clock className="h-4 w-4 flex-shrink-0" />
+                    <span className="mobile-text-safe">{formatDate(stage.deadline)}</span>
                   </div>
                 </div>
               )}
@@ -471,7 +479,7 @@ export function EditableStageCard({
                   variant="ghost"
                   size="sm"
                   onClick={() => onToggleComments?.(stage.id)}
-                  className="h-11 sm:h-8 text-xs hover:bg-blue-100/50 hover:text-blue-700 transition-colors duration-200 gap-1.5 justify-start sm:justify-center touch-manipulation w-full sm:w-auto"
+                  className="h-11 sm:h-8 text-xs hover:bg-blue-100/50 hover:text-blue-700 transition-colors duration-200 gap-1.5 justify-start sm:justify-center touch-manipulation w-full sm:w-auto mobile-text-safe"
                 >
                   <motion.div
                     animate={totalCommentsCount > 0 ? {
@@ -484,9 +492,12 @@ export function EditableStageCard({
                       repeatDelay: 3
                     }}
                   >
-                    <MessageSquare className="h-4 w-4 sm:h-3 sm:w-3" />
+                    <MessageSquare className="h-4 w-4 sm:h-3 sm:w-3 flex-shrink-0" />
                   </motion.div>
-                  <span>Comentar</span>
+                  <span className="mobile-text-safe">
+                    <span className="hidden xs:inline">Comentar</span>
+                    <span className="xs:hidden">💬</span>
+                  </span>
                   <AnimatePresence>
                     {totalCommentsCount > 0 && (
                       <motion.span
@@ -494,7 +505,7 @@ export function EditableStageCard({
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                        className="bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center ml-auto sm:ml-0"
+                        className="bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center ml-auto sm:ml-0 flex-shrink-0"
                       >
                         {totalCommentsCount}
                       </motion.span>
@@ -512,7 +523,7 @@ export function EditableStageCard({
                   variant="ghost"
                   size="sm"
                   onClick={() => onUploadFiles?.(stage.id)}
-                  className="h-11 sm:h-8 text-xs hover:bg-green-100/50 hover:text-green-700 transition-colors duration-200 gap-1.5 justify-start sm:justify-center touch-manipulation w-full sm:w-auto"
+                  className="h-11 sm:h-8 text-xs hover:bg-green-100/50 hover:text-green-700 transition-colors duration-200 gap-1.5 justify-start sm:justify-center touch-manipulation w-full sm:w-auto mobile-text-safe"
                 >
                   <motion.div
                     animate={stageLinksCount > 0 ? {
@@ -525,9 +536,12 @@ export function EditableStageCard({
                       repeatDelay: 4
                     }}
                   >
-                    <Link className="h-4 w-4 sm:h-3 sm:w-3" />
+                    <Link className="h-4 w-4 sm:h-3 sm:w-3 flex-shrink-0" />
                   </motion.div>
-                  <span>Compartir enlace</span>
+                  <span className="mobile-text-safe">
+                    <span className="hidden xs:inline">Compartir enlace</span>
+                    <span className="xs:hidden">🔗</span>
+                  </span>
                   <AnimatePresence>
                     {stageLinksCount > 0 && (
                       <motion.span
@@ -535,7 +549,7 @@ export function EditableStageCard({
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                        className="bg-green-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center ml-auto sm:ml-0"
+                        className="bg-green-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center ml-auto sm:ml-0 flex-shrink-0"
                       >
                         {stageLinksCount}
                       </motion.span>

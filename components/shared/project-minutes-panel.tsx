@@ -159,30 +159,32 @@ export function ProjectMinutesPanel({ minutes, projectId, stages = [], canEdit =
 
   return (
     <>
-      <Card className="relative overflow-hidden border-border/50 shadow-lg bg-gradient-to-br from-white to-purple-50/30">
+      <Card className="relative overflow-hidden border-border/50 shadow-lg bg-gradient-to-br from-white to-purple-50/30 panel-mobile-safe">
         <div className="absolute top-0 right-0 w-16 h-16 sm:w-32 sm:h-32 bg-gradient-radial from-purple-100/20 to-transparent blur-2xl"></div>
 
         <CardHeader className="relative">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 shadow-lg">
+          <div className="flex items-center justify-between mobile-flex-safe">
+            <CardTitle className="flex items-center gap-3 text-lg mobile-flex-safe">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 shadow-lg flex-shrink-0">
                 <FileText className="h-4 w-4 text-white" />
               </div>
-              Minutas de Reuniones
+              <span className="mobile-text-safe">Minutas de Reuniones</span>
             </CardTitle>
             {canEdit && (
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs shadow-sm">
-                  {minutes.length} minutas
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Badge variant="outline" className="text-xs shadow-sm stage-badge-mobile">
+                  <span className="hidden xs:inline">{minutes.length} minutas</span>
+                  <span className="xs:hidden">{minutes.length}</span>
                 </Badge>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={openCreateDialog}
-                  className="h-8 px-3"
+                  className="h-8 px-3 panel-button-mobile"
                 >
                   <Plus className="h-3 w-3 mr-1" />
-                  Nueva
+                  <span className="hidden sm:inline">Nueva</span>
+                  <span className="sm:hidden">+</span>
                 </Button>
               </div>
             )}
@@ -195,39 +197,40 @@ export function ProjectMinutesPanel({ minutes, projectId, stages = [], canEdit =
               {sortedMinutes.map((minute) => (
                 <div
                   key={minute.id}
-                  className="group rounded-xl border border-purple-200/50 bg-gradient-to-r from-purple-50/50 to-white p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                  className="group rounded-xl border border-purple-200/50 bg-gradient-to-r from-purple-50/50 to-white p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer panel-mobile-safe"
                   onClick={() => openMinuteDialog(minute, 'view')}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className="flex items-start justify-between mobile-flex-safe">
+                    <div className="flex items-start gap-3 flex-1 min-w-0 mobile-flex-safe">
                       <div className="flex-shrink-0 mt-1">
                         <Calendar className="h-4 w-4 text-purple-600" />
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 mobile-flex-safe">
                         <div className="mb-2">
-                          <h4 className="text-sm font-medium text-gray-900 mb-1">
+                          <h4 className="text-sm font-medium text-gray-900 mb-1 mobile-text-safe">
                             {minute.title || `Reunión ${formatDate(minute.meeting_date)}`}
                           </h4>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline" className="text-xs text-purple-600 border-purple-200">
+                          <div className="flex items-center gap-2 flex-wrap mobile-flex-safe">
+                            <Badge variant="outline" className="text-xs text-purple-600 border-purple-200 stage-badge-mobile">
                               <Calendar className="h-3 w-3 mr-1" />
-                              {formatDate(minute.meeting_date)}
+                              <span className="hidden sm:inline">{formatDate(minute.meeting_date)}</span>
+                              <span className="sm:hidden">{new Date(minute.meeting_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}</span>
                             </Badge>
                             {minute.stage_id && getStageById(minute.stage_id) && (
-                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
-                                {getStageById(minute.stage_id)?.title}
+                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200 stage-badge-mobile">
+                                <span className="mobile-text-safe">{getStageById(minute.stage_id)?.title}</span>
                               </Badge>
                             )}
                           </div>
                         </div>
-                        <div className="text-xs text-gray-600 line-clamp-3">
+                        <div className="text-xs text-gray-600 line-clamp-3 stage-component-content">
                           {minute.content_markdown.trim() ? (
                             <RichTextViewer
                               content={minute.content_markdown}
-                              className="prose-xs text-xs line-clamp-3"
+                              className="prose-xs text-xs line-clamp-3 mobile-text-safe"
                             />
                           ) : (
-                            <span className="italic text-gray-400">Sin contenido</span>
+                            <span className="italic text-gray-400 mobile-text-safe">Sin contenido</span>
                           )}
                         </div>
                       </div>

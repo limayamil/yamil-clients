@@ -125,17 +125,17 @@ export function GanttTimeline({ stages, projectStartDate, projectEndDate, projec
   };
 
   return (
-    <div className="rounded-3xl border border-border/50 bg-gradient-to-br from-white to-brand-50/30 shadow-sm overflow-hidden">
+    <div className="rounded-3xl border border-border/50 bg-gradient-to-br from-white to-brand-50/30 shadow-sm overflow-hidden mobile-safe-container">
       {/* Header del Gantt */}
       <div className="p-4 border-b border-border/30 bg-gradient-to-r from-brand-500 to-brand-600">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 shadow-lg">
+          <div className="flex items-center gap-3 mobile-flex-safe">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 shadow-lg flex-shrink-0">
               <CalendarDays className="h-4 w-4 text-white" />
             </div>
-            <h3 className="text-lg font-semibold text-white">Cronograma del proyecto</h3>
+            <h3 className="text-lg font-semibold text-white mobile-text-safe">Cronograma del proyecto</h3>
           </div>
-          <div className="flex items-center gap-3 text-xs text-white/80">
+          <div className="flex items-center gap-3 text-xs text-white/80 flex-shrink-0">
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               <span>{timeline.totalDays} días</span>
@@ -145,8 +145,8 @@ export function GanttTimeline({ stages, projectStartDate, projectEndDate, projec
       </div>
 
       {/* Tabla tipo Gantt */}
-      <div className="overflow-x-auto max-w-full">
-        <div className="min-w-full">
+      <div className="overflow-x-auto max-w-full" style={{ maxWidth: 'calc(100vw - 2rem)' }}>
+        <div className="min-w-[600px]">
           {/* Header de meses */}
           <div className="flex border-b border-border/30 bg-gray-50/50">
             {/* Columna de etapas */}
@@ -180,20 +180,23 @@ export function GanttTimeline({ stages, projectStartDate, projectEndDate, projec
             {/* Línea de "hoy" */}
             <div
               className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-20 shadow-lg"
-              style={{ left: `calc(8rem + ${timeline.todayPosition}% * (100% - 8rem) / 100)` }}
+              style={{
+                left: `calc(8rem + ${Math.min(timeline.todayPosition, 95)}% * (100% - 8rem) / 100)`,
+                maxWidth: '2px'
+              }}
             />
 
             {timeline.stages.map((stage, stageIndex) => (
               <div key={stage.id} className="flex border-b border-border/30 hover:bg-brand-50/20 transition-colors">
                 {/* Nombre de la etapa */}
                 <div className="w-32 sm:w-40 lg:w-48 flex-shrink-0 p-2 sm:p-3 lg:p-4 border-r border-border/30 bg-gray-50/30">
-                  <div className="text-xs sm:text-sm font-medium text-foreground truncate">
+                  <div className="text-xs sm:text-sm font-medium text-foreground mobile-text-safe">
                     <span className="hidden sm:inline">Etapa {stageIndex + 1}</span>
                     <span className="sm:hidden">E{stageIndex + 1}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground truncate mt-1">
+                  <div className="text-xs text-muted-foreground mobile-text-safe mt-1">
                     <span className="hidden sm:inline">{stage.title}</span>
-                    <span className="sm:hidden">{stage.title.slice(0, 12)}{stage.title.length > 12 ? '...' : ''}</span>
+                    <span className="sm:hidden">{stage.title.slice(0, 8)}{stage.title.length > 8 ? '...' : ''}</span>
                   </div>
                 </div>
 

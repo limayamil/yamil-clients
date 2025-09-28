@@ -154,3 +154,96 @@
   display: inline !important;
 }
 
+/* Mobile-safe utilities to prevent horizontal overflow */
+.mobile-safe-container {
+  max-width: calc(100vw - 2rem);
+  overflow-x: hidden;
+}
+
+.mobile-text-safe {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  min-width: 0;
+}
+
+.mobile-flex-safe {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Ensure all main containers never exceed viewport width */
+@media (max-width: 640px) {
+  .container, .max-w-full {
+    max-width: calc(100vw - 1rem) !important;
+  }
+
+  /* Prevent grid overflow on mobile */
+  .grid-mobile-safe {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Force single column layout for complex grids on mobile */
+  .sm\\:grid-cols-2, .sm\\:grid-cols-3, .lg\\:grid-cols-2, .lg\\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure horizontal scrolling containers have proper constraints */
+  .overflow-x-auto {
+    max-width: calc(100vw - 2rem);
+  }
+
+  /* Stage-specific mobile optimizations */
+  .stage-dates-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Aggressive badge truncation for very small screens */
+  .stage-badge-mobile {
+    max-width: 60px !important;
+    font-size: 0.625rem !important;
+  }
+
+  /* Stage component content wrapping */
+  .stage-component-content {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+  }
+
+  /* Stage container extra safety */
+  .stage-container-mobile {
+    max-width: calc(100vw - 1.5rem) !important;
+    overflow: hidden !important;
+  }
+
+  /* Panel-specific mobile safety */
+  .panel-mobile-safe {
+    max-width: calc(100vw - 1rem) !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Compact buttons for panels */
+  .panel-button-mobile {
+    max-width: 120px !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* URL and email truncation */
+  .url-mobile-safe {
+    max-width: 200px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  /* Form layouts for mobile panels */
+  .panel-form-mobile {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+}
+

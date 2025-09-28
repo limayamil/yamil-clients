@@ -110,25 +110,27 @@ export function ProjectMembersManager({ projectId, members }: ProjectMembersMana
   };
 
   return (
-    <Card>
+    <Card className="panel-mobile-safe">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <UserCheck className="h-5 w-5" />
-              Miembros del Proyecto
+        <div className="flex items-center justify-between mobile-flex-safe">
+          <div className="mobile-flex-safe">
+            <CardTitle className="flex items-center gap-2 mobile-flex-safe">
+              <UserCheck className="h-5 w-5 flex-shrink-0" />
+              <span className="mobile-text-safe">Miembros del Proyecto</span>
             </CardTitle>
-            <CardDescription>
-              Gestiona quién puede acceder a este proyecto y sus permisos
+            <CardDescription className="mobile-text-safe">
+              <span className="hidden sm:inline">Gestiona quién puede acceder a este proyecto y sus permisos</span>
+              <span className="sm:hidden">Gestiona acceso y permisos</span>
             </CardDescription>
           </div>
           <Button
             onClick={() => setShowAddForm(!showAddForm)}
             size="sm"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 panel-button-mobile flex-shrink-0"
           >
             <Plus className="h-4 w-4" />
-            Agregar Miembro
+            <span className="hidden sm:inline">Agregar Miembro</span>
+            <span className="sm:hidden">Agregar</span>
           </Button>
         </div>
       </CardHeader>
@@ -203,34 +205,40 @@ export function ProjectMembersManager({ projectId, members }: ProjectMembersMana
           {members.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <UserX className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium">No hay miembros asignados</p>
-              <p className="text-sm">Agrega clientes para que puedan acceder a este proyecto</p>
+              <p className="text-lg font-medium mobile-text-safe">No hay miembros asignados</p>
+              <p className="text-sm mobile-text-safe">
+                <span className="hidden sm:inline">Agrega clientes para que puedan acceder a este proyecto</span>
+                <span className="sm:hidden">Agrega clientes para el acceso</span>
+              </p>
             </div>
           ) : (
             members.map((member) => (
-              <Card key={member.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
+              <Card key={member.id} className="p-4 panel-mobile-safe">
+                <div className="flex items-center justify-between mobile-flex-safe">
+                  <div className="flex items-center gap-3 mobile-flex-safe">
+                    <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full flex-shrink-0">
                       <Mail className="h-4 w-4 text-primary" />
                     </div>
-                    <div>
-                      <p className="font-medium">{member.email}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={member.role === 'client_editor' ? 'default' : 'secondary'}>
-                          {roleLabels[member.role]}
+                    <div className="mobile-flex-safe">
+                      <p className="font-medium url-mobile-safe">{member.email}</p>
+                      <div className="flex items-center gap-2 mt-1 mobile-flex-safe">
+                        <Badge variant={member.role === 'client_editor' ? 'default' : 'secondary'} className="stage-badge-mobile">
+                          <span className="hidden sm:inline">{roleLabels[member.role]}</span>
+                          <span className="sm:hidden">{member.role === 'client_editor' ? 'Ed.' : 'Ver.'}</span>
                         </Badge>
                         {member.accepted_at ? (
-                          <Badge variant="outline" className="text-green-600 border-green-600">
-                            Activo
+                          <Badge variant="outline" className="text-green-600 border-green-600 stage-badge-mobile">
+                            <span className="hidden sm:inline">Activo</span>
+                            <span className="sm:hidden">✓</span>
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-orange-600 border-orange-600">
-                            Pendiente
+                          <Badge variant="outline" className="text-orange-600 border-orange-600 stage-badge-mobile">
+                            <span className="hidden sm:inline">Pendiente</span>
+                            <span className="sm:hidden">⏳</span>
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground mt-1 mobile-text-safe hidden sm:block">
                         {roleDescriptions[member.role]}
                       </p>
                     </div>

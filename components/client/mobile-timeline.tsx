@@ -82,15 +82,15 @@ export function MobileTimeline({ stages, projectStartDate, projectEndDate, proje
   };
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-white to-brand-50/30 shadow-sm overflow-hidden">
+    <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-white to-brand-50/30 shadow-sm overflow-hidden mobile-safe-container">
       {/* Header */}
       <div className="p-4 border-b border-border/30 bg-gradient-to-r from-brand-500 to-brand-600">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 shadow-lg">
+          <div className="flex items-center gap-3 mobile-flex-safe">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 shadow-lg flex-shrink-0">
               <CalendarDays className="h-4 w-4 text-white" />
             </div>
-            <h3 className="text-lg font-semibold text-white">Progreso del proyecto</h3>
+            <h3 className="text-lg font-semibold text-white mobile-text-safe">Progreso del proyecto</h3>
           </div>
         </div>
       </div>
@@ -141,20 +141,21 @@ export function MobileTimeline({ stages, projectStartDate, projectEndDate, proje
 
               {/* Contenido de la etapa */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-sm font-medium text-foreground truncate">
+                <div className="flex items-center gap-2 mb-1 mobile-flex-safe">
+                  <h4 className="text-sm font-medium text-foreground mobile-text-safe flex-1">
                     Etapa {stage.stageNumber}: {stage.title}
                   </h4>
                   <Badge
                     variant="outline"
-                    className={`text-xs ${getStatusColor(stage.status)} border-current`}
+                    className={`text-xs ${getStatusColor(stage.status)} border-current flex-shrink-0`}
                   >
-                    {getStatusText(stage.status)}
+                    <span className="hidden sm:inline">{getStatusText(stage.status)}</span>
+                    <span className="sm:hidden">{getStatusText(stage.status).slice(0, 6)}</span>
                   </Badge>
                 </div>
 
                 {stage.description && (
-                  <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                  <p className="text-xs text-muted-foreground mb-2 line-clamp-2 mobile-text-safe">
                     {stage.description}
                   </p>
                 )}
@@ -162,16 +163,20 @@ export function MobileTimeline({ stages, projectStartDate, projectEndDate, proje
                 {/* Fechas */}
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                   {stage.planned_start && (
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      <span>Inicio: {formatDate(stage.planned_start)}</span>
+                    <div className="flex items-center gap-1 mobile-text-safe">
+                      <Clock className="h-3 w-3 flex-shrink-0" />
+                      <span className="mobile-text-safe">
+                        <span className="hidden sm:inline">Inicio: </span>
+                        {formatDate(stage.planned_start)}
+                      </span>
                     </div>
                   )}
                   {(stage.planned_end || stage.deadline) && (
-                    <div className="flex items-center gap-1">
-                      <CalendarDays className="h-3 w-3" />
-                      <span>
-                        Fin: {formatDate(stage.planned_end || stage.deadline!)}
+                    <div className="flex items-center gap-1 mobile-text-safe">
+                      <CalendarDays className="h-3 w-3 flex-shrink-0" />
+                      <span className="mobile-text-safe">
+                        <span className="hidden sm:inline">Fin: </span>
+                        {formatDate(stage.planned_end || stage.deadline!)}
                       </span>
                     </div>
                   )}
