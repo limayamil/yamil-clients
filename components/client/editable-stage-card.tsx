@@ -55,6 +55,7 @@ interface EditableStageCardProps {
   viewMode?: 'client' | 'provider';
   currentUserId?: string;
   clientName?: string;
+  providerName?: string;
 }
 
 export function EditableStageCard({
@@ -73,7 +74,8 @@ export function EditableStageCard({
   className,
   viewMode = 'provider',
   currentUserId,
-  clientName
+  clientName,
+  providerName
 }: EditableStageCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -436,6 +438,7 @@ export function EditableStageCard({
                 onUpdateComponent={onUpdateComponent}
                 currentUser={currentUser}
                 clientName={clientName}
+                providerName={providerName}
               />
             ) : (
               <ProviderStageComponents
@@ -448,6 +451,7 @@ export function EditableStageCard({
                 onReorderComponents={(componentIds) => onReorderComponents?.(stage.id, componentIds)}
                 currentUser={currentUser}
                 clientName={clientName}
+                providerName={providerName}
               />
             )}
 

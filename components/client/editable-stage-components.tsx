@@ -732,13 +732,19 @@ function ComponentContent({ component }: { component: StageComponent }) {
           <p className="text-sm text-foreground">
             {(component.config?.label as string) || 'Enlace externo'}
           </p>
-          {component.config?.description && (
-            <ExpandableText
-              content={(component.config.description as string)}
-              maxLength={100}
-              className="text-xs text-muted-foreground"
-            />
-          )}
+          {(() => {
+            const description = component.config?.description;
+            if (description && typeof description === 'string') {
+              return (
+                <ExpandableText
+                  content={description}
+                  maxLength={100}
+                  className="text-xs text-muted-foreground"
+                />
+              );
+            }
+            return null;
+          })()}
           <a
             href={component.config?.url as string}
             target="_blank"

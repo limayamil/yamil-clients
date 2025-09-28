@@ -24,6 +24,7 @@ interface StageCommentThreadProps {
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
   stageComponents?: Array<{ id: string; component_type: string; config?: any }>;
   clientName?: string;
+  providerName?: string;
 }
 
 const initialState: { error?: string; success?: boolean; message?: string } = {};
@@ -37,7 +38,8 @@ export function StageCommentThread({
   projectId,
   currentUser,
   stageComponents = [],
-  clientName
+  clientName,
+  providerName
 }: StageCommentThreadProps) {
   const [state, formAction] = useFormState(createComment, initialState);
   const [editState, editAction] = useFormState(updateComment, initialState);
@@ -54,6 +56,12 @@ export function StageCommentThread({
   const getClientFirstName = (fullName?: string): string => {
     if (!fullName) return 'Cliente';
     return fullName.split(' ')[0] || 'Cliente';
+  };
+
+  // Helper function to get the first name from full provider name
+  const getProviderFirstName = (fullName?: string): string => {
+    if (!fullName) return 'Proveedor';
+    return fullName.split(' ')[0] || 'Proveedor';
   };
 
   // Include both stage-level comments and component-level comments for this stage
@@ -188,7 +196,7 @@ export function StageCommentThread({
                   <div className="flex items-center justify-between text-xs mb-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant={comment.author_type === 'provider' ? 'default' : 'secondary'} className="text-xs">
-                        {comment.author_type === 'provider' ? 'Proveedor' : getClientFirstName(clientName)}
+                        {comment.author_type === 'provider' ? getProviderFirstName(providerName) : getClientFirstName(clientName)}
                       </Badge>
                       {comment.component_id && (
                         <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-300">

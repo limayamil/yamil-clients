@@ -17,9 +17,10 @@ interface StageComponentRendererProps {
   comments: CommentEntry[];
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
   clientName?: string;
+  providerName?: string;
 }
 
-export function StageComponentRenderer({ stage, projectId, comments, currentUser, clientName }: StageComponentRendererProps) {
+export function StageComponentRenderer({ stage, projectId, comments, currentUser, clientName, providerName }: StageComponentRendererProps) {
   console.log('🎭 [Provider] StageComponentRenderer for stage', stage.id, ':', {
     stageTitle: stage.title,
     hasComponents: !!stage.components,
@@ -103,6 +104,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   isCompact={true}
                   currentUser={currentUser}
                   clientName={clientName}
+                  providerName={providerName}
                 />
               </div>
             );
@@ -125,6 +127,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   isCompact={true}
                   currentUser={currentUser}
                   clientName={clientName}
+                  providerName={providerName}
                 />
               </div>
             );
@@ -203,6 +206,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   isCompact={true}
                   currentUser={currentUser}
                   clientName={clientName}
+                  providerName={providerName}
                 />
               </div>
             );
@@ -219,13 +223,19 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                     </a>
                   </Button>
                 </div>
-                {component.config?.description && (
-                  <ExpandableText
-                    content={(component.config.description as string)}
-                    maxLength={100}
-                    className="text-xs text-muted-foreground"
-                  />
-                )}
+                {(() => {
+                  const description = component.config?.description;
+                  if (description && typeof description === 'string') {
+                    return (
+                      <ExpandableText
+                        content={description}
+                        maxLength={100}
+                        className="text-xs text-muted-foreground"
+                      />
+                    );
+                  }
+                  return null;
+                })()}
                 <ComponentCommentThread
                   componentId={component.id}
                   componentTitle={getComponentTitle(component)}
@@ -234,6 +244,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   isCompact={true}
                   currentUser={currentUser}
                   clientName={clientName}
+                  providerName={providerName}
                 />
               </div>
             );
@@ -258,6 +269,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   isCompact={true}
                   currentUser={currentUser}
                   clientName={clientName}
+                  providerName={providerName}
                 />
               </div>
             );
@@ -280,6 +292,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   isCompact={true}
                   currentUser={currentUser}
                   clientName={clientName}
+                  providerName={providerName}
                 />
               </div>
             );
@@ -302,6 +315,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   isCompact={true}
                   currentUser={currentUser}
                   clientName={clientName}
+                  providerName={providerName}
                 />
               </div>
             );

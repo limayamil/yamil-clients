@@ -24,6 +24,10 @@ export async function getProviderDashboardProjects() {
 export async function getProviderProject(projectId: string) {
   const supabase = createSupabaseServerClient();
 
+  // Get current provider user info
+  const { getCurrentUser } = await import('@/lib/auth/simple-auth');
+  const currentUser = await getCurrentUser();
+
   // Intentar usar la RPC function que incluye el nombre del cliente
   const { data, error } = await (supabase as any).rpc('provider_project_detail', { project_id_input: projectId });
   if (!error && data) {
@@ -69,7 +73,8 @@ export async function getProviderProject(projectId: string) {
       activity: Array.isArray(parsed.activity) ? parsed.activity : [],
       links: linksResult.data ?? [],
       minutes: minutesResult.data ?? [],
-      project_members: projectMembersResult.data ?? []
+      project_members: projectMembersResult.data ?? [],
+      provider_name: currentUser?.name || 'Proveedor'
     } as any;
   }
 
@@ -132,6 +137,7 @@ export async function getProviderProject(projectId: string) {
       project_members: (membersResult as any).data ?? [],
       progress: 0, // Placeholder
       client_name: (projectData.clients as any)?.name || 'Cliente',
+      provider_name: currentUser?.name || 'Proveedor',
       overdue: false, // Placeholder
       waiting_on_client: false // Placeholder
     } as any;

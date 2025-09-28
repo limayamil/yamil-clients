@@ -119,6 +119,7 @@ export interface ProjectSummary {
   description?: string | null;
   status: ProjectStatus;
   client_name: string;
+  provider_name?: string;
   deadline?: string | null;
   start_date?: string | null;
   end_date?: string | null;

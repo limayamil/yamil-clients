@@ -77,6 +77,25 @@ export async function getClientProject(projectId: string, clientEmail: string) {
 
   const supabase = createSupabaseServerClient();
 
+  // Get provider information - we'll query for the first active provider
+  // In most cases there's only one provider in the system
+  let providerName = 'Proveedor';
+  try {
+    const { data: providerData } = await (supabase as any)
+      .from('simple_users')
+      .select('name')
+      .eq('role', 'provider')
+      .eq('active', true)
+      .limit(1)
+      .single();
+
+    if (providerData?.name) {
+      providerName = providerData.name;
+    }
+  } catch (error) {
+    console.log('Could not get provider name, using fallback');
+  }
+
   try {
     // Try the RPC function first (now fixed to include title field)
     const { data: rpcData, error: rpcError } = await (supabase as any).rpc('client_project_detail', {
@@ -128,6 +147,7 @@ export async function getClientProject(projectId: string, clientEmail: string) {
         minutes: minutesResult.data ?? [],
         progress: Number(parsed.progress ?? 0),
         client_name: parsed.client_name || clientEmail,
+        provider_name: providerName,
         overdue: false, // Placeholder
         waiting_on_client: false // Placeholder
       } as any;
@@ -210,6 +230,7 @@ export async function getClientProject(projectId: string, clientEmail: string) {
       minutes: (minutesResult as any).data ?? [],
       progress: 0, // Placeholder
       client_name: (membersResult as any).data?.find((m: any) => m.email === clientEmail)?.email || clientEmail,
+      provider_name: providerName,
       overdue: false, // Placeholder
       waiting_on_client: false // Placeholder
     } as ProjectSummary;

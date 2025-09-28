@@ -57,6 +57,7 @@ interface ProviderStageComponentsProps {
   onReorderComponents?: (componentIds: string[]) => void;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
   clientName?: string;
+  providerName?: string;
 }
 
 export function ProviderStageComponents({
@@ -68,7 +69,8 @@ export function ProviderStageComponents({
   onDeleteComponent,
   onReorderComponents,
   currentUser,
-  clientName
+  clientName,
+  providerName
 }: ProviderStageComponentsProps) {
   const [editingComponent, setEditingComponent] = useState<string | null>(null);
   const [orderedComponents, setOrderedComponents] = useState(components);
@@ -135,6 +137,7 @@ export function ProviderStageComponents({
               onDeleteComponent={onDeleteComponent}
               currentUser={currentUser}
               clientName={clientName}
+              providerName={providerName}
             />
           ))}
         </div>
@@ -154,6 +157,7 @@ interface ProviderComponentCardProps {
   onDeleteComponent?: (componentId: string) => void;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
   clientName?: string;
+  providerName?: string;
 }
 
 function ProviderComponentCard({
@@ -166,7 +170,8 @@ function ProviderComponentCard({
   onUpdateComponent,
   onDeleteComponent,
   currentUser,
-  clientName
+  clientName,
+  providerName
 }: ProviderComponentCardProps) {
   const [editData, setEditData] = useState({
     title: component.title || '',
@@ -310,6 +315,7 @@ function ProviderComponentCard({
           isCompact={true}
           currentUser={currentUser}
           clientName={clientName}
+          providerName={providerName}
         />
       </div>
     </div>

@@ -21,6 +21,7 @@ interface ComponentCommentThreadProps {
   isCompact?: boolean;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
   clientName?: string;
+  providerName?: string;
 }
 
 const initialState: { error?: string; success?: boolean; message?: string } = {};
@@ -32,7 +33,8 @@ export function ComponentCommentThread({
   comments,
   isCompact = true,
   currentUser,
-  clientName
+  clientName,
+  providerName
 }: ComponentCommentThreadProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [state, formAction] = useFormState(createComment, initialState);
@@ -49,6 +51,12 @@ export function ComponentCommentThread({
   const getClientFirstName = (fullName?: string): string => {
     if (!fullName) return 'Cliente';
     return fullName.split(' ')[0] || 'Cliente';
+  };
+
+  // Helper function to get the first name from full provider name
+  const getProviderFirstName = (fullName?: string): string => {
+    if (!fullName) return 'Proveedor';
+    return fullName.split(' ')[0] || 'Proveedor';
   };
 
   useEffect(() => {
@@ -196,7 +204,7 @@ export function ComponentCommentThread({
                       variant={comment.author_type === 'provider' ? 'default' : 'secondary'}
                       className="text-xs h-5"
                     >
-                      {comment.author_type === 'provider' ? 'Proveedor' : getClientFirstName(clientName)}
+                      {comment.author_type === 'provider' ? getProviderFirstName(providerName) : getClientFirstName(clientName)}
                     </Badge>
                     <time className="text-muted-foreground">
                       {formatDate(comment.created_at)}

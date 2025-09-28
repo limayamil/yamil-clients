@@ -23,5 +23,5 @@ export default async function ClientProjectPage({ params }: ClientProjectPagePro
     notFound();
   }
 
-  return <ClientProjectDetail project={project} clientEmail={user.email} currentUserId={user.id} />;
+  return <ClientProjectDetail project={project} clientEmail={user.email} currentUserId={user.id} providerName={project.provider_name} />;
 }

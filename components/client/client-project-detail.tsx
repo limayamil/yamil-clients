@@ -50,9 +50,10 @@ interface ClientProjectDetailProps {
   project: ProjectSummary;
   clientEmail: string;
   currentUserId: string;
+  providerName?: string;
 }
 
-export function ClientProjectDetail({ project, clientEmail, currentUserId }: ClientProjectDetailProps) {
+export function ClientProjectDetail({ project, clientEmail, currentUserId, providerName }: ClientProjectDetailProps) {
   const router = useRouter();
   const [activeCommentStage, setActiveCommentStage] = useState<string | null>(null);
   const [activeFileStage, setActiveFileStage] = useState<string | null>(null);
@@ -323,6 +324,7 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
                     viewMode="client"
                     currentUserId={currentUserId}
                     clientName={project.client_name}
+                    providerName={providerName || project.provider_name}
                     className={`transition-all duration-300 ${
                       isActiveStage
                         ? 'ring-2 ring-brand-500/20 shadow-lg shadow-brand-500/10 bg-gradient-to-br from-white to-brand-50/30'
@@ -388,6 +390,7 @@ export function ClientProjectDetail({ project, clientEmail, currentUserId }: Cli
           currentUser={currentUser}
           stageComponents={project.stages?.find(s => s.id === activeCommentStage)?.components || []}
           clientName={project.client_name}
+          providerName={providerName || project.provider_name}
         />
       )}
 

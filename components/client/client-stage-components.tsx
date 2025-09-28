@@ -19,6 +19,7 @@ interface ClientStageComponentsProps {
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
   clientName?: string;
+  providerName?: string;
 }
 
 export function ClientStageComponents({
@@ -27,7 +28,8 @@ export function ClientStageComponents({
   comments,
   onUpdateComponent,
   currentUser,
-  clientName
+  clientName,
+  providerName
 }: ClientStageComponentsProps) {
 
   if (!components || components.length === 0) {
@@ -53,6 +55,7 @@ export function ClientStageComponents({
           onUpdateComponent={onUpdateComponent}
           currentUser={currentUser}
           clientName={clientName}
+          providerName={providerName}
         />
       ))}
     </div>
@@ -66,6 +69,7 @@ interface ClientComponentCardProps {
   onUpdateComponent?: (componentId: string, updates: Partial<StageComponent>) => void;
   currentUser?: { id: string; role: 'provider' | 'client' } | null;
   clientName?: string;
+  providerName?: string;
 }
 
 function ClientComponentCard({
@@ -74,7 +78,8 @@ function ClientComponentCard({
   comments,
   onUpdateComponent,
   currentUser,
-  clientName
+  clientName,
+  providerName
 }: ClientComponentCardProps) {
   const getComponentIcon = (type: string) => {
     switch (type) {
@@ -182,6 +187,7 @@ function ClientComponentCard({
         isCompact={true}
         currentUser={currentUser}
         clientName={clientName}
+        providerName={providerName}
       />
     </div>
   );
@@ -263,13 +269,19 @@ function ComponentContent({
           <p className="text-sm text-foreground">
             {(component.config?.label as string) || 'Enlace externo'}
           </p>
-          {component.config?.description && (
-            <ExpandableText
-              content={(component.config.description as string)}
-              maxLength={100}
-              className="text-xs text-muted-foreground"
-            />
-          )}
+          {(() => {
+            const description = component.config?.description;
+            if (description && typeof description === 'string') {
+              return (
+                <ExpandableText
+                  content={description}
+                  maxLength={100}
+                  className="text-xs text-muted-foreground"
+                />
+              );
+            }
+            return null;
+          })()}
           <a
             href={component.config?.url as string}
             target="_blank"
