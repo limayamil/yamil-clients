@@ -23,7 +23,8 @@ import {
   CheckCircle2,
   Users,
   Target,
-  Link
+  Link,
+  Edit
 } from 'lucide-react';
 import type { Stage, StageComponent, CommentEntry, FileEntry } from '@/types/project';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +38,8 @@ import { EditableStageDate } from '@/components/ui/editable-stage-date';
 import { EditableStageComponents } from '@/components/client/editable-stage-components';
 import { ClientStageComponents } from '@/components/client/client-stage-components';
 import { ProviderStageComponents } from '@/components/provider/provider-stage-components';
+import { CompleteStageDialog } from '@/components/shared/complete-stage-dialog';
+import { EditCompletionNoteDialog } from '@/components/shared/edit-completion-note-dialog';
 
 interface EditableStageCardProps {
   stage: Stage;
@@ -79,6 +82,8 @@ export function EditableStageCard({
 }: EditableStageCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [showEditNoteDialog, setShowEditNoteDialog] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Create current user object for comment permissions
@@ -139,8 +144,21 @@ export function EditableStageCard({
   };
 
   const handleUpdateStageStatus = (newStatus: string) => {
+    // Si el nuevo estado es 'done', abrir el diálogo de completar etapa
+    if (newStatus === 'done') {
+      setShowCompleteDialog(true);
+      setShowAddMenu(false);
+      return;
+    }
+
+    // Para otros estados, actualizar normalmente
     onUpdateStage?.(stage.id, { status: newStatus as Stage['status'] });
     setShowAddMenu(false);
+  };
+
+  const handleCompleteSuccess = () => {
+    // Callback después de completar la etapa exitosamente
+    // La revalidación se maneja en el server action
   };
 
   const handleUpdateStageDate = async (dateField: 'planned_start' | 'planned_end' | 'deadline', newDate: string) => {
@@ -437,6 +455,46 @@ export function EditableStageCard({
             style={{ overflow: 'hidden' }}
           >
             <CardContent className="pt-0">
+            {/* Comentario de cierre (visible cuando la etapa está completada) */}
+            {stage.status === 'done' && (
+              <div className="mb-4">
+                {stage.completion_note ? (
+                  <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <h4 className="text-sm font-semibold text-green-900">Comentario de cierre</h4>
+                      </div>
+                      {viewMode === 'provider' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 gap-1.5 text-green-700 hover:text-green-900 hover:bg-green-100"
+                          onClick={() => setShowEditNoteDialog(true)}
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                          Editar
+                        </Button>
+                      )}
+                    </div>
+                    <div className="prose prose-sm max-w-none text-green-900">
+                      <div dangerouslySetInnerHTML={{ __html: stage.completion_note }} />
+                    </div>
+                  </div>
+                ) : viewMode === 'provider' ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-dashed border-green-300 text-green-700 hover:bg-green-50 hover:text-green-900 hover:border-green-400"
+                    onClick={() => setShowEditNoteDialog(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar comentario de cierre
+                  </Button>
+                ) : null}
+              </div>
+            )}
+
             {/* Componentes editables o de solo lectura según el modo */}
             {viewMode === 'client' ? (
               <ClientStageComponents
@@ -595,6 +653,24 @@ export function EditableStageCard({
         )}
       </AnimatePresence>
       </Card>
+
+      {/* Diálogo para completar etapa con comentario de cierre */}
+      <CompleteStageDialog
+        stageId={stage.id}
+        projectId={projectId}
+        isOpen={showCompleteDialog}
+        onOpenChange={setShowCompleteDialog}
+        onSuccess={handleCompleteSuccess}
+      />
+
+      {/* Diálogo para editar comentario de cierre */}
+      <EditCompletionNoteDialog
+        stageId={stage.id}
+        projectId={projectId}
+        currentNote={stage.completion_note}
+        isOpen={showEditNoteDialog}
+        onOpenChange={setShowEditNoteDialog}
+      />
     </motion.div>
   );
 }

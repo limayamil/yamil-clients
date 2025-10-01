@@ -34,6 +34,7 @@ export interface Stage {
   planned_end?: string | null;
   deadline?: string | null;
   completion_at?: string | null;
+  completion_note?: string | null;
   owner: StageOwner;
   components?: StageComponent[];
 }

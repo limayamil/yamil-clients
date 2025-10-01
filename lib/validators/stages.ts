@@ -33,7 +33,8 @@ export const requestApprovalSchema = z.object({
 
 export const completeStageSchema = z.object({
   stageId: z.string().uuid(),
-  projectId: projectIdSchema
+  projectId: projectIdSchema,
+  completionNote: richTextSchema(5000).optional()
 });
 
 export const addStageComponentSchema = z.object({
@@ -167,4 +168,10 @@ export const updateChecklistSchema = z.object({
   projectId: projectIdSchema,
   title: simpleTextSchema(200).optional(),
   items: z.array(richTextSchema(500)).optional()
+});
+
+export const updateCompletionNoteSchema = z.object({
+  stageId: z.string().uuid(),
+  projectId: projectIdSchema,
+  completionNote: richTextSchema(5000)
 });

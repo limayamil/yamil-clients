@@ -13,7 +13,8 @@ import {
   createStageSchema,
   deleteStageSchema,
   reorderStagesSchema,
-  reorderStageComponentsSchema
+  reorderStageComponentsSchema,
+  updateCompletionNoteSchema
 } from '@/lib/validators/stages';
 import { audit } from '@/lib/observability/audit';
 import { trackEvent } from '@/lib/observability/events';
@@ -92,21 +93,38 @@ export async function completeStage(_: unknown, formData: FormData) {
   const supabase = createSupabaseServerClient();
   rateLimitCurrentUser();
   const payload = processFormData(formData);
+
   const parsed = completeStageSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const { error } = await (supabase as any).rpc('complete_stage_and_move_next', { stage_id_input: parsed.data.stageId });
+  // Get current user for authorization
+  const user = await getCurrentUser();
+  if (!user?.id || !user?.role) {
+    return { error: { auth: ['Sin sesión activa'] } };
+  }
+
+  const { error } = await (supabase as any).rpc('complete_stage_and_move_next', {
+    stage_id_input: parsed.data.stageId,
+    completion_note_input: parsed.data.completionNote || null,
+    user_id_input: user.id,
+    user_role_input: user.role
+  });
+
   if (error) return { error: { rpc: [error.message] } };
 
   await audit({
     projectId: parsed.data.projectId,
-    actorType: 'provider',
+    actorType: user.role === 'provider' ? 'provider' : 'client',
     action: 'stage.completed',
-    details: { stageId: parsed.data.stageId }
+    details: {
+      stageId: parsed.data.stageId,
+      hasCompletionNote: !!parsed.data.completionNote
+    }
   });
   await trackEvent({ name: 'stage.completed', projectId: parsed.data.projectId, payload: { stageId: parsed.data.stageId } });
 
   revalidatePath('/dashboard');
+  revalidatePath(`/projects/${parsed.data.projectId}`);
   return { success: true };
 }
 
@@ -620,5 +638,45 @@ export async function reorderStageComponents(_: unknown, formData: FormData) {
 
   revalidatePath(`/projects/${parsed.data.projectId}`);
   revalidatePath(`/c/${user.email}/projects/${parsed.data.projectId}`);
+  return { success: true };
+}
+
+export async function updateStageCompletionNote(_: unknown, formData: FormData) {
+  const supabase = createSupabaseServerClient();
+  rateLimitCurrentUser();
+
+  const payload = processFormData(formData);
+  const parsed = updateCompletionNoteSchema.safeParse(payload);
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  const user = await getCurrentUser();
+  if (!user?.id || !user?.role) {
+    return { error: { auth: ['Sin sesión activa'] } };
+  }
+
+  // Only providers can update completion notes
+  if (user.role !== 'provider') {
+    return { error: { auth: ['Solo los proveedores pueden actualizar notas de cierre'] } };
+  }
+
+  const { error } = await (supabase as any).rpc('update_stage_completion_note', {
+    stage_id_input: parsed.data.stageId,
+    completion_note_input: parsed.data.completionNote,
+    user_id_input: user.id,
+    user_role_input: user.role
+  });
+
+  if (error) return { error: { rpc: [error.message] } };
+
+  await audit({
+    projectId: parsed.data.projectId,
+    actorType: 'provider',
+    action: 'stage.completion_note_updated',
+    details: {
+      stageId: parsed.data.stageId
+    }
+  });
+
+  revalidatePath(`/projects/${parsed.data.projectId}`);
   return { success: true };
 }
