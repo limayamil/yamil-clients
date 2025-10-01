@@ -123,6 +123,122 @@ export function parseDateFromInput(inputValue: string): string {
   }
 }
 
+/**
+ * Convierte una fecha a formato DD/MM/YYYY para mostrar en inputs personalizados
+ */
+export function formatDateToDDMMYYYY(date: string | Date | null | undefined): string {
+  if (!date) return '';
+
+  try {
+    let d: Date;
+
+    if (typeof date === 'string') {
+      // Si la fecha es solo YYYY-MM-DD (sin hora), interpretarla como fecha local
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const [year, month, day] = date.split('-').map(Number);
+        d = new Date(year, month - 1, day); // Crear como fecha local
+      } else {
+        // Para fechas con timezone, convertir a zona horaria de Argentina
+        d = new Date(date);
+      }
+    } else {
+      d = date;
+    }
+
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Parsea una fecha en formato DD/MM/YYYY y la convierte a ISO string para la base de datos
+ * @param inputValue - Fecha en formato DD/MM/YYYY (ejemplo: "25/12/2024")
+ * @returns ISO string (ejemplo: "2024-12-25T00:00:00.000Z")
+ */
+export function parseDDMMYYYY(inputValue: string): string {
+  if (!inputValue.trim()) {
+    throw new Error('Fecha inválida');
+  }
+
+  try {
+    // Validar formato DD/MM/YYYY
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(inputValue)) {
+      throw new Error('Formato de fecha inválido. Use DD/MM/YYYY');
+    }
+
+    const [day, month, year] = inputValue.split('/').map(Number);
+
+    if (!year || !month || !day || month < 1 || month > 12 || day < 1 || day > 31) {
+      throw new Error('Fecha inválida');
+    }
+
+    // Validar que la fecha sea válida (no 31/02/2024 por ejemplo)
+    const testDate = new Date(year, month - 1, day);
+    if (testDate.getDate() !== day || testDate.getMonth() !== month - 1 || testDate.getFullYear() !== year) {
+      throw new Error('Fecha inválida');
+    }
+
+    // Convertir a formato YYYY-MM-DD y luego a ISO string
+    const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return `${isoDate}T00:00:00.000Z`;
+  } catch (error) {
+    console.error('Error parsing DD/MM/YYYY date:', error);
+    throw new Error('Fecha inválida. Use el formato DD/MM/YYYY');
+  }
+}
+
+/**
+ * Valida si un string parcial puede ser una fecha válida en formato DD/MM/YYYY
+ * Útil para validación mientras el usuario escribe
+ */
+export function isValidPartialDate(inputValue: string): boolean {
+  // Permitir vacío
+  if (!inputValue) return true;
+
+  // Permitir solo números y barras
+  if (!/^[\d/]*$/.test(inputValue)) return false;
+
+  // Si tiene formato completo, validar
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(inputValue)) {
+    try {
+      parseDDMMYYYY(inputValue);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Validar formato parcial (mientras escribe)
+  const parts = inputValue.split('/');
+
+  // Día: máximo 2 dígitos, entre 01-31
+  if (parts[0]) {
+    const day = parseInt(parts[0]);
+    if (parts[0].length > 2 || day < 1 || day > 31) return false;
+  }
+
+  // Mes: máximo 2 dígitos, entre 01-12
+  if (parts[1]) {
+    const month = parseInt(parts[1]);
+    if (parts[1].length > 2 || month < 1 || month > 12) return false;
+  }
+
+  // Año: máximo 4 dígitos
+  if (parts[2]) {
+    if (parts[2].length > 4) return false;
+  }
+
+  // No más de 3 partes
+  if (parts.length > 3) return false;
+
+  return true;
+}
+
 export function getStageStatusVariant(status: string) {
   switch (status) {
     case 'waiting_client':

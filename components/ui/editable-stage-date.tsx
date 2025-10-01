@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Calendar, Check, X, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { formatDate, formatDateForInput, parseDateFromInput } from '@/lib/utils';
+import { formatDate, formatDateToDDMMYYYY, parseDDMMYYYY } from '@/lib/utils';
+import { CustomDateInput } from '@/components/ui/custom-date-input';
 import { toast } from 'sonner';
 
 interface EditableStageDateProps {
@@ -29,23 +29,10 @@ export function EditableStageDate({
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Usar la utilidad para formatear fechas para inputs
-
-  // Inicializar valor del input cuando se entra en modo edición
-  useEffect(() => {
-    if (isEditing) {
-      setInputValue(formatDateForInput(value));
-      // Focus después de que el input se renderice
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 0);
-    }
-  }, [isEditing, value]);
 
   const handleEdit = () => {
     if (disabled) return;
+    setInputValue('');
     setIsEditing(true);
   };
 
@@ -62,9 +49,7 @@ export function EditableStageDate({
 
     try {
       setIsLoading(true);
-      // Usar la utilidad para parsear la fecha en GMT-3
-      const dateToSave = parseDateFromInput(inputValue);
-      await onSave(dateToSave);
+      await onSave(inputValue);
       setIsEditing(false);
       toast.success(`${getDateTypeLabel(dateType)} actualizada`);
     } catch (error) {
@@ -114,15 +99,14 @@ export function EditableStageDate({
     return (
       <div className={`flex items-center gap-2 ${className}`}>
         <div className="flex-1">
-          <Input
-            ref={inputRef}
-            type="date"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+          <CustomDateInput
+            value={value}
+            onChange={setInputValue}
             onKeyDown={handleKeyDown}
             className="h-8 text-sm"
             disabled={isLoading}
             placeholder={placeholder}
+            autoFocus
           />
         </div>
         <div className="flex items-center gap-1">
@@ -130,7 +114,7 @@ export function EditableStageDate({
             size="sm"
             variant="ghost"
             onClick={handleSave}
-            disabled={isLoading}
+            disabled={isLoading || !inputValue}
             className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
           >
             <Check className="h-3 w-3" />

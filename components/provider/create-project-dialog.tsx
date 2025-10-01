@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { CustomDateInput } from '@/components/ui/custom-date-input';
 import { createProjectFromTemplate } from '@/actions/projects';
 import { useFormState, useFormStatus } from 'react-dom';
 import { AddClientDialog } from './add-client-dialog';
@@ -19,6 +20,7 @@ const initialState: { error?: any; success?: boolean; projectId?: any } = {};
 export function CreateProjectDialog({ clients, templates }: CreateProjectDialogProps) {
   const [state, formAction] = useFormState(createProjectFromTemplate, initialState);
   const [localClients, setLocalClients] = useState(clients);
+  const [deadline, setDeadline] = useState<string>('');
 
   const handleClientAdded = (newClient: any) => {
     setLocalClients((prev) => [...prev, newClient]);
@@ -84,7 +86,12 @@ export function CreateProjectDialog({ clients, templates }: CreateProjectDialogP
             <label className="text-sm font-medium text-foreground" htmlFor="deadline">
               Deadline (opcional)
             </label>
-            <Input id="deadline" name="deadline" type="date" />
+            <CustomDateInput
+              value={deadline}
+              onChange={setDeadline}
+              placeholder="DD/MM/YYYY"
+            />
+            <input type="hidden" name="deadline" value={deadline} />
           </div>
           {state?.error && <p className="text-sm text-error">{JSON.stringify(state.error)}</p>}
           <SubmitButton />

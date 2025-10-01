@@ -30,6 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { LoadingButton, LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ActionLoading } from '@/components/ui/loading-overlay';
+import { CustomDateInput } from '@/components/ui/custom-date-input';
 import { toast } from 'sonner';
 import type { Stage } from '@/types/project';
 import { createStage, deleteStage, reorderStages } from '@/actions/stages';
@@ -313,30 +314,27 @@ export function StageManagementPanel({ stages, projectId, onStagesUpdated }: Sta
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="planned_start">Inicio planificado</Label>
-                    <Input
-                      id="planned_start"
-                      type="datetime-local"
+                    <CustomDateInput
                       value={createFormData.planned_start}
-                      onChange={(e) => setCreateFormData(prev => ({ ...prev, planned_start: e.target.value }))}
+                      onChange={(value) => setCreateFormData(prev => ({ ...prev, planned_start: value }))}
+                      placeholder="DD/MM/YYYY"
                     />
                   </div>
                   <div>
                     <Label htmlFor="planned_end">Fin planificado</Label>
-                    <Input
-                      id="planned_end"
-                      type="datetime-local"
+                    <CustomDateInput
                       value={createFormData.planned_end}
-                      onChange={(e) => setCreateFormData(prev => ({ ...prev, planned_end: e.target.value }))}
+                      onChange={(value) => setCreateFormData(prev => ({ ...prev, planned_end: value }))}
+                      placeholder="DD/MM/YYYY"
                     />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="deadline">Fecha límite</Label>
-                  <Input
-                    id="deadline"
-                    type="datetime-local"
+                  <CustomDateInput
                     value={createFormData.deadline}
-                    onChange={(e) => setCreateFormData(prev => ({ ...prev, deadline: e.target.value }))}
+                    onChange={(value) => setCreateFormData(prev => ({ ...prev, deadline: value }))}
+                    placeholder="DD/MM/YYYY"
                   />
                 </div>
                 <div>

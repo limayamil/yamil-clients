@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Edit3, Check, X, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDate, formatDateForInput, parseDateFromInput } from '@/lib/utils';
+import { formatDate, formatDateToDDMMYYYY, parseDDMMYYYY } from '@/lib/utils';
+import { CustomDateInput } from '@/components/ui/custom-date-input';
 
 interface EditableDateProps {
   value: string | null | undefined;
@@ -27,33 +27,26 @@ export function EditableDate({
   allowNull = true
 }: EditableDateProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(formatDateForInput(value));
+  const [editValue, setEditValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const displayValue = value ? formatDate(value) : placeholder;
 
   const handleSave = async () => {
-    const currentFormattedValue = formatDateForInput(value);
-    if (editValue === currentFormattedValue) {
-      setIsEditing(false);
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const dateToSave = editValue ? parseDateFromInput(editValue) : null;
+      const dateToSave = editValue ? editValue : null;
       await onSave(dateToSave);
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving date:', error);
-      setEditValue(formatDateForInput(value));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
-    setEditValue(formatDateForInput(value));
+    setEditValue('');
     setIsEditing(false);
   };
 
@@ -70,10 +63,9 @@ export function EditableDate({
   if (isEditing) {
     return (
       <div className="space-y-2">
-        <Input
-          type="date"
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
+        <CustomDateInput
+          value={value}
+          onChange={setEditValue}
           onKeyDown={handleKeyDown}
           className="font-medium"
           disabled={isLoading}
@@ -84,7 +76,7 @@ export function EditableDate({
             size="sm"
             onClick={handleSave}
             loading={isLoading}
-            disabled={editValue === formatDateForInput(value)}
+            disabled={!editValue}
           >
             <Check className="h-4 w-4" />
             Guardar
@@ -102,7 +94,17 @@ export function EditableDate({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setEditValue('')}
+              onClick={async () => {
+                setIsLoading(true);
+                try {
+                  await onSave(null);
+                  setIsEditing(false);
+                } catch (error) {
+                  console.error('Error clearing date:', error);
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
               disabled={isLoading}
             >
               <X className="h-4 w-4" />
@@ -123,7 +125,7 @@ export function EditableDate({
       )}
       onClick={() => {
         if (!disabled) {
-          setEditValue(formatDateForInput(value));
+          setEditValue('');
           setIsEditing(true);
         }
       }}
@@ -145,7 +147,7 @@ export function EditableDate({
           className="absolute -right-1 -top-1 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
           onClick={(e) => {
             e.stopPropagation();
-            setEditValue(formatDateForInput(value));
+            setEditValue('');
             setIsEditing(true);
           }}
         >
