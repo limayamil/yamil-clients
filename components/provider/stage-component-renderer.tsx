@@ -164,7 +164,8 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                 </div>
               </div>
             );
-          case 'approval':
+          case 'approval': {
+            const approvalUrl = component.config?.url;
             return (
               <div key={component.id} className="space-y-3 rounded-2xl border border-brand-100 bg-white p-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -174,9 +175,9 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   content={(component.config?.description as string) ?? (component.config?.instructions as string) ?? 'Awaiting approval to proceed.'}
                   className="text-xs text-muted-foreground"
                 />
-                {component.config?.url && (
+                {approvalUrl && typeof approvalUrl === 'string' ? (
                   <a
-                    href={String(component.config.url)}
+                    href={approvalUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-xs text-brand-600 hover:text-brand-700 underline"
@@ -184,7 +185,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                     <ExternalLink className="h-3 w-3" />
                     Ver material para aprobar
                   </a>
-                )}
+                ) : null}
                 <div className="flex items-center justify-between">
                   <Badge variant={component.status === 'approved' ? 'success' : 'warning'}>{component.status}</Badge>
                   <ComponentCommentThread
@@ -199,6 +200,7 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                 </div>
               </div>
             );
+          }
           case 'text_block':
             return (
               <div key={component.id} className="space-y-3 rounded-2xl border border-border bg-white p-4">

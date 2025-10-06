@@ -262,16 +262,17 @@ function ComponentContent({
         </div>
       );
 
-    case 'approval':
+    case 'approval': {
+      const approvalUrl = component.config?.url;
       return (
         <div className="space-y-3 stage-component-content">
           <RichTextViewer
             content={(component.config?.description as string) || (component.config?.instructions as string) || 'Solicitud de aprobación'}
             className="text-sm text-foreground mobile-text-safe"
           />
-          {component.config?.url && (
+          {approvalUrl && typeof approvalUrl === 'string' ? (
             <a
-              href={component.config.url as string}
+              href={approvalUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 underline mobile-text-safe"
@@ -279,9 +280,10 @@ function ComponentContent({
               <ExternalLink className="h-3 w-3" />
               Ver material para aprobar
             </a>
-          )}
+          ) : null}
         </div>
       );
+    }
 
     case 'link':
       return (

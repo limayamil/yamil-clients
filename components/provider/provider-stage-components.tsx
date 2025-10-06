@@ -360,16 +360,17 @@ function ProviderComponentContent({ component }: { component: StageComponent }) 
         </div>
       );
 
-    case 'approval':
+    case 'approval': {
+      const approvalUrl = component.config?.url;
       return (
         <div className="space-y-2">
           <RichTextViewer
             content={(component.config?.description as string) || (component.config?.instructions as string) || 'Solicitud de aprobación'}
             className="text-sm text-foreground"
           />
-          {component.config?.url && (
+          {approvalUrl && typeof approvalUrl === 'string' ? (
             <a
-              href={component.config.url as string}
+              href={approvalUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 underline"
@@ -377,12 +378,13 @@ function ProviderComponentContent({ component }: { component: StageComponent }) 
               <ExternalLink className="h-3 w-3" />
               Ver material
             </a>
-          )}
+          ) : null}
           <Badge variant="outline">
             Estado: {component.status}
           </Badge>
         </div>
       );
+    }
 
     case 'prototype':
       return (

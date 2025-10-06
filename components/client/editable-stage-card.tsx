@@ -667,7 +667,7 @@ export function EditableStageCard({
       <EditCompletionNoteDialog
         stageId={stage.id}
         projectId={projectId}
-        currentNote={stage.completion_note}
+        currentNote={stage.completion_note ?? null}
         isOpen={showEditNoteDialog}
         onOpenChange={setShowEditNoteDialog}
       />
