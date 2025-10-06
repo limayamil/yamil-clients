@@ -484,7 +484,7 @@ function ApprovalButton({ component, projectId }: ApprovalButtonProps) {
       <Button
         onClick={handleApprove}
         disabled={isSubmitting}
-        className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+        className="w-full sm:w-auto sm:min-w-[200px] gap-2 bg-green-600 hover:bg-green-700 text-white"
         size="lg"
       >
         {isSubmitting ? (
