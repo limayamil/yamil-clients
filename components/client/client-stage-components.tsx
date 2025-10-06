@@ -180,6 +180,14 @@ function ClientComponentCard({
         />
       )}
 
+      {/* Approval CTA for approval components */}
+      {component.component_type === 'approval' && (
+        <ApprovalButton
+          component={component}
+          projectId={projectId}
+        />
+      )}
+
       <ComponentCommentThread
         componentId={component.id}
         componentTitle={getComponentTitle(component)}
@@ -256,11 +264,22 @@ function ComponentContent({
 
     case 'approval':
       return (
-        <div className="space-y-2 stage-component-content">
+        <div className="space-y-3 stage-component-content">
           <RichTextViewer
-            content={(component.config?.instructions as string) || 'Solicitud de aprobación'}
+            content={(component.config?.description as string) || (component.config?.instructions as string) || 'Solicitud de aprobación'}
             className="text-sm text-foreground mobile-text-safe"
           />
+          {component.config?.url && (
+            <a
+              href={component.config.url as string}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 underline mobile-text-safe"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Ver material para aprobar
+            </a>
+          )}
         </div>
       );
 
@@ -413,6 +432,71 @@ function URLSubmissionForm({ component, onUpdateComponent }: URLSubmissionFormPr
           <Send className="h-3 w-3" />
         </Button>
       </div>
+    </div>
+  );
+}
+
+interface ApprovalButtonProps {
+  component: StageComponent;
+  projectId: string;
+}
+
+function ApprovalButton({ component, projectId }: ApprovalButtonProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleApprove = async () => {
+    setIsSubmitting(true);
+    try {
+      const { approveComponent } = await import('@/actions/stages');
+      const formData = new FormData();
+      formData.append('componentId', component.id);
+      formData.append('projectId', projectId);
+
+      const result = await approveComponent(undefined, formData);
+
+      if (result?.error) {
+        console.error('Error al aprobar:', result.error);
+        // TODO: Mostrar toast de error
+      }
+    } catch (error) {
+      console.error('Error al aprobar:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Si ya está aprobado, mostrar badge en verde
+  if (component.status === 'approved') {
+    return (
+      <div className="mt-3 p-4 bg-green-50 rounded-lg border border-green-200">
+        <div className="flex items-center gap-2 text-green-700">
+          <CheckCircle2 className="h-5 w-5" />
+          <span className="font-medium text-sm">Material aprobado</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3">
+      <Button
+        onClick={handleApprove}
+        disabled={isSubmitting}
+        className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+        size="lg"
+      >
+        {isSubmitting ? (
+          <>
+            <Send className="h-4 w-4 animate-pulse" />
+            Aprobando...
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="h-4 w-4" />
+            Aprobar
+          </>
+        )}
+      </Button>
     </div>
   );
 }

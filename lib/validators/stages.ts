@@ -145,7 +145,13 @@ export const updateApprovalSchema = z.object({
   componentId: z.string().uuid(),
   projectId: projectIdSchema,
   title: simpleTextSchema(200).optional(),
-  instructions: richTextSchema(3000).optional()
+  description: richTextSchema(3000).optional(),
+  url: z.string().url('URL inválida').optional().or(z.literal(''))
+});
+
+export const approveComponentSchema = z.object({
+  componentId: z.string().uuid(),
+  projectId: projectIdSchema
 });
 
 export const updateMilestoneSchema = z.object({

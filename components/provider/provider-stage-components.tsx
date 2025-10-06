@@ -364,9 +364,20 @@ function ProviderComponentContent({ component }: { component: StageComponent }) 
       return (
         <div className="space-y-2">
           <RichTextViewer
-            content={(component.config?.instructions as string) || 'Solicitud de aprobación'}
+            content={(component.config?.description as string) || (component.config?.instructions as string) || 'Solicitud de aprobación'}
             className="text-sm text-foreground"
           />
+          {component.config?.url && (
+            <a
+              href={component.config.url as string}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 underline"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Ver material
+            </a>
+          )}
           <Badge variant="outline">
             Estado: {component.status}
           </Badge>
@@ -516,18 +527,31 @@ function ProviderComponentEditor({
       )}
 
       {component.component_type === 'approval' && (
-        <div>
-          <label className="text-sm font-medium text-foreground mb-1 block">
-            Instrucciones para la aprobación
-          </label>
-          <RichTextEditor
-            value={editData.instructions || ''}
-            onChange={(value) => updateField('instructions', value)}
-            placeholder="Describe qué necesita ser aprobado..."
-            mode="full"
-            maxLength={10000}
-          />
-        </div>
+        <>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">
+              Descripción
+            </label>
+            <RichTextEditor
+              value={editData.description || editData.instructions || ''}
+              onChange={(value) => updateField('description', value)}
+              placeholder="Describe qué necesita ser aprobado..."
+              mode="full"
+              maxLength={10000}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">
+              Link del material (opcional)
+            </label>
+            <Input
+              value={editData.url || ''}
+              onChange={(e) => updateField('url', e.target.value)}
+              placeholder="https://figma.com/..."
+              type="url"
+            />
+          </div>
+        </>
       )}
 
       {component.component_type === 'prototype' && (

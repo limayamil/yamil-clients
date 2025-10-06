@@ -171,9 +171,20 @@ export function StageComponentRenderer({ stage, projectId, comments, currentUser
                   <ShieldCheck className="h-4 w-4" /> Approval gate
                 </div>
                 <RichTextViewer
-                  content={(component.config?.instructions as string) ?? 'Awaiting approval to proceed.'}
+                  content={(component.config?.description as string) ?? (component.config?.instructions as string) ?? 'Awaiting approval to proceed.'}
                   className="text-xs text-muted-foreground"
                 />
+                {component.config?.url && (
+                  <a
+                    href={String(component.config.url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs text-brand-600 hover:text-brand-700 underline"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Ver material para aprobar
+                  </a>
+                )}
                 <div className="flex items-center justify-between">
                   <Badge variant={component.status === 'approved' ? 'success' : 'warning'}>{component.status}</Badge>
                   <ComponentCommentThread

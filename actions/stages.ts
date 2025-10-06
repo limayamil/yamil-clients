@@ -14,7 +14,8 @@ import {
   deleteStageSchema,
   reorderStagesSchema,
   reorderStageComponentsSchema,
-  updateCompletionNoteSchema
+  updateCompletionNoteSchema,
+  approveComponentSchema
 } from '@/lib/validators/stages';
 import { audit } from '@/lib/observability/audit';
 import { trackEvent } from '@/lib/observability/events';
@@ -290,6 +291,66 @@ export async function deleteStageComponent(_: unknown, formData: FormData) {
   });
 
   revalidatePath(`/projects/${parsed.data.projectId}`);
+  return { success: true };
+}
+
+export async function approveComponent(_: unknown, formData: FormData) {
+  const supabase = createSupabaseServerClient();
+  rateLimitCurrentUser();
+
+  const payload = processFormData(formData);
+  const parsed = approveComponentSchema.safeParse(payload);
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  const user = await getCurrentUser();
+  if (!user) return { error: { auth: ['Sin sesión activa'] } };
+
+  // Verificar que el componente existe y es de tipo 'approval'
+  const { data: component, error: fetchError } = await (supabase as any)
+    .from('stage_components')
+    .select(`
+      id,
+      stage_id,
+      component_type,
+      stages!inner(
+        id,
+        project_id,
+        projects!inner(id, organization_id)
+      )
+    `)
+    .eq('id', parsed.data.componentId)
+    .single();
+
+  if (fetchError || !component) {
+    return { error: { component: ['Componente no encontrado'] } };
+  }
+
+  if (component.component_type !== 'approval') {
+    return { error: { component: ['Este componente no es de tipo aprobación'] } };
+  }
+
+  // Actualizar estado a 'approved'
+  const { error } = await (supabase as any)
+    .from('stage_components')
+    .update({ status: 'approved' })
+    .eq('id', parsed.data.componentId);
+
+  if (error) return { error: { db: [error.message] } };
+
+  await audit({
+    projectId: parsed.data.projectId,
+    actorType: 'client',
+    action: 'component.approved',
+    details: {
+      componentId: parsed.data.componentId,
+      stageId: component.stage_id
+    }
+  });
+
+  // Revalidar tanto rutas de provider como de cliente
+  revalidatePath(`/projects/${parsed.data.projectId}`);
+  revalidatePath(`/c`, 'layout');
+
   return { success: true };
 }
 
