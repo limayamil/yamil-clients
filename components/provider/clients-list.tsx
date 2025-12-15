@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toggleClientStatus } from '@/actions/clients';
 import { AddClientDialog } from './add-client-dialog';
-import { Search, Mail, Building, Phone, MoreVertical } from 'lucide-react';
+import { Search, Mail, Building, Phone, MoreVertical, FolderOpen } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,7 @@ interface Client {
   phone: string | null;
   active: boolean;
   created_at: string;
+  project_count: number;
 }
 
 interface ClientsListProps {
@@ -30,6 +32,7 @@ interface ClientsListProps {
 }
 
 export function ClientsList({ clients }: ClientsListProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [localClients, setLocalClients] = useState(clients);
 
@@ -98,6 +101,10 @@ export function ClientsList({ clients }: ClientsListProps) {
                       <Badge variant={client.active ? 'default' : 'secondary'}>
                         {client.active ? 'Activo' : 'Inactivo'}
                       </Badge>
+                      <Badge variant="outline" className="gap-1">
+                        <FolderOpen className="h-3 w-3" />
+                        {client.project_count} {client.project_count === 1 ? 'proyecto' : 'proyectos'}
+                      </Badge>
                     </div>
                   </div>
                   <DropdownMenu>
@@ -134,6 +141,15 @@ export function ClientsList({ clients }: ClientsListProps) {
                 <div className="text-xs text-muted-foreground pt-2 border-t">
                   Registrado: {new Date(client.created_at).toLocaleDateString('es-ES')}
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-3"
+                  onClick={() => router.push(`/clients/${client.id}`)}
+                >
+                  <FolderOpen className="h-4 w-4 mr-2" />
+                  Ver Proyectos
+                </Button>
               </CardContent>
             </Card>
           ))}

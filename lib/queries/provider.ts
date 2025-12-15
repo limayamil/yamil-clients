@@ -172,7 +172,9 @@ export async function getProjectTemplates() {
 
 export async function getAllClients() {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await (supabase as any)
+
+  // Get clients with project count
+  const { data: clients, error } = await (supabase as any)
     .from('clients')
     .select('id, name, email, company, phone, active, created_at')
     .order('created_at', { ascending: false });
@@ -181,7 +183,25 @@ export async function getAllClients() {
     console.error('Error fetching all clients:', error);
     return [];
   }
-  return data ?? [];
+
+  if (!clients) return [];
+
+  // Get project counts for each client
+  const clientsWithProjectCount = await Promise.all(
+    clients.map(async (client: any) => {
+      const { count } = await (supabase as any)
+        .from('projects')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', client.id);
+
+      return {
+        ...client,
+        project_count: count || 0
+      };
+    })
+  );
+
+  return clientsWithProjectCount;
 }
 
 export async function getClientById(clientId: string) {
@@ -209,6 +229,35 @@ export async function getClientProjects(clientId: string) {
 
   if (error) {
     console.error('Error fetching client projects:', error);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function getUnassignedProjects() {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await (supabase as any)
+    .from('projects')
+    .select('id, title, status, created_at, deadline')
+    .is('client_id', null)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching unassigned projects:', error);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function getAllProjectsForAssignment() {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await (supabase as any)
+    .from('projects')
+    .select('id, title, status, client_id, clients(name)')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching all projects for assignment:', error);
     return [];
   }
   return data ?? [];

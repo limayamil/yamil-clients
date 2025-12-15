@@ -45,6 +45,11 @@ const createProjectSchema = z.object({
   deadline: z.string().optional()
 });
 
+const assignProjectToClientSchema = z.object({
+  projectId: z.string().uuid(),
+  clientId: z.string().uuid()
+});
+
 export async function createProjectFromTemplate(_: unknown, formData: FormData) {
   const supabase = createSupabaseServerClient();
   const payload = processFormData(formData);
@@ -233,5 +238,93 @@ export async function updateProjectCurrentStage(formData: FormData) {
   });
 
   revalidatePath(`/projects/${parsed.data.projectId}`);
+  return { success: true };
+}
+
+export async function assignProjectToClient(formData: FormData) {
+  const supabase = createSupabaseServerClient();
+  const payload = processFormData(formData);
+  const parsed = assignProjectToClientSchema.safeParse(payload);
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  const user = await getCurrentUser();
+  const userId = user?.id;
+  if (!userId) return { error: { auth: ['No autorizado'] } };
+
+  // Verificar que el proyecto existe
+  const { data: project, error: projectError } = await (supabase as any)
+    .from('projects')
+    .select('id, title, client_id')
+    .eq('id', parsed.data.projectId)
+    .single();
+
+  if (projectError || !project) {
+    return { error: { project: ['Proyecto no encontrado'] } };
+  }
+
+  // Verificar que el cliente existe y está activo
+  const { data: client, error: clientError } = await (supabase as any)
+    .from('clients')
+    .select('id, email, active')
+    .eq('id', parsed.data.clientId)
+    .single();
+
+  if (clientError || !client) {
+    return { error: { client: ['Cliente no encontrado'] } };
+  }
+
+  if (!client.active) {
+    return { error: { client: ['El cliente no está activo'] } };
+  }
+
+  // Actualizar el client_id del proyecto
+  const { error: updateError } = await (supabase as any)
+    .from('projects')
+    .update({ client_id: parsed.data.clientId })
+    .eq('id', parsed.data.projectId);
+
+  if (updateError) {
+    return { error: { db: [updateError.message] } };
+  }
+
+  // Actualizar project_members: eliminar el anterior y agregar el nuevo
+  // Primero eliminar miembros existentes con rol de cliente
+  await (supabase as any)
+    .from('project_members')
+    .delete()
+    .eq('project_id', parsed.data.projectId)
+    .in('role', ['client_viewer', 'client_editor']);
+
+  // Agregar el nuevo cliente como miembro
+  const { error: memberError } = await (supabase as any)
+    .from('project_members')
+    .insert({
+      project_id: parsed.data.projectId,
+      email: client.email.toLowerCase(),
+      role: 'client_viewer',
+      invited_at: new Date().toISOString(),
+      accepted_at: new Date().toISOString()
+    });
+
+  if (memberError) {
+    console.error('Error adding project member:', memberError);
+    // No retornamos error aquí, el proyecto ya fue asignado
+  }
+
+  await audit({
+    projectId: parsed.data.projectId,
+    actorType: 'provider',
+    action: 'project.client_assigned',
+    details: {
+      newClientId: parsed.data.clientId,
+      previousClientId: project.client_id
+    }
+  });
+
+  revalidatePath('/clients');
+  revalidatePath(`/clients/${parsed.data.clientId}`);
+  revalidatePath(`/projects/${parsed.data.projectId}`);
+  revalidatePath('/dashboard');
+
   return { success: true };
 }
