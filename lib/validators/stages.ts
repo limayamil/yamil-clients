@@ -88,9 +88,27 @@ export const updateStageSchema = z.object({
   status: z.enum(['todo', 'waiting_client', 'in_review', 'approved', 'blocked', 'done']).optional(),
   title: z.string().optional(),
   description: z.string().optional(),
-  planned_start: z.string().datetime().optional(),
-  planned_end: z.string().datetime().optional(),
-  deadline: z.string().datetime().optional()
+  planned_start: z.string().transform((val) => val === '' ? null : val).pipe(
+    z.union([
+      z.string().datetime(),
+      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
+      z.null()
+    ])
+  ).optional(),
+  planned_end: z.string().transform((val) => val === '' ? null : val).pipe(
+    z.union([
+      z.string().datetime(),
+      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
+      z.null()
+    ])
+  ).optional(),
+  deadline: z.string().transform((val) => val === '' ? null : val).pipe(
+    z.union([
+      z.string().datetime(),
+      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
+      z.null()
+    ])
+  ).optional()
 });
 
 export const createStageSchema = z.object({
@@ -99,9 +117,27 @@ export const createStageSchema = z.object({
   description: z.string().optional(),
   type: z.enum(['intake', 'materials', 'design', 'development', 'review', 'handoff', 'custom']).default('custom'),
   status: z.enum(['todo', 'waiting_client', 'in_review', 'approved', 'blocked', 'done']).default('todo'),
-  planned_start: z.string().transform((val) => val || null).pipe(z.string().datetime().nullable()).optional(),
-  planned_end: z.string().transform((val) => val || null).pipe(z.string().datetime().nullable()).optional(),
-  deadline: z.string().transform((val) => val || null).pipe(z.string().datetime().nullable()).optional(),
+  planned_start: z.string().transform((val) => val || null).pipe(
+    z.union([
+      z.string().datetime(),
+      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
+      z.null()
+    ])
+  ).optional(),
+  planned_end: z.string().transform((val) => val || null).pipe(
+    z.union([
+      z.string().datetime(),
+      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
+      z.null()
+    ])
+  ).optional(),
+  deadline: z.string().transform((val) => val || null).pipe(
+    z.union([
+      z.string().datetime(),
+      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
+      z.null()
+    ])
+  ).optional(),
   owner: z.enum(['provider', 'client']).default('provider'),
   insertAfterStageId: z.string().uuid().optional()
 });
